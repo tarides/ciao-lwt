@@ -1,0 +1,4 @@
+(executable
+ (public_name lwt-to-eio)
+ (name main)
+ (libraries cmdliner))
