@@ -1,0 +1,7 @@
+(library
+ (name lwt_to_eio)
+ (libraries
+  unix
+  ocamlformat-lib
+  ocamlformat.bin_conf
+  ocamlformat-lib.format_))

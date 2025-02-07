@@ -22,4 +22,4 @@
 (package
  (name lwt_to_eio)
  (synopsis "Convert your codebase from Lwt to Eio")
- (depends ocaml))
+ (depends ocaml cmdliner ocamlformat ocamlformat-lib))
