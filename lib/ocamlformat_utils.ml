@@ -1,8 +1,13 @@
 open Ocamlformat_lib
 open Ocamlformat_format
-open Ocamlformat_parser_extended
 module Location = Migrate_ast.Location
-module Parsetree = Extended_ast
+
+module Parsing = struct
+  include Ocamlformat_ocaml_common
+  include Ocamlformat_parser_extended
+end
+
+open Parsing
 
 let ( let* ) = Result.bind
 
@@ -61,7 +66,7 @@ module Trimmed_translation_unit = struct
         let print l = Format.fprintf fmt "%a\n%!" Location.print_loc l in
         Format.fprintf fmt
           "Warning: Some locations have not been considered\n%!";
-        List.iter print (List.sort Location.compare l)
+        List.iter print (List.sort compare l)
 
   let format (type ext) (ext_fg : ext Extended_ast.t) ~input_name ~prev_source
       ~ext_parsed (conf : Conf.t) =

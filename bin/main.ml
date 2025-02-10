@@ -1,6 +1,6 @@
 open Lwt_to_eio
 
-let modify_ast ast = ast
+let modify_ast = Ast_transforms.remove_lwt_ppx
 let is_ml_file fname = Filename.extension fname = ".ml"
 
 let main () =

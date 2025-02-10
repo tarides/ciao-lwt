@@ -1,16 +1,11 @@
-open Ocamlformat_lib
+module Parsing : sig
+  (** OCamlformat's version of OCaml's parsing modules *)
 
-val build_config : file:string -> Conf.t
+  include module type of Ocamlformat_ocaml_common
+  include module type of Ocamlformat_parser_extended
+end
 
-val parse_and_format :
-  'ast Extended_ast.t ->
-  input_name:string ->
-  source:string ->
-  modify_ast:('ast -> 'ast) ->
-  Conf.t ->
-  string
-
-module Parsetree = Ocamlformat_lib.Extended_ast
+open Parsing
 
 val format_structure_in_place :
   file:string -> modify_ast:(Parsetree.structure -> Parsetree.structure) -> unit

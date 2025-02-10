@@ -4,4 +4,5 @@
   unix
   ocamlformat-lib
   ocamlformat.bin_conf
-  ocamlformat-lib.format_))
+  ocamlformat-lib.format_
+  ocamlformat-lib.ocaml_common))
