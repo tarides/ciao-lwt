@@ -4,6 +4,13 @@ let _ =
 
 let _ = match%lwt input with case -> ()
 let _ = match%lwt input with case -> () | case2 -> ()
-
 let _ = try%lwt input with case -> ()
 let _ = try%lwt input with case -> () | case2 -> ()
+
+let _ =
+  for%lwt pat = 0 to 10 do
+    loop_body
+  done;
+  for%lwt pat = 10 downto 0 do
+    loop_body
+  done

@@ -9,3 +9,17 @@
   let _ = Lwt.bind input (function case -> () | case2 -> ())
   let _ = Lwt.catch (fun () -> input) (function case -> ())
   let _ = Lwt.catch (fun () -> input) (function case -> () | case2 -> ())
+  
+  let _ =
+    (let __ppx_lwt_bound = 10 in
+     let rec __ppx_lwt_loop pat =
+       if pat > __ppx_lwt_bound then Lwt.return_unit
+       else Lwt.bind (fun () -> __ppx_lwt_loop (pat + 1)) loop_body
+     in
+     __ppx_lwt_loop 0);
+    let __ppx_lwt_bound = 0 in
+    let rec __ppx_lwt_loop pat =
+      if pat < __ppx_lwt_bound then Lwt.return_unit
+      else Lwt.bind (fun () -> __ppx_lwt_loop (pat - 1)) loop_body
+    in
+    __ppx_lwt_loop 10
