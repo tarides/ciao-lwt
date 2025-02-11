@@ -13,4 +13,8 @@ let _ =
   done;
   for%lwt pat = 10 downto 0 do
     loop_body
-  done
+  done;
+  while%lwt while_condition do
+    loop_body
+  done;
+  ()

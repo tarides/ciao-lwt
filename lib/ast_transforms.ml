@@ -10,7 +10,6 @@ let mk_function_param ?(loc = !default_loc) ?(lbl = Nolabel) ?def pat =
 
 let mk_let ?(loc_in = !default_loc) ?(rec_ = Nonrecursive) pat ?(args = []) lhs
     rhs =
-  let args = List.map mk_function_param args in
   let binding = Vb.mk ~is_pun:false pat args (Pfunction_body lhs) in
   let bindings = { pvbs_bindings = [ binding ]; pvbs_rec = rec_ } in
   Exp.let_ ~loc_in bindings rhs
@@ -25,10 +24,9 @@ let mk_longident = function
       mk_loc (List.fold_left (fun acc seg -> Ldot (acc, seg)) (Lident hd) tl)
 
 let mk_exp_var s = Exp.ident (mk_longident [ s ])
-
-let mk_unit_arg =
-  let unit_ident = mk_longident [ "()" ] in
-  mk_function_param (Pat.construct unit_ident None)
+let mk_unit_ident = mk_longident [ "()" ]
+let mk_unit_arg = mk_function_param (Pat.construct mk_unit_ident None)
+let mk_unit_val = Exp.construct mk_unit_ident None
 
 let mk_if if_cond if_body else_body =
   let mk_if_cond ?(loc_then = !default_loc) ?(attrs = []) if_cond if_body =
@@ -77,7 +75,7 @@ let rewrite_lwt_extension_expression ~attrs exp =
         (mk_let (Pat.var (mk_loc "__ppx_lwt_bound")) exp_to
         @@ mk_let ~rec_:Recursive
              (Pat.var (mk_loc "__ppx_lwt_loop"))
-             ~args:[ pat ]
+             ~args:[ mk_function_param pat ]
              (mk_if
                 (comp p_exp (mk_exp_var "__ppx_lwt_bound"))
                 mk_lwt_return_unit
@@ -88,6 +86,16 @@ let rewrite_lwt_extension_expression ~attrs exp =
                             (mk_exp_var "__ppx_lwt_loop")
                             [ (Nolabel, op p_exp (Exp.constant (Const.int 1))) ])))))
         @@ Exp.apply (mk_exp_var "__ppx_lwt_loop") [ (Nolabel, exp_from) ])
+  (* [while%lwt]. *)
+  | Pexp_while (cond, body) ->
+      Some
+        (mk_let ~rec_:Recursive
+           (Pat.var (mk_loc "__ppx_lwt_loop"))
+           ~args:[ mk_unit_arg ]
+           (mk_if cond
+              (mk_lwt_bind body (mk_exp_var "__ppx_lwt_loop"))
+              mk_lwt_return_unit)
+        @@ Exp.apply (mk_exp_var "__ppx_lwt_loop") [ (Nolabel, mk_unit_val) ])
   | _ -> None
 
 let rewrite_expression exp =
