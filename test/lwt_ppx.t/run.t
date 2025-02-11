@@ -5,3 +5,5 @@
 
   $ cat test.ml
   let _ = Lwt.bind (fun binding_name -> binding_body) (Lwt.return binding_value)
+  let _ = Lwt.bind (function case -> ()) input
+  let _ = Lwt.bind (function case -> () | case2 -> ()) input

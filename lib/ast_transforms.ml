@@ -1,22 +1,37 @@
 open Ocamlformat_utils.Parsing
 open Asttypes
 open Parsetree
+open Ast_helper
 
-let mk_loc txt = { Location.txt; loc = !Ast_helper.default_loc }
+let mk_loc txt = { Location.txt; loc = !default_loc }
 
-let mk_function_param ?(loc = !Ast_helper.default_loc) ?(lbl = Nolabel) ?def pat
-    =
+let mk_function_param ?(loc = !default_loc) ?(lbl = Nolabel) ?def pat =
   { pparam_loc = loc; pparam_desc = Pparam_val (lbl, def, pat) }
 
+let mk_function_cases ?(loc = !default_loc) ?(attrs = []) cases =
+  Pfunction_cases (cases, loc, attrs)
+
 let lwt_bind_exp f v =
-  let open Ast_helper in
   Exp.apply
     (Exp.ident (mk_loc (Longident.Ldot (Longident.Lident "Lwt", "bind"))))
     [ (Nolabel, f); (Nolabel, v) ]
 
-let rewrite_expression exp =
-  let open Ast_helper in
+let rewrite_extension_expression ~attrs exp =
   match exp.pexp_desc with
+  | Pexp_match (input_exp, cases) ->
+      let body = Exp.function_ [] None (mk_function_cases ~attrs cases) in
+      Some (lwt_bind_exp body input_exp)
+  | _ -> None
+
+let rewrite_expression exp =
+  match exp.pexp_desc with
+  (* Expressions like [match%lwt ..] and [[%lwt ..]]. *)
+  | Pexp_extension
+      ({ txt = "lwt"; _ }, PStr [ { pstr_desc = Pstr_eval (exp, attrs); _ } ])
+    ->
+      rewrite_extension_expression ~attrs exp
+  (* Some expressions like [let%lwt] are not a [Pexp_extension] in OCamlformat's
+     AST. *)
   (* [let%lwt pvb = body in] *)
   | Pexp_let
       ( {
