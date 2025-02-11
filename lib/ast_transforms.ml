@@ -3,7 +3,7 @@ open Asttypes
 open Parsetree
 open Ast_helper
 
-let mk_loc txt = { Location.txt; loc = !default_loc }
+let mk_loc ?(loc = !default_loc) txt = { Location.txt; loc }
 
 let mk_function_param ?(loc = !default_loc) ?(lbl = Nolabel) ?def pat =
   { pparam_loc = loc; pparam_desc = Pparam_val (lbl, def, pat) }
@@ -11,16 +11,35 @@ let mk_function_param ?(loc = !default_loc) ?(lbl = Nolabel) ?def pat =
 let mk_function_cases ?(loc = !default_loc) ?(attrs = []) cases =
   Pfunction_cases (cases, loc, attrs)
 
-let lwt_bind_exp f v =
+let mk_longident = function
+  | [] -> assert false
+  | hd :: tl ->
+      let open Longident in
+      mk_loc (List.fold_left (fun acc seg -> Ldot (acc, seg)) (Lident hd) tl)
+
+let mk_unit_arg =
+  let unit_ident = mk_longident [ "()" ] in
+  mk_function_param (Pat.construct unit_ident None)
+
+let mk_lwt_bind body input =
   Exp.apply
-    (Exp.ident (mk_loc (Longident.Ldot (Longident.Lident "Lwt", "bind"))))
-    [ (Nolabel, f); (Nolabel, v) ]
+    (Exp.ident (mk_longident [ "Lwt"; "bind" ]))
+    [ (Nolabel, body); (Nolabel, input) ]
+
+let mk_lwt_catch body input =
+  let input_thunk = Exp.function_ [ mk_unit_arg ] None (Pfunction_body input) in
+  Exp.apply
+    (Exp.ident (mk_longident [ "Lwt"; "catch" ]))
+    [ (Nolabel, input_thunk); (Nolabel, body) ]
 
 let rewrite_extension_expression ~attrs exp =
   match exp.pexp_desc with
   | Pexp_match (input_exp, cases) ->
       let body = Exp.function_ [] None (mk_function_cases ~attrs cases) in
-      Some (lwt_bind_exp body input_exp)
+      Some (mk_lwt_bind body input_exp)
+  | Pexp_try (input_exp, cases) ->
+      let body = Exp.function_ [] None (mk_function_cases ~attrs cases) in
+      Some (mk_lwt_catch body input_exp)
   | _ -> None
 
 let rewrite_expression exp =
@@ -67,7 +86,7 @@ let rewrite_expression exp =
         in
         Exp.function_ [ mk_function_param param_pat ] None (Pfunction_body body)
       in
-      Some (lwt_bind_exp body_fun promise_exp)
+      Some (mk_lwt_bind body_fun promise_exp)
   | _ -> None
 
 let remove_lwt_ppx =
