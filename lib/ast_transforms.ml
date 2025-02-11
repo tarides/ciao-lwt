@@ -24,7 +24,7 @@ let mk_unit_arg =
 let mk_lwt_bind body input =
   Exp.apply
     (Exp.ident (mk_longident [ "Lwt"; "bind" ]))
-    [ (Nolabel, body); (Nolabel, input) ]
+    [ (Nolabel, input); (Nolabel, body) ]
 
 let mk_lwt_catch body input =
   let input_thunk = Exp.function_ [ mk_unit_arg ] None (Pfunction_body input) in
