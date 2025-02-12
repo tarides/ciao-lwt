@@ -160,6 +160,13 @@ let build_config ~file =
 (*       }; *)
 (*   } *)
 
+exception Syntax_error of Location.t
+
+let parse_and_format ext_fg ~input_name ~source ~modify_ast conf =
+  try parse_and_format ext_fg ~input_name ~source ~modify_ast conf
+  with Syntaxerr.Error err ->
+    raise (Syntax_error (Syntaxerr.location_of_error err))
+
 let format_in_place ast ~file ~modify_ast =
   let conf = build_config ~file in
   let source = In_channel.with_open_text file In_channel.input_all in
