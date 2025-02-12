@@ -34,10 +34,15 @@ let mk_if if_cond if_body else_body =
   in
   Exp.ifthenelse [ mk_if_cond if_cond if_body ] (Some (else_body, !default_loc))
 
-let mk_lwt_bind body input =
+(** [Lwt.bind input cont_expr]. *)
+let mk_lwt_bind_expr input cont_expr =
   Exp.apply
     (Exp.ident (mk_longident [ "Lwt"; "bind" ]))
-    [ (Nolabel, input); (Nolabel, body) ]
+    [ (Nolabel, input); (Nolabel, cont_expr) ]
+
+(** [Lwt.bind input (fun param -> body)]. *)
+let mk_lwt_bind input ?(param = mk_unit_arg) body =
+  mk_lwt_bind_expr input (Exp.function_ [ param ] None (Pfunction_body body))
 
 let mk_lwt_catch body input =
   let input_thunk = Exp.function_ [ mk_unit_arg ] None (Pfunction_body input) in
@@ -54,7 +59,7 @@ let rewrite_lwt_extension_expression ~attrs exp =
   (* [match%lwt]. *)
   | Pexp_match (input_exp, cases) ->
       let body = Exp.function_ [] None (mk_function_cases ~attrs cases) in
-      Some (mk_lwt_bind body input_exp)
+      Some (mk_lwt_bind_expr input_exp body)
   (* [try%lwt]. *)
   | Pexp_try (input_exp, cases) ->
       let body = Exp.function_ [] None (mk_function_cases ~attrs cases) in
@@ -80,11 +85,9 @@ let rewrite_lwt_extension_expression ~attrs exp =
                 (comp p_exp (mk_exp_var "__ppx_lwt_bound"))
                 mk_lwt_return_unit
                 (mk_lwt_bind body
-                   (Exp.function_ [ mk_unit_arg ] None
-                      (Pfunction_body
-                         (Exp.apply
-                            (mk_exp_var "__ppx_lwt_loop")
-                            [ (Nolabel, op p_exp (Exp.constant (Const.int 1))) ])))))
+                   (Exp.apply
+                      (mk_exp_var "__ppx_lwt_loop")
+                      [ (Nolabel, op p_exp (Exp.constant (Const.int 1))) ])))
         @@ Exp.apply (mk_exp_var "__ppx_lwt_loop") [ (Nolabel, exp_from) ])
   (* [while%lwt]. *)
   | Pexp_while (cond, body) ->
@@ -93,9 +96,11 @@ let rewrite_lwt_extension_expression ~attrs exp =
            (Pat.var (mk_loc "__ppx_lwt_loop"))
            ~args:[ mk_unit_arg ]
            (mk_if cond
-              (mk_lwt_bind body (mk_exp_var "__ppx_lwt_loop"))
+              (mk_lwt_bind_expr body (mk_exp_var "__ppx_lwt_loop"))
               mk_lwt_return_unit)
         @@ Exp.apply (mk_exp_var "__ppx_lwt_loop") [ (Nolabel, mk_unit_val) ])
+  (* [e ;%lwt e'] *)
+  | Pexp_sequence (e, e') -> Some (mk_lwt_bind e e')
   | _ -> None
 
 let rewrite_expression exp =
@@ -128,7 +133,7 @@ let rewrite_expression exp =
         },
         body,
         _loc ) ->
-      let body_fun =
+      let param =
         let param_pat =
           match pvb_constraint with
           (* [locally_abstract_univars] are unlikely to present. *)
@@ -141,9 +146,9 @@ let rewrite_expression exp =
               Pat.constraint_ pvb_pat typ
           | None -> pvb_pat
         in
-        Exp.function_ [ mk_function_param param_pat ] None (Pfunction_body body)
+        mk_function_param param_pat
       in
-      Some (mk_lwt_bind body_fun promise_exp)
+      Some (mk_lwt_bind promise_exp ~param body)
   | _ -> None
 
 let remove_lwt_ppx =
