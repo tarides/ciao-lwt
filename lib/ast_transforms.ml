@@ -8,11 +8,13 @@ let mk_loc ?(loc = !default_loc) txt = { Location.txt; loc }
 let mk_function_param ?(loc = !default_loc) ?(lbl = Nolabel) ?def pat =
   { pparam_loc = loc; pparam_desc = Pparam_val (lbl, def, pat) }
 
-let mk_let ?(loc_in = !default_loc) ?(rec_ = Nonrecursive) pat ?(args = []) lhs
-    rhs =
-  let binding = Vb.mk ~is_pun:false pat args (Pfunction_body lhs) in
-  let bindings = { pvbs_bindings = [ binding ]; pvbs_rec = rec_ } in
+let mk_let' ?(loc_in = !default_loc) ?(rec_ = Nonrecursive) bindings rhs =
+  let bindings = { pvbs_bindings = bindings; pvbs_rec = rec_ } in
   Exp.let_ ~loc_in bindings rhs
+
+let mk_let ?loc_in ?rec_ pat ?(args = []) lhs rhs =
+  let binding = Vb.mk ~is_pun:false pat args (Pfunction_body lhs) in
+  mk_let' ?loc_in ?rec_ [ binding ] rhs
 
 let mk_function_cases ?(loc = !default_loc) ?(attrs = []) cases =
   Exp.function_ [] None (Pfunction_cases (cases, loc, attrs))
@@ -66,35 +68,64 @@ let match_extract_exception_cases =
       | _ -> Left case)
 
 (** Rewrite a [let%lwt]. *)
-let rewrite_lwt_let_expression binding body =
-  match binding with
-  | {
-   (* Bindings that define functions are not supported by lwt_ppx (with
-      non-empty [pvb_args] or with [Pfunction_case] body). *)
-   pvb_args = [];
-   pvb_is_pun = _;
-   pvb_pat;
-   pvb_body = Pfunction_body promise_exp;
-   pvb_constraint;
-   pvb_loc = _;
-   pvb_attributes = { attrs_before = []; attrs_after = []; _ };
-  } ->
-      let param_pat, promise_exp =
-        match pvb_constraint with
-        (* [locally_abstract_univars] are unlikely to present. *)
-        | Some (Pvc_constraint { locally_abstract_univars = _ :: _; _ }) ->
-            assert false
-        | Some (Pvc_coercion { ground; coercion }) ->
-            (* Generate [Lwt.bind (promise_exp :> coercion) (fun pat -> body)]. *)
-            (pvb_pat, Exp.coerce promise_exp ground coercion)
-        | Some (Pvc_constraint { locally_abstract_univars = []; typ }) ->
-            (* Generate [Lwt.bind promise_exp (fun (pat : typ) -> body)]. *)
-            (Pat.constraint_ pvb_pat typ, promise_exp)
-        | None -> (pvb_pat, promise_exp)
-      in
+let rewrite_lwt_let_expression bindings body =
+  let generate_parallel_binds bindings =
+    let gen_name i = "__ppx_lwt_" ^ string_of_int i in
+    let bindings = List.mapi (fun i b -> (gen_name i, b)) bindings in
+    let generated_mangled_bindings =
+      List.map
+        (fun (name, (_pat, exp)) ->
+          Vb.mk ~is_pun:false (Pat.var (mk_loc name)) [] (Pfunction_body exp))
+        bindings
+    in
+    let rec generated_lwt_binds bindings acc =
+      match bindings with
+      | [] -> acc
+      | (name, (pat, _exp)) :: tl ->
+          generated_lwt_binds tl
+          @@ mk_lwt_bind (mk_exp_var name) ~param:(mk_function_param pat) acc
+    in
+    mk_let' generated_mangled_bindings @@ generated_lwt_binds bindings @@ body
+  in
+  let apply_constraint pvb_pat promise_exp pvb_constraint =
+    match pvb_constraint with
+    (* [locally_abstract_univars] are unlikely to present. *)
+    | Some (Pvc_constraint { locally_abstract_univars = _ :: _; _ }) ->
+        assert false
+    | Some (Pvc_coercion { ground; coercion }) ->
+        (* Generate [Lwt.bind (promise_exp :> coercion) (fun pat -> body)]. *)
+        (pvb_pat, Exp.coerce promise_exp ground coercion)
+    | Some (Pvc_constraint { locally_abstract_univars = []; typ }) ->
+        (* Generate [Lwt.bind promise_exp (fun (pat : typ) -> body)]. *)
+        (Pat.constraint_ pvb_pat typ, promise_exp)
+    | None -> (pvb_pat, promise_exp)
+  in
+  let decode_bindings =
+    let exception Unsupported in
+    let decode = function
+      | {
+          (* Bindings that define functions are not supported by lwt_ppx (with
+             non-empty [pvb_args] or with [Pfunction_case] body). *)
+          pvb_args = [];
+          pvb_is_pun = _;
+          pvb_pat;
+          pvb_body = Pfunction_body promise_exp;
+          pvb_constraint;
+          pvb_loc = _;
+          pvb_attributes = { attrs_before = []; attrs_after = []; _ };
+        } ->
+          apply_constraint pvb_pat promise_exp pvb_constraint
+      | _ -> raise Unsupported
+    in
+    try Some (List.map decode bindings) with Unsupported -> None
+  in
+  match decode_bindings with
+  | Some [ (param_pat, promise_exp) ] ->
+      (* Simple let binding. *)
       let param = mk_function_param param_pat in
       Some (mk_lwt_bind promise_exp ~param body)
-  | _ -> None
+  | Some bindings -> Some (generate_parallel_binds bindings)
+  | None -> None
 
 (** Rewrite an expression embedded in a [[%lwt ..]] or an expression like
     [match%lwt]. *)
@@ -177,9 +208,8 @@ let rewrite_lwt_extension_expression exp =
       in
       Some (mk_lwt_bind_expr if_cond body)
   (* [[%lwt let a = b in ..]]. *)
-  | Pexp_let ({ pvbs_bindings = [ binding ]; pvbs_rec = Nonrecursive }, body, _)
-    ->
-      rewrite_lwt_let_expression binding body
+  | Pexp_let ({ pvbs_bindings; pvbs_rec = Nonrecursive }, body, _) ->
+      rewrite_lwt_let_expression pvbs_bindings body
   | _ -> None
 
 let rewrite_expression exp =
@@ -194,19 +224,17 @@ let rewrite_expression exp =
   | Pexp_let
       ( {
           pvbs_bindings =
-            [
-              ({
-                 pvb_attributes =
-                   { attrs_extension = Some { txt = "lwt"; _ }; _ };
-                 _;
-               } as binding);
-            ];
+            {
+              pvb_attributes = { attrs_extension = Some { txt = "lwt"; _ }; _ };
+              _;
+            }
+            :: _ as bindings;
           (* [let rec] is not handled by ppx_lwt. *)
           pvbs_rec = Nonrecursive;
         },
         body,
         _ ) ->
-      rewrite_lwt_let_expression binding body
+      rewrite_lwt_let_expression bindings body
   | _ -> None
 
 let remove_lwt_ppx =

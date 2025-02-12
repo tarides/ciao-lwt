@@ -10,6 +10,21 @@
     Lwt.bind v1 (fun (n1 : t) ->
         Lwt.bind (v2 : t :> t') (fun n2 -> Lwt.bind n3 (fun n3 -> ())))
   
+  let _ =
+    let __ppx_lwt_0 = v1 and __ppx_lwt_1 = v2 in
+    Lwt.bind __ppx_lwt_1 (fun n2 ->
+        Lwt.bind __ppx_lwt_0 (fun n1 ->
+            let __ppx_lwt_0 = v1
+            and __ppx_lwt_1 = v2
+            and __ppx_lwt_2 = v3
+            and __ppx_lwt_3 = v4
+            and __ppx_lwt_4 = (v5 : t :> t') in
+            Lwt.bind __ppx_lwt_4 (fun v5 ->
+                Lwt.bind __ppx_lwt_3 (fun (v4 : t) ->
+                    Lwt.bind __ppx_lwt_2 (fun v3 ->
+                        Lwt.bind __ppx_lwt_1 (fun n2 ->
+                            Lwt.bind __ppx_lwt_0 (fun n1 -> ())))))))
+  
   let _ = Lwt.bind input (function case -> ())
   let _ = Lwt.bind input (function case -> () | case2 -> ())
   
