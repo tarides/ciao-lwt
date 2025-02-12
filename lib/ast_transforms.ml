@@ -72,7 +72,7 @@ let rewrite_lwt_let_expression binding body =
    (* Bindings that define functions are not supported by lwt_ppx (with
       non-empty [pvb_args] or with [Pfunction_case] body). *)
    pvb_args = [];
-   pvb_is_pun = false;
+   pvb_is_pun = _;
    pvb_pat;
    pvb_body = Pfunction_body promise_exp;
    pvb_constraint;

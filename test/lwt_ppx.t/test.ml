@@ -3,8 +3,9 @@ let _ =
   binding_body
 
 let _ =
-  let%lwt n : t = v in
-  let%lwt n : t :> t' = v in
+  let%lwt n1 : t = v1 in
+  let%lwt n2 : t :> t' = v2 in
+  let%lwt n3 in
   ()
 
 let _ = match%lwt input with case -> ()
