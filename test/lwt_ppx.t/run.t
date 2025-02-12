@@ -29,11 +29,28 @@
   let _ = Lwt.bind input (function case -> () | case2 -> ())
   
   let _ =
-    Lwt.try_bind (fun () -> input) (function case -> ()) (function E -> ())
+    Lwt.try_bind
+      (fun () -> input)
+      (function case -> ())
+      (function E -> () | exc -> Lwt.reraise exc)
   
-  let _ = Lwt.catch (fun () -> input) (function E -> ())
-  let _ = Lwt.catch (fun () -> input) (function case -> ())
-  let _ = Lwt.catch (fun () -> input) (function case -> () | case2 -> ())
+  let _ =
+    Lwt.try_bind
+      (fun () -> input)
+      (function case -> ())
+      (function E -> () | catchall -> ())
+  
+  let _ =
+    Lwt.catch (fun () -> input) (function E -> () | exc -> Lwt.reraise exc)
+  
+  let _ = Lwt.catch (fun () -> input) (function E | catchall -> ())
+  let _ = Lwt.catch (fun () -> input) (function catchall -> ())
+  let _ = Lwt.catch (fun () -> input) (function E -> () | catchall -> ())
+  
+  let _ =
+    Lwt.catch
+      (fun () -> input)
+      (function E -> () | E' -> () | exc -> Lwt.reraise exc)
   
   let _ =
     (let __ppx_lwt_bound = 10 in

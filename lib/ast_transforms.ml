@@ -47,12 +47,39 @@ let mk_lwt_bind_expr input cont_expr =
 let mk_lwt_bind input ?(param = mk_unit_arg) body =
   mk_lwt_bind_expr input (Exp.function_ [ param ] None (Pfunction_body body))
 
-let mk_lwt_catch input body =
+let mk_lwt_catch_exp input body =
   Exp.apply
     (Exp.ident (mk_longident [ "Lwt"; "catch" ]))
     [ (Nolabel, mk_thunk input); (Nolabel, body) ]
 
-let mk_lwt_try_bind input value_f exn_f =
+(** Makes sure that the exception matching is exhaustive by adding a catch-all
+    case doing a reraise. *)
+let add_exn_catch_all cases =
+  let rec is_catchall_pat pat =
+    match pat.ppat_desc with
+    | Ppat_any | Ppat_var _ -> true
+    | Ppat_alias (p, _) | Ppat_constraint (p, _) | Ppat_open (_, p) ->
+        is_catchall_pat p
+    | Ppat_or pats -> List.exists is_catchall_pat pats
+    | _ -> false
+  in
+  let is_catchall case = is_catchall_pat case.pc_lhs in
+  if List.exists is_catchall cases then cases
+  else
+    let catch_all =
+      Exp.case
+        (Pat.var (mk_loc "exc"))
+        (Exp.apply
+           (Exp.ident (mk_longident [ "Lwt"; "reraise" ]))
+           [ (Nolabel, mk_exp_var "exc") ])
+    in
+    cases @ [ catch_all ]
+
+let mk_lwt_catch input cases =
+  mk_lwt_catch_exp input (mk_function_cases (add_exn_catch_all cases))
+
+let mk_lwt_try_bind input value_f exn_cases =
+  let exn_f = mk_function_cases (add_exn_catch_all exn_cases) in
   Exp.apply
     (Exp.ident (mk_longident [ "Lwt"; "try_bind" ]))
     [ (Nolabel, mk_thunk input); (Nolabel, value_f); (Nolabel, exn_f) ]
@@ -139,16 +166,15 @@ let rewrite_lwt_extension_expression exp =
           Some (mk_lwt_bind_expr input_exp (mk_function_cases cases))
       | [], exn_cases ->
           (* Only exception cases *)
-          Some (mk_lwt_catch input_exp (mk_function_cases exn_cases))
+          Some (mk_lwt_catch input_exp exn_cases)
       | value_cases, exn_cases ->
           (* Both value and exception cases *)
           Some
             (mk_lwt_try_bind input_exp
                (mk_function_cases value_cases)
-               (mk_function_cases exn_cases)))
+               exn_cases))
   (* [try%lwt]. *)
-  | Pexp_try (input_exp, cases) ->
-      Some (mk_lwt_catch input_exp (mk_function_cases cases))
+  | Pexp_try (input_exp, cases) -> Some (mk_lwt_catch input_exp cases)
   (* [for%lwt]. ppx_lwt doesn't work with other patterns. *)
   | Pexp_for
       (({ ppat_desc = Ppat_var p_var; _ } as pat), exp_from, exp_to, dir, body)
@@ -187,7 +213,7 @@ let rewrite_lwt_extension_expression exp =
   (* [e ;%lwt e'] *)
   | Pexp_sequence (e, e') -> Some (mk_lwt_bind e e')
   (* [assert%lwt e] *)
-  | Pexp_assert _ -> Some (mk_lwt_catch exp mk_lwt_fail_ident)
+  | Pexp_assert _ -> Some (mk_lwt_catch_exp exp mk_lwt_fail_ident)
   (* [if%lwt c then a else b *)
   | Pexp_ifthenelse
       ({ if_cond; if_body; if_attrs; _ } :: elseif_branches, else_branch) ->

@@ -20,9 +20,12 @@ let _ =
 let _ = match%lwt input with case -> ()
 let _ = match%lwt input with case -> () | case2 -> ()
 let _ = match%lwt input with case -> () | exception E -> ()
+let _ = match%lwt input with case -> () | exception E -> () | exception catchall -> ()
 let _ = match%lwt input with exception E -> ()
-let _ = try%lwt input with case -> ()
-let _ = try%lwt input with case -> () | case2 -> ()
+let _ = match%lwt input with exception (E | catchall) -> ()
+let _ = try%lwt input with catchall -> ()
+let _ = try%lwt input with E -> () | catchall -> ()
+let _ = try%lwt input with E -> () | E' -> ()
 
 let _ =
   for%lwt pat = 0 to 10 do
