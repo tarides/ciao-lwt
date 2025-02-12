@@ -1,7 +1,13 @@
 open Lwt_ppx_to_let_syntax
 
 let modify_ast = Ast_transforms.remove_lwt_ppx
-let is_ml_file fname = Filename.extension fname = ".ml"
+
+let is_ml_file fname =
+  match Filename.extension fname with
+  | ".ml" | ".eliom" -> true
+  | ext ->
+      (* Accept extensions of the form [foo.client.ml] *)
+      String.ends_with ~suffix:".ml" ext
 
 let pp_format_exn ppf = function
   | Failure msg | Sys_error msg -> Format.fprintf ppf "%s" msg
