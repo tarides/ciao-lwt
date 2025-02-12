@@ -56,3 +56,9 @@ let _ =
   [%lwt
     let a = b in
     c]
+
+let _ =
+  expr[%finally this];
+  expr[%lwt.finally this];
+  (some expr)[%finally this];
+  (some expr)[%lwt.finally this]

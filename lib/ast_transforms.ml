@@ -235,6 +235,23 @@ let rewrite_expression exp =
         body,
         _ ) ->
       rewrite_lwt_let_expression bindings body
+  (* [exp [%finally f]] *)
+  | Pexp_apply
+      ( lhs,
+        [
+          ( Nolabel,
+            {
+              pexp_desc =
+                Pexp_extension
+                  ( { txt = "finally" | "lwt.finally"; _ },
+                    PStr [ { pstr_desc = Pstr_eval (rhs, []); _ } ] );
+              _;
+            } );
+        ] ) ->
+      Some
+        (Exp.apply
+           (Exp.ident (mk_longident [ "Lwt"; "finalize" ]))
+           [ (Nolabel, mk_thunk lhs); (Nolabel, mk_thunk rhs) ])
   | _ -> None
 
 let remove_lwt_ppx =

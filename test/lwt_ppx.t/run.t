@@ -75,3 +75,9 @@
       | false -> Lwt.bind cond2 (function true -> b | false -> c))
   
   let _ = Lwt.bind b (fun a -> c)
+  
+  let _ =
+    Lwt.finalize (fun () -> expr) (fun () -> this);
+    Lwt.finalize (fun () -> expr) (fun () -> this);
+    Lwt.finalize (fun () -> some expr) (fun () -> this);
+    Lwt.finalize (fun () -> some expr) (fun () -> this)
