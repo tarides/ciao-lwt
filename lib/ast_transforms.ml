@@ -76,7 +76,15 @@ let add_exn_catch_all cases =
     cases @ [ catch_all ]
 
 let mk_lwt_catch input cases =
-  mk_lwt_catch_exp input (mk_function_cases (add_exn_catch_all cases))
+  let cases = add_exn_catch_all cases in
+  let exp =
+    match cases with
+    (* Generate a [fun] instead of a [function] when there's a single case to make the formatting nicer. *)
+    | [ { pc_lhs; pc_guard = None; pc_rhs } ] ->
+        Exp.function_ [ mk_function_param pc_lhs ] None (Pfunction_body pc_rhs)
+    | cases -> mk_function_cases cases
+  in
+  mk_lwt_catch_exp input exp
 
 let mk_lwt_try_bind input value_f exn_cases =
   let exn_f = mk_function_cases (add_exn_catch_all exn_cases) in

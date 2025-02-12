@@ -43,8 +43,8 @@
   let _ =
     Lwt.catch (fun () -> input) (function E -> () | exc -> Lwt.reraise exc)
   
-  let _ = Lwt.catch (fun () -> input) (function E | catchall -> ())
-  let _ = Lwt.catch (fun () -> input) (function catchall -> ())
+  let _ = Lwt.catch (fun () -> input) (fun (E | catchall) -> ())
+  let _ = Lwt.catch (fun () -> input) (fun catchall -> ())
   let _ = Lwt.catch (fun () -> input) (function E -> () | catchall -> ())
   
   let _ =
