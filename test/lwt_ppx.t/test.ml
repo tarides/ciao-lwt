@@ -4,6 +4,10 @@ let _ =
 
 let _ = match%lwt input with case -> ()
 let _ = match%lwt input with case -> () | case2 -> ()
+
+let _ = match%lwt input with case -> () | exception E -> ()
+let _ = match%lwt input with exception E -> ()
+
 let _ = try%lwt input with case -> ()
 let _ = try%lwt input with case -> () | case2 -> ()
 

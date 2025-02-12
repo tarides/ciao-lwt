@@ -15,7 +15,7 @@ let mk_let ?(loc_in = !default_loc) ?(rec_ = Nonrecursive) pat ?(args = []) lhs
   Exp.let_ ~loc_in bindings rhs
 
 let mk_function_cases ?(loc = !default_loc) ?(attrs = []) cases =
-  Pfunction_cases (cases, loc, attrs)
+  Exp.function_ [] None (Pfunction_cases (cases, loc, attrs))
 
 let mk_longident = function
   | [] -> assert false
@@ -27,6 +27,7 @@ let mk_exp_var s = Exp.ident (mk_longident [ s ])
 let mk_unit_ident = mk_longident [ "()" ]
 let mk_unit_arg = mk_function_param (Pat.construct mk_unit_ident None)
 let mk_unit_val = Exp.construct mk_unit_ident None
+let mk_thunk body = Exp.function_ [ mk_unit_arg ] None (Pfunction_body body)
 
 let mk_if if_cond if_body else_body =
   let mk_if_cond ?(loc_then = !default_loc) ?(attrs = []) if_cond if_body =
@@ -44,27 +45,48 @@ let mk_lwt_bind_expr input cont_expr =
 let mk_lwt_bind input ?(param = mk_unit_arg) body =
   mk_lwt_bind_expr input (Exp.function_ [ param ] None (Pfunction_body body))
 
-let mk_lwt_catch body input =
-  let input_thunk = Exp.function_ [ mk_unit_arg ] None (Pfunction_body input) in
+let mk_lwt_catch input body =
   Exp.apply
     (Exp.ident (mk_longident [ "Lwt"; "catch" ]))
-    [ (Nolabel, input_thunk); (Nolabel, body) ]
+    [ (Nolabel, mk_thunk input); (Nolabel, body) ]
+
+let mk_lwt_try_bind input value_f exn_f =
+  Exp.apply
+    (Exp.ident (mk_longident [ "Lwt"; "try_bind" ]))
+    [ (Nolabel, mk_thunk input); (Nolabel, value_f); (Nolabel, exn_f) ]
 
 let mk_lwt_fail_ident = Exp.ident (mk_longident [ "Lwt"; "fail" ])
 let mk_lwt_return_unit = Exp.ident (mk_longident [ "Lwt"; "return_unit" ])
 
+let match_extract_exception_cases =
+  List.partition_map (fun case ->
+      match case.pc_lhs.ppat_desc with
+      | Ppat_exception exn_pat ->
+          Either.Right (Exp.case exn_pat ?guard:case.pc_guard case.pc_rhs)
+      | _ -> Left case)
+
 (** Rewrite an expression embedded in a [[%lwt ..]] or an expression like
     [match%lwt]. *)
-let rewrite_lwt_extension_expression ~attrs exp =
+let rewrite_lwt_extension_expression exp =
   match exp.pexp_desc with
   (* [match%lwt]. *)
-  | Pexp_match (input_exp, cases) ->
-      let body = Exp.function_ [] None (mk_function_cases ~attrs cases) in
-      Some (mk_lwt_bind_expr input_exp body)
+  | Pexp_match (input_exp, cases) -> (
+      match match_extract_exception_cases cases with
+      | cases, [] ->
+          (* No exception cases *)
+          Some (mk_lwt_bind_expr input_exp (mk_function_cases cases))
+      | [], exn_cases ->
+          (* Only exception cases *)
+          Some (mk_lwt_catch input_exp (mk_function_cases exn_cases))
+      | value_cases, exn_cases ->
+          (* Both value and exception cases *)
+          Some
+            (mk_lwt_try_bind input_exp
+               (mk_function_cases value_cases)
+               (mk_function_cases exn_cases)))
   (* [try%lwt]. *)
   | Pexp_try (input_exp, cases) ->
-      let body = Exp.function_ [] None (mk_function_cases ~attrs cases) in
-      Some (mk_lwt_catch body input_exp)
+      Some (mk_lwt_catch input_exp (mk_function_cases cases))
   (* [for%lwt]. ppx_lwt doesn't work with other patterns. *)
   | Pexp_for
       (({ ppat_desc = Ppat_var p_var; _ } as pat), exp_from, exp_to, dir, body)
@@ -103,7 +125,7 @@ let rewrite_lwt_extension_expression ~attrs exp =
   (* [e ;%lwt e'] *)
   | Pexp_sequence (e, e') -> Some (mk_lwt_bind e e')
   (* [assert%lwt e] *)
-  | Pexp_assert _ -> Some (mk_lwt_catch mk_lwt_fail_ident exp)
+  | Pexp_assert _ -> Some (mk_lwt_catch exp mk_lwt_fail_ident)
   (* [if%lwt c then a else b *)
   | Pexp_ifthenelse
       ({ if_cond; if_body; if_attrs; _ } :: elseif_branches, else_branch) ->
@@ -119,9 +141,8 @@ let rewrite_lwt_extension_expression ~attrs exp =
         Exp.case (Pat.construct (mk_longident [ ident ]) None) body
       in
       let body =
-        Exp.function_ [] None
-          (mk_function_cases ~attrs:if_attrs
-             [ constr_case "true" if_body; constr_case "false" else_exp ])
+        mk_function_cases ~attrs:if_attrs
+          [ constr_case "true" if_body; constr_case "false" else_exp ]
       in
       Some (mk_lwt_bind_expr if_cond body)
   | _ -> None
@@ -130,9 +151,8 @@ let rewrite_expression exp =
   match exp.pexp_desc with
   (* Expressions like [match%lwt ..] and [[%lwt ..]]. *)
   | Pexp_extension
-      ({ txt = "lwt"; _ }, PStr [ { pstr_desc = Pstr_eval (exp, attrs); _ } ])
-    ->
-      rewrite_lwt_extension_expression ~attrs exp
+      ({ txt = "lwt"; _ }, PStr [ { pstr_desc = Pstr_eval (exp, []); _ } ]) ->
+      rewrite_lwt_extension_expression exp
   (* Some expressions like [let%lwt] are not a [Pexp_extension] in OCamlformat's
      AST. *)
   (* [let%lwt pvb = body in] *)

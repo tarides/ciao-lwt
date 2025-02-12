@@ -7,6 +7,11 @@
   let _ = Lwt.bind (Lwt.return binding_value) (fun binding_name -> binding_body)
   let _ = Lwt.bind input (function case -> ())
   let _ = Lwt.bind input (function case -> () | case2 -> ())
+  
+  let _ =
+    Lwt.try_bind (fun () -> input) (function case -> ()) (function E -> ())
+  
+  let _ = Lwt.catch (fun () -> input) (function E -> ())
   let _ = Lwt.catch (fun () -> input) (function case -> ())
   let _ = Lwt.catch (fun () -> input) (function case -> () | case2 -> ())
   
