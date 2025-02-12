@@ -1,7 +1,5 @@
 open Lwt_ppx_to_let_syntax
 
-let modify_ast = Ast_transforms.remove_lwt_ppx
-
 let is_ml_file fname =
   match Filename.extension fname with
   | ".ml" | ".eliom" -> true
@@ -16,9 +14,10 @@ let pp_format_exn ppf = function
         Ocamlformat_utils.Parsing.Location.print_loc loc
   | exn -> Format.fprintf ppf "Unhandled exception: %s" (Printexc.to_string exn)
 
-let main () =
+let main use_lwt_bind =
   let errors = ref 0 in
   let i = ref 0 in
+  let modify_ast = Ast_transforms.remove_lwt_ppx ~use_lwt_bind in
   Fs_utils.scan_dir
     ~descend_into:(fun path ->
       match Filename.basename path with "_build" | ".git" -> false | _ -> true)
@@ -36,9 +35,16 @@ let main () =
 
 open Cmdliner
 
+let opt_use_lwt_bind =
+  let doc =
+    "Use 'Lwt.bind' instead of 'let*'. This can help migrate modules that \
+     already use 'let*' for an other purpose."
+  in
+  Arg.(value & flag & info ~doc [ "use-lwt-bind" ])
+
 let cmd =
   let doc = "Convert your codebase from Lwt to Eio" in
   let info = Cmd.info "lwt-ppx-to-let-syntax" ~version:"%%VERSION%%" ~doc in
-  Cmd.v info Term.(const main $ const ())
+  Cmd.v info Term.(const main $ opt_use_lwt_bind)
 
 let () = exit (Cmd.eval cmd)

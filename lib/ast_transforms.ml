@@ -3,6 +3,12 @@ open Asttypes
 open Parsetree
 open Ast_helper
 
+(** Whether [let*] was used and an [open Lwt.Syntax] is required. *)
+let letop_was_used = ref false
+
+(** Whether to use [Lwt.bind] instead of [let*]. *)
+let use_lwt_bind = ref false
+
 let mk_loc ?(loc = !default_loc) txt = { Location.txt; loc }
 
 let mk_function_param ?(loc = !default_loc) ?(lbl = Nolabel) ?def pat =
@@ -27,7 +33,8 @@ let mk_longident = function
 
 let mk_exp_var s = Exp.ident (mk_longident [ s ])
 let mk_unit_ident = mk_longident [ "()" ]
-let mk_unit_arg = mk_function_param (Pat.construct mk_unit_ident None)
+let mk_unit_pat = Pat.construct mk_unit_ident None
+let mk_unit_arg = mk_function_param mk_unit_pat
 let mk_unit_val = Exp.construct mk_unit_ident None
 let mk_thunk body = Exp.function_ [ mk_unit_arg ] None (Pfunction_body body)
 
@@ -43,9 +50,20 @@ let mk_lwt_bind_expr input cont_expr =
     (Exp.ident (mk_longident [ "Lwt"; "bind" ]))
     [ (Nolabel, input); (Nolabel, cont_expr) ]
 
+let mk_binding_op ?(loc = !default_loc) ?(is_pun = false) op pat ?(args = [])
+    ?(typ = None) exp =
+  Exp.binding_op op pat args typ exp is_pun loc
+
 (** [Lwt.bind input (fun param -> body)]. *)
-let mk_lwt_bind input ?(param = mk_unit_arg) body =
-  mk_lwt_bind_expr input (Exp.function_ [ param ] None (Pfunction_body body))
+let mk_lwt_bind input ?(param = mk_unit_pat) body =
+  if !use_lwt_bind then
+    mk_lwt_bind_expr input
+      (Exp.function_ [ mk_function_param param ] None (Pfunction_body body))
+  else (
+    letop_was_used := true;
+    Exp.letop ~loc_in:!default_loc
+      (mk_binding_op (mk_loc "let*") param input)
+      [] body)
 
 let mk_lwt_catch_exp input body =
   Exp.apply
@@ -117,8 +135,7 @@ let rewrite_lwt_let_expression bindings body =
       match bindings with
       | [] -> acc
       | (name, (pat, _exp)) :: tl ->
-          generated_lwt_binds tl
-          @@ mk_lwt_bind (mk_exp_var name) ~param:(mk_function_param pat) acc
+          generated_lwt_binds tl @@ mk_lwt_bind (mk_exp_var name) ~param:pat acc
     in
     mk_let' generated_mangled_bindings @@ generated_lwt_binds bindings @@ body
   in
@@ -155,9 +172,8 @@ let rewrite_lwt_let_expression bindings body =
     try Some (List.map decode bindings) with Unsupported -> None
   in
   match decode_bindings with
-  | Some [ (param_pat, promise_exp) ] ->
+  | Some [ (param, promise_exp) ] ->
       (* Simple let binding. *)
-      let param = mk_function_param param_pat in
       Some (mk_lwt_bind promise_exp ~param body)
   | Some bindings -> Some (generate_parallel_binds bindings)
   | None -> None
@@ -288,10 +304,16 @@ let rewrite_expression exp =
            [ (Nolabel, mk_thunk lhs); (Nolabel, mk_thunk rhs) ])
   | _ -> None
 
-let remove_lwt_ppx =
+let mk_open_lwt_syntax =
+  Str.open_ (Opn.mk (Mod.ident (mk_longident [ "Lwt"; "Syntax" ])))
+
+let remove_lwt_ppx ~use_lwt_bind:use_lwt_bind_ str =
+  use_lwt_bind := use_lwt_bind_;
+  letop_was_used := false;
   let default = Ast_mapper.default_mapper in
   let expr m exp =
     default.expr m (Option.value (rewrite_expression exp) ~default:exp)
   in
   let m = { default with expr } in
-  m.structure m
+  let str = m.structure m str in
+  if !letop_was_used then mk_open_lwt_syntax :: str else str

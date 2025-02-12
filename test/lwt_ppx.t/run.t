@@ -4,26 +4,35 @@
   Formatted 1 files, 0 errors
 
   $ cat test.ml
-  let _ = Lwt.bind (Lwt.return binding_value) (fun binding_name -> binding_body)
+  open Lwt.Syntax
   
   let _ =
-    Lwt.bind v1 (fun (n1 : t) ->
-        Lwt.bind (v2 : t :> t') (fun n2 -> Lwt.bind n3 (fun n3 -> ())))
+    let* binding_name = Lwt.return binding_value in
+    binding_body
+  
+  let _ =
+    let* (n1 : t) = v1 in
+    let* n2 = (v2 : t :> t') in
+    let* n3 = n3 in
+  
+    ()
   
   let _ =
     let __ppx_lwt_0 = v1 and __ppx_lwt_1 = v2 in
-    Lwt.bind __ppx_lwt_1 (fun n2 ->
-        Lwt.bind __ppx_lwt_0 (fun n1 ->
-            let __ppx_lwt_0 = v1
-            and __ppx_lwt_1 = v2
-            and __ppx_lwt_2 = v3
-            and __ppx_lwt_3 = v4
-            and __ppx_lwt_4 = (v5 : t :> t') in
-            Lwt.bind __ppx_lwt_4 (fun v5 ->
-                Lwt.bind __ppx_lwt_3 (fun (v4 : t) ->
-                    Lwt.bind __ppx_lwt_2 (fun v3 ->
-                        Lwt.bind __ppx_lwt_1 (fun n2 ->
-                            Lwt.bind __ppx_lwt_0 (fun n1 -> ())))))))
+    let* n2 = __ppx_lwt_1 in
+    let* n1 = __ppx_lwt_0 in
+    let __ppx_lwt_0 = v1
+    and __ppx_lwt_1 = v2
+    and __ppx_lwt_2 = v3
+    and __ppx_lwt_3 = v4
+    and __ppx_lwt_4 = (v5 : t :> t') in
+    let* v5 = __ppx_lwt_4 in
+    let* (v4 : t) = __ppx_lwt_3 in
+    let* v3 = __ppx_lwt_2 in
+    let* n2 = __ppx_lwt_1 in
+    let* n1 = __ppx_lwt_0 in
+  
+    ()
   
   let _ = Lwt.bind input (function case -> ())
   let _ = Lwt.bind input (function case -> () | case2 -> ())
@@ -56,14 +65,18 @@
     (let __ppx_lwt_bound = 10 in
      let rec __ppx_lwt_loop pat =
        if pat > __ppx_lwt_bound then Lwt.return_unit
-       else Lwt.bind loop_body (fun () -> __ppx_lwt_loop (pat + 1))
+       else
+         let* () = loop_body in
+         __ppx_lwt_loop (pat + 1)
      in
      __ppx_lwt_loop 0);
   
     (let __ppx_lwt_bound = 0 in
      let rec __ppx_lwt_loop pat =
        if pat < __ppx_lwt_bound then Lwt.return_unit
-       else Lwt.bind loop_body (fun () -> __ppx_lwt_loop (pat - 1))
+       else
+         let* () = loop_body in
+         __ppx_lwt_loop (pat - 1)
      in
      __ppx_lwt_loop 10);
   
@@ -76,8 +89,11 @@
     ()
   
   let _ =
-    Lwt.bind stmt_1 (fun () ->
-        Lwt.bind stmt_2 (fun () -> Lwt.bind stmt_3 (fun () -> stmt_4)))
+    let* () = stmt_1 in
+    let* () = stmt_2 in
+    let* () = stmt_3 in
+  
+    stmt_4
   
   let _ =
     Lwt.catch (fun () -> assert false) Lwt.fail;
@@ -91,7 +107,9 @@
       | true -> a
       | false -> Lwt.bind cond2 (function true -> b | false -> c))
   
-  let _ = Lwt.bind b (fun a -> c)
+  let _ = let* a = b in
+  
+          c
   
   let _ =
     Lwt.finalize (fun () -> expr) (fun () -> this);
