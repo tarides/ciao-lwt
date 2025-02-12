@@ -133,14 +133,23 @@ let build_config ~file =
       ~is_stdin:false
   with
   | Ok conf ->
+      let mk v = Conf_t.Elt.make v `Default in
       {
         conf with
+        fmt_opts =
+          {
+            conf.fmt_opts with
+            (* Don't change comments to remove a source of errors and of
+               undesirable changes. *)
+            parse_docstrings = mk false;
+            wrap_comments = mk false;
+          };
         opr_opts =
           {
             conf.opr_opts with
-            comment_check = Conf_t.Elt.make false `Default;
-            disable = Conf_t.Elt.make false `Default;
-            version_check = Conf_t.Elt.make false `Default;
+            comment_check = mk false;
+            disable = mk false;
+            version_check = mk false;
           };
       }
   | Error msg -> failwith msg
