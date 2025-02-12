@@ -65,7 +65,6 @@
 
   $ cat use_letop/already_had_open.ml
   open Lwt.Syntax
-  open Lwt.Syntax
   
   (* This file already has [open Lwt.Syntax], no need to add one more. *)
   

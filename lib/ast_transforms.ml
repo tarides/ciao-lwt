@@ -304,8 +304,18 @@ let rewrite_expression exp =
            [ (Nolabel, mk_thunk lhs); (Nolabel, mk_thunk rhs) ])
   | _ -> None
 
-let mk_open_lwt_syntax =
-  Str.open_ (Opn.mk (Mod.ident (mk_longident [ "Lwt"; "Syntax" ])))
+let mk_lwt_syntax_ident = mk_longident [ "Lwt"; "Syntax" ]
+let mk_open_lwt_syntax = Str.open_ (Opn.mk (Mod.ident mk_lwt_syntax_ident))
+
+let structure_has_open_lwt_syntax =
+  List.exists (function
+    | {
+        pstr_desc =
+          Pstr_open { popen_expr = { pmod_desc = Pmod_ident opn_ident; _ }; _ };
+        _;
+      } ->
+        opn_ident.txt = mk_lwt_syntax_ident.txt
+    | _ -> false)
 
 let remove_lwt_ppx ~use_lwt_bind:use_lwt_bind_ str =
   use_lwt_bind := use_lwt_bind_;
@@ -316,4 +326,6 @@ let remove_lwt_ppx ~use_lwt_bind:use_lwt_bind_ str =
   in
   let m = { default with expr } in
   let str = m.structure m str in
-  if !letop_was_used then mk_open_lwt_syntax :: str else str
+  if !letop_was_used && not (structure_has_open_lwt_syntax str) then
+    mk_open_lwt_syntax :: str
+  else str
