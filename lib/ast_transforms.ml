@@ -79,21 +79,20 @@ let rewrite_lwt_let_expression binding body =
    pvb_loc = _;
    pvb_attributes = { attrs_before = []; attrs_after = []; _ };
   } ->
-      let param =
-        let param_pat =
-          match pvb_constraint with
-          (* [locally_abstract_univars] are unlikely to present. *)
-          | Some (Pvc_constraint { locally_abstract_univars = _ :: _; _ }) ->
-              assert false
-          (* Let binding coercion are unlikely to be used with %lwt in the
-             wild. *)
-          | Some (Pvc_coercion _) -> assert false
-          | Some (Pvc_constraint { locally_abstract_univars = []; typ }) ->
-              Pat.constraint_ pvb_pat typ
-          | None -> pvb_pat
-        in
-        mk_function_param param_pat
+      let param_pat, promise_exp =
+        match pvb_constraint with
+        (* [locally_abstract_univars] are unlikely to present. *)
+        | Some (Pvc_constraint { locally_abstract_univars = _ :: _; _ }) ->
+            assert false
+        | Some (Pvc_coercion { ground; coercion }) ->
+            (* Generate [Lwt.bind (promise_exp :> coercion) (fun pat -> body)]. *)
+            (pvb_pat, Exp.coerce promise_exp ground coercion)
+        | Some (Pvc_constraint { locally_abstract_univars = []; typ }) ->
+            (* Generate [Lwt.bind promise_exp (fun (pat : typ) -> body)]. *)
+            (Pat.constraint_ pvb_pat typ, promise_exp)
+        | None -> (pvb_pat, promise_exp)
       in
+      let param = mk_function_param param_pat in
       Some (mk_lwt_bind promise_exp ~param body)
   | _ -> None
 

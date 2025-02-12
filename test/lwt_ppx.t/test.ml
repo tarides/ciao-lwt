@@ -2,6 +2,11 @@ let _ =
   let%lwt binding_name = Lwt.return binding_value in
   binding_body
 
+let _ =
+  let%lwt n : t = v in
+  let%lwt n : t :> t' = v in
+  ()
+
 let _ = match%lwt input with case -> ()
 let _ = match%lwt input with case -> () | case2 -> ()
 
