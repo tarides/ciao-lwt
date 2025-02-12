@@ -104,6 +104,26 @@ let rewrite_lwt_extension_expression ~attrs exp =
   | Pexp_sequence (e, e') -> Some (mk_lwt_bind e e')
   (* [assert%lwt e] *)
   | Pexp_assert _ -> Some (mk_lwt_catch mk_lwt_fail_ident exp)
+  (* [if%lwt c then a else b *)
+  | Pexp_ifthenelse
+      ({ if_cond; if_body; if_attrs; _ } :: elseif_branches, else_branch) ->
+      let else_exp =
+        (* OCamlformat encodes chains of [else if] as a list so we must construct
+         the rhs expression in some cases. *)
+        match (elseif_branches, else_branch) with
+        | [], Some (e, _) -> e
+        | [], None -> mk_lwt_return_unit
+        | _ -> Exp.ifthenelse elseif_branches else_branch
+      in
+      let constr_case ident body =
+        Exp.case (Pat.construct (mk_longident [ ident ]) None) body
+      in
+      let body =
+        Exp.function_ [] None
+          (mk_function_cases ~attrs:if_attrs
+             [ constr_case "true" if_body; constr_case "false" else_exp ])
+      in
+      Some (mk_lwt_bind_expr if_cond body)
   | _ -> None
 
 let rewrite_expression exp =

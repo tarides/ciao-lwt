@@ -40,3 +40,11 @@
   let _ =
     Lwt.catch (fun () -> assert false) Lwt.fail;
     Lwt.catch (fun () -> assert (e = 1)) Lwt.fail
+  
+  let _ =
+    Lwt.bind cond (function true -> a | false -> b);
+    Lwt.bind cond (function true -> a | false -> Lwt.return_unit);
+    Lwt.bind cond1 (function true -> a | false -> if cond2 then b else c);
+    Lwt.bind cond1 (function
+      | true -> a
+      | false -> Lwt.bind cond2 (function true -> b | false -> c))

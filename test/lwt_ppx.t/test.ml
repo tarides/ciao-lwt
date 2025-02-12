@@ -28,3 +28,20 @@ let _ =
 let _ =
   assert%lwt false;
   assert%lwt (e = 1)
+
+let _ =
+  if%lwt cond then
+    a
+  else b;
+  if%lwt cond then
+    a;
+  if%lwt cond1 then
+    a
+  else if cond2 then
+    b
+  else c;
+  if%lwt cond1 then
+    a
+  else if%lwt cond2 then
+    b
+  else c;
