@@ -1,6 +1,6 @@
 (lang dune 3.17)
 
-(name lwt_to_eio)
+(name lwt_ppx_to_let_syntax)
 
 (generate_opam_files true)
 
@@ -20,6 +20,6 @@
 ; (documentation https://url/to/documentation)
 
 (package
- (name lwt_to_eio)
- (synopsis "Convert your codebase from Lwt to Eio")
+ (name lwt_ppx_to_let_syntax)
+ (synopsis "A tool for migrating away from lwt_ppx")
  (depends ocaml cmdliner ocamlformat ocamlformat-lib))

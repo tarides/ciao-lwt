@@ -1,4 +1,4 @@
-open Lwt_to_eio
+open Lwt_ppx_to_let_syntax
 
 let modify_ast = Ast_transforms.remove_lwt_ppx
 let is_ml_file fname = Filename.extension fname = ".ml"
@@ -25,7 +25,7 @@ open Cmdliner
 
 let cmd =
   let doc = "Convert your codebase from Lwt to Eio" in
-  let info = Cmd.info "lwt-to-eio" ~version:"%%VERSION%%" ~doc in
+  let info = Cmd.info "lwt-ppx-to-let-syntax" ~version:"%%VERSION%%" ~doc in
   Cmd.v info Term.(const main $ const ())
 
 let () = exit (Cmd.eval cmd)

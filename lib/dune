@@ -1,5 +1,5 @@
 (library
- (name lwt_to_eio)
+ (name lwt_ppx_to_let_syntax)
  (libraries
   unix
   ocamlformat-lib
