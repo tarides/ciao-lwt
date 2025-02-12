@@ -53,3 +53,5 @@
     Lwt.bind cond1 (function
       | true -> a
       | false -> Lwt.bind cond2 (function true -> b | false -> c))
+  
+  let _ = Lwt.bind b (fun a -> c)

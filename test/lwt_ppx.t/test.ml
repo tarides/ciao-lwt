@@ -48,4 +48,7 @@ let _ =
     a
   else if%lwt cond2 then
     b
-  else c;
+  else c
+
+let _ =
+  [%lwt let a = b in c]

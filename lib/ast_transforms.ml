@@ -65,6 +65,38 @@ let match_extract_exception_cases =
           Either.Right (Exp.case exn_pat ?guard:case.pc_guard case.pc_rhs)
       | _ -> Left case)
 
+(** Rewrite a [let%lwt]. *)
+let rewrite_lwt_let_expression binding body =
+  match binding with
+  | {
+   (* Bindings that define functions are not supported by lwt_ppx (with
+      non-empty [pvb_args] or with [Pfunction_case] body). *)
+   pvb_args = [];
+   pvb_is_pun = false;
+   pvb_pat;
+   pvb_body = Pfunction_body promise_exp;
+   pvb_constraint;
+   pvb_loc = _;
+   pvb_attributes = { attrs_before = []; attrs_after = []; _ };
+  } ->
+      let param =
+        let param_pat =
+          match pvb_constraint with
+          (* [locally_abstract_univars] are unlikely to present. *)
+          | Some (Pvc_constraint { locally_abstract_univars = _ :: _; _ }) ->
+              assert false
+          (* Let binding coercion are unlikely to be used with %lwt in the
+             wild. *)
+          | Some (Pvc_coercion _) -> assert false
+          | Some (Pvc_constraint { locally_abstract_univars = []; typ }) ->
+              Pat.constraint_ pvb_pat typ
+          | None -> pvb_pat
+        in
+        mk_function_param param_pat
+      in
+      Some (mk_lwt_bind promise_exp ~param body)
+  | _ -> None
+
 (** Rewrite an expression embedded in a [[%lwt ..]] or an expression like
     [match%lwt]. *)
 let rewrite_lwt_extension_expression exp =
@@ -145,6 +177,10 @@ let rewrite_lwt_extension_expression exp =
           [ constr_case "true" if_body; constr_case "false" else_exp ]
       in
       Some (mk_lwt_bind_expr if_cond body)
+  (* [[%lwt let a = b in ..]]. *)
+  | Pexp_let ({ pvbs_bindings = [ binding ]; pvbs_rec = Nonrecursive }, body, _)
+    ->
+      rewrite_lwt_let_expression binding body
   | _ -> None
 
 let rewrite_expression exp =
@@ -160,38 +196,18 @@ let rewrite_expression exp =
       ( {
           pvbs_bindings =
             [
-              {
-                pvb_attributes =
-                  { attrs_extension = Some { txt = "lwt"; _ }; _ };
-                pvb_args = [];
-                pvb_is_pun = false;
-                pvb_pat;
-                pvb_body = Pfunction_body promise_exp;
-                pvb_constraint;
-                pvb_loc = _;
-              };
+              ({
+                 pvb_attributes =
+                   { attrs_extension = Some { txt = "lwt"; _ }; _ };
+                 _;
+               } as binding);
             ];
+          (* [let rec] is not handled by ppx_lwt. *)
           pvbs_rec = Nonrecursive;
-        (* [let rec] is not handled by ppx_lwt. *)
         },
         body,
-        _loc ) ->
-      let param =
-        let param_pat =
-          match pvb_constraint with
-          (* [locally_abstract_univars] are unlikely to present. *)
-          | Some (Pvc_constraint { locally_abstract_univars = _ :: _; _ }) ->
-              assert false
-          (* Let binding coercion are unlikely to be used with %lwt in the
-             wild. *)
-          | Some (Pvc_coercion _) -> assert false
-          | Some (Pvc_constraint { locally_abstract_univars = _; typ }) ->
-              Pat.constraint_ pvb_pat typ
-          | None -> pvb_pat
-        in
-        mk_function_param param_pat
-      in
-      Some (mk_lwt_bind promise_exp ~param body)
+        _ ) ->
+      rewrite_lwt_let_expression binding body
   | _ -> None
 
 let remove_lwt_ppx =
