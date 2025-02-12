@@ -20,8 +20,11 @@ let _ =
   ()
 
 let _ =
-  (* $e$;%lwt $e'$ ≡ [Lwt.bind $e$ (fun $p$ -> $e'$)] *)
   stmt_1 ;%lwt
   stmt_2 ;%lwt
   stmt_3 ;%lwt
   stmt_4
+
+let _ =
+  assert%lwt false;
+  assert%lwt (e = 1)

@@ -34,7 +34,9 @@
     ()
   
   let _ =
-    Lwt.bind
-      (* $e$;%lwt $e'$ ≡ [Lwt.bind $e$ (fun $p$ -> $e'$)] *)
-      stmt_1 (fun () ->
+    Lwt.bind stmt_1 (fun () ->
         Lwt.bind stmt_2 (fun () -> Lwt.bind stmt_3 (fun () -> stmt_4)))
+  
+  let _ =
+    Lwt.catch (fun () -> assert false) Lwt.fail;
+    Lwt.catch (fun () -> assert (e = 1)) Lwt.fail

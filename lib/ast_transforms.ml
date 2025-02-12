@@ -50,6 +50,7 @@ let mk_lwt_catch body input =
     (Exp.ident (mk_longident [ "Lwt"; "catch" ]))
     [ (Nolabel, input_thunk); (Nolabel, body) ]
 
+let mk_lwt_fail_ident = Exp.ident (mk_longident [ "Lwt"; "fail" ])
 let mk_lwt_return_unit = Exp.ident (mk_longident [ "Lwt"; "return_unit" ])
 
 (** Rewrite an expression embedded in a [[%lwt ..]] or an expression like
@@ -101,6 +102,8 @@ let rewrite_lwt_extension_expression ~attrs exp =
         @@ Exp.apply (mk_exp_var "__ppx_lwt_loop") [ (Nolabel, mk_unit_val) ])
   (* [e ;%lwt e'] *)
   | Pexp_sequence (e, e') -> Some (mk_lwt_bind e e')
+  (* [assert%lwt e] *)
+  | Pexp_assert _ -> Some (mk_lwt_catch mk_lwt_fail_ident exp)
   | _ -> None
 
 let rewrite_expression exp =
