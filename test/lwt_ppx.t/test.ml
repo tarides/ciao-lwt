@@ -4,23 +4,27 @@ let _ =
 
 let _ =
   let%lwt n1 : t = v1 in
-  let%lwt n2 : t :> t' = v2 in
   let%lwt n3 = n3 in
   ()
 
 let _ =
   let%lwt n1 = v1 and n2 = v2 in
-  let%lwt n1 = v1
-  and n2 = v2
-  and v3 = v3
-  and v4 : t = v4
-  and v5 : t :> t' = v5 in
+  let%lwt n1 = v1 and n2 = v2 and v3 = v3 and v4 : t = v4 in
+  (* Not translated due to a bug in ocamlformat *)
+  let%lwt v5 : t :> t' = v5 and v6 : t :> t' = v6 in
+  let%lwt n1 = n1 and n2 = n2 in
   ()
 
 let _ = match%lwt input with case -> ()
 let _ = match%lwt input with case -> () | case2 -> ()
 let _ = match%lwt input with case -> () | exception E -> ()
-let _ = match%lwt input with case -> () | exception E -> () | exception catchall -> ()
+
+let _ =
+  match%lwt input with
+  | case -> ()
+  | exception E -> ()
+  | exception catchall -> ()
+
 let _ = match%lwt input with exception E -> ()
 let _ = match%lwt input with exception (E | catchall) -> ()
 let _ = try%lwt input with catchall -> ()
@@ -61,7 +65,7 @@ let _ =
     c]
 
 let _ =
-  expr[%finally this];
-  expr[%lwt.finally this];
-  (some expr)[%finally this];
-  (some expr)[%lwt.finally this]
+  expr [%finally this];
+  expr [%lwt.finally this];
+  (some expr) [%finally this];
+  (some expr) [%lwt.finally this]

@@ -23,20 +23,10 @@
     binding_body
   
   let _ =
-    let __ppx_lwt_0 = v1 and __ppx_lwt_1 = v2 in
-    let* n2 = __ppx_lwt_1 in
-    let* n1 = __ppx_lwt_0 in
-    let __ppx_lwt_0 = v1
-    and __ppx_lwt_1 = v2
-    and __ppx_lwt_2 = v3
-    and __ppx_lwt_3 = v4
-    and __ppx_lwt_4 = (v5 : t :> t') in
-    let* v5 = __ppx_lwt_4 in
-    let* (v4 : t) = __ppx_lwt_3 in
-    let* v3 = __ppx_lwt_2 in
-    let* n2 = __ppx_lwt_1 in
-    let* n1 = __ppx_lwt_0 in
+    let* n1 = v1 and* n2 = v2 in
+    let* n1 = v1 and* n2 = v2 and* v3 = v3 and* v4 : t = v4 in
   
+    let%lwt v5 : t :> t' = v5 and v6 : t :> t' = v6 in
     ()
   
   (* Let bindings in different contextes. *)
@@ -88,13 +78,15 @@
             let __ppx_lwt_0 = v1
             and __ppx_lwt_1 = v2
             and __ppx_lwt_2 = v3
-            and __ppx_lwt_3 = v4
-            and __ppx_lwt_4 = (v5 : t :> t') in
-            Lwt.bind __ppx_lwt_4 (fun v5 ->
-                Lwt.bind __ppx_lwt_3 (fun (v4 : t) ->
-                    Lwt.bind __ppx_lwt_2 (fun v3 ->
-                        Lwt.bind __ppx_lwt_1 (fun n2 ->
-                            Lwt.bind __ppx_lwt_0 (fun n1 -> ())))))))
+            and __ppx_lwt_3 = v4 in
+            Lwt.bind __ppx_lwt_3 (fun (v4 : t) ->
+                Lwt.bind __ppx_lwt_2 (fun v3 ->
+                    Lwt.bind __ppx_lwt_1 (fun n2 ->
+                        Lwt.bind __ppx_lwt_0 (fun n1 ->
+                            let __ppx_lwt_0 = (v5 : t :> t')
+                            and __ppx_lwt_1 = (v6 : t :> t') in
+                            Lwt.bind __ppx_lwt_1 (fun v6 ->
+                                Lwt.bind __ppx_lwt_0 (fun v5 -> ()))))))))
   
   (* Let bindings in different contextes. *)
   let _ =

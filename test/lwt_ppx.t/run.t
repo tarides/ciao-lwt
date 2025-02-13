@@ -11,26 +11,18 @@
     binding_body
   
   let _ =
-    let* (n1 : t) = v1 in
-    let* n2 = (v2 : t :> t') in
+    let* n1 : t = v1 in
     let* n3 = n3 in
   
     ()
   
   let _ =
-    let __ppx_lwt_0 = v1 and __ppx_lwt_1 = v2 in
-    let* n2 = __ppx_lwt_1 in
-    let* n1 = __ppx_lwt_0 in
-    let __ppx_lwt_0 = v1
-    and __ppx_lwt_1 = v2
-    and __ppx_lwt_2 = v3
-    and __ppx_lwt_3 = v4
-    and __ppx_lwt_4 = (v5 : t :> t') in
-    let* v5 = __ppx_lwt_4 in
-    let* (v4 : t) = __ppx_lwt_3 in
-    let* v3 = __ppx_lwt_2 in
-    let* n2 = __ppx_lwt_1 in
-    let* n1 = __ppx_lwt_0 in
+    let* n1 = v1 and* n2 = v2 in
+    let* n1 = v1 and* n2 = v2 and* v3 = v3 and* v4 : t = v4 in
+  
+    (* Not translated due to a bug in ocamlformat *)
+    let%lwt v5 : t :> t' = v5 and v6 : t :> t' = v6 in
+    let* n1 = n1 and* n2 = n2 in
   
     ()
   

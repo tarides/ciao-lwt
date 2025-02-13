@@ -120,8 +120,8 @@ let match_extract_exception_cases =
           Either.Right (Exp.case exn_pat ?guard:case.pc_guard case.pc_rhs)
       | _ -> Left case)
 
-(** Rewrite a [let%lwt]. *)
-let rewrite_lwt_let_expression bindings body =
+(** Rewrite a [let%lwt] using the same translation used by [lwt_ppx]. *)
+let rewrite_lwt_let_expression_using_lwt_bind bindings body =
   let generate_parallel_binds bindings =
     let gen_name i = "__ppx_lwt_" ^ string_of_int i in
     let bindings = List.mapi (fun i b -> (gen_name i, b)) bindings in
@@ -177,6 +177,41 @@ let rewrite_lwt_let_expression bindings body =
       Some (mk_lwt_bind promise_exp ~param body)
   | Some bindings -> Some (generate_parallel_binds bindings)
   | None -> None
+
+(** Rewrite a [let%lwt]. *)
+let rewrite_lwt_let_expression bindings body =
+  let decode_bindings =
+    let exception Unsupported in
+    let decode = function
+      | {
+          (* Bindings that define functions are not supported by lwt_ppx (with
+             non-empty [pvb_args] or with [Pfunction_case] body). *)
+          pvb_args = [];
+          pvb_is_pun = is_pun;
+          pvb_pat;
+          pvb_body = Pfunction_body promise_exp;
+          (* Other values for [pvb_constraint] are not handled correctly by
+             ocamlformat 0.27.0. *)
+          pvb_constraint =
+            (Some (Pvc_constraint { locally_abstract_univars = []; _ }) | None)
+            as typ;
+          pvb_loc = _;
+          pvb_attributes = { attrs_before = []; attrs_after = []; _ };
+        } ->
+          fun op -> mk_binding_op ~is_pun (mk_loc op) pvb_pat ~typ promise_exp
+      | _ -> raise Unsupported
+    in
+    try List.map decode bindings with Unsupported -> []
+  in
+  if !use_lwt_bind then rewrite_lwt_let_expression_using_lwt_bind bindings body
+  else
+    match decode_bindings with
+    | [] -> None
+    | let_ :: ands ->
+        letop_was_used := true;
+        let let_ = let_ "let*"
+        and ands = List.map (fun and_ -> and_ "and*") ands in
+        Some (Exp.letop ~loc_in:!default_loc let_ ands body)
 
 (** Rewrite an expression embedded in a [[%lwt ..]] or an expression like
     [match%lwt]. *)
