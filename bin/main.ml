@@ -14,23 +14,27 @@ let pp_format_exn ppf = function
         Ocamlformat_utils.Parsing.Location.print_loc loc
   | exn -> Format.fprintf ppf "Unhandled exception: %s" (Printexc.to_string exn)
 
-let main use_lwt_bind =
+let migrate_file ~formatted ~errors ~modify_ast file =
+  if is_ml_file file then (
+    try
+      Ocamlformat_utils.format_structure_in_place ~file ~modify_ast;
+      incr formatted
+    with exn ->
+      Format.eprintf "%s: %a\n%!" file pp_format_exn exn;
+      incr errors)
+
+let main use_lwt_bind paths =
   let errors = ref 0 in
-  let i = ref 0 in
+  let formatted = ref 0 in
   let modify_ast = Ast_transforms.remove_lwt_ppx ~use_lwt_bind in
-  Fs_utils.scan_dir
-    ~descend_into:(fun path ->
-      match Filename.basename path with "_build" | ".git" -> false | _ -> true)
-    (fun file ->
-      if is_ml_file file then (
-        try
-          Ocamlformat_utils.format_structure_in_place ~file ~modify_ast;
-          incr i
-        with exn ->
-          Format.eprintf "%s: %a\n%!" file pp_format_exn exn;
-          incr errors))
-    ".";
-  Format.printf "Formatted %d files, %d errors\n%!" !i !errors;
+  let descend_into path =
+    match Filename.basename path with "_build" | ".git" -> false | _ -> true
+  in
+  List.iter
+    (Fs_utils.scan_dir ~descend_into
+       (migrate_file ~formatted ~errors ~modify_ast))
+    paths;
+  Format.printf "Formatted %d files, %d errors\n%!" !formatted !errors;
   if !errors > 0 then exit 1
 
 open Cmdliner
@@ -42,9 +46,13 @@ let opt_use_lwt_bind =
   in
   Arg.(value & flag & info ~doc [ "use-lwt-bind" ])
 
+let pos_inputs =
+  let doc = "Path to files or directories to migrate." in
+  Arg.(non_empty & pos_all file [] & info ~doc ~docv:"PATH" [])
+
 let cmd =
-  let doc = "Convert your codebase from Lwt to Eio" in
+  let doc = "Migrate your codebase from lwt_ppx to plain Lwt." in
   let info = Cmd.info "lwt-ppx-to-let-syntax" ~version:"%%VERSION%%" ~doc in
-  Cmd.v info Term.(const main $ opt_use_lwt_bind)
+  Cmd.v info Term.(const main $ opt_use_lwt_bind $ pos_inputs)
 
 let () = exit (Cmd.eval cmd)

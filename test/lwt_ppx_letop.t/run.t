@@ -2,9 +2,9 @@
   $ cp --no-preserve=mode *.ml use_letop
   $ cp --no-preserve=mode *.ml use_lwt_bind
 
-  $ (cd use_letop; lwt-ppx-to-let-syntax)
+  $ lwt-ppx-to-let-syntax use_letop
   Formatted 3 files, 0 errors
-  $ (cd use_lwt_bind; lwt-ppx-to-let-syntax --use-lwt-bind)
+  $ lwt-ppx-to-let-syntax --use-lwt-bind use_lwt_bind
   Formatted 3 files, 0 errors
 
   $ cat use_letop/test.ml

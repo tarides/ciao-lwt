@@ -1,6 +1,6 @@
   $ chmod a+w test.ml
 
-  $ lwt-ppx-to-let-syntax
+  $ lwt-ppx-to-let-syntax .
   Formatted 1 files, 0 errors
 
   $ cat test.ml

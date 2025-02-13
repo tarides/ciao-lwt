@@ -2,7 +2,7 @@
 
 Usage:
 ```
-$ lwt-ppx-to-let-syntax
+$ lwt-ppx-to-let-syntax .
 ```
 
 This will recursively scan the current directory and modify every `.ml` files.
