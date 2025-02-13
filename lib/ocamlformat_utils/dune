@@ -1,7 +1,6 @@
 (library
- (name lwt_ppx_to_let_syntax)
+ (name ocamlformat_utils)
  (libraries
-  unix
   ocamlformat-lib
   ocamlformat.bin_conf
   ocamlformat-lib.format_

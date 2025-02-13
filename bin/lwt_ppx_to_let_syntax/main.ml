@@ -1,5 +1,3 @@
-open Lwt_ppx_to_let_syntax
-
 let is_ml_file fname =
   match Filename.extension fname with
   | ".ml" | ".eliom" -> true

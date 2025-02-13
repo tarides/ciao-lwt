@@ -1,4 +1,4 @@
 (executable
  (public_name lwt-ppx-to-let-syntax)
  (name main)
- (libraries cmdliner lwt_ppx_to_let_syntax))
+ (libraries cmdliner fs_utils ocamlformat_utils))
