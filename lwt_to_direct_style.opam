@@ -15,6 +15,7 @@ depends: [
   "ocaml"
   "cmdliner"
   "lwt" {with-test}
+  "ocaml-index" {with-test}
   "odoc" {with-doc}
 ]
 build: [

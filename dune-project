@@ -31,4 +31,5 @@
  (depends
   ocaml
   cmdliner
-  (lwt :with-test)))
+  (lwt :with-test)
+  (ocaml-index :with-test)))
