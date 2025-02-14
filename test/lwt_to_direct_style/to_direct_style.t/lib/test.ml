@@ -29,4 +29,4 @@ let infix () =
 let test () =
   Lwt_fmt.printf "Test.test" >>= fun () ->
   Lwt.both (lwt_calls ()) (lwt_calls_point_free ()) >>= fun _ ->
-  Lwt.join [ (letops ()); (infix ()) ] >>= Lwt.return
+  Lwt.join [ letops (); infix () ] >>= Lwt.return

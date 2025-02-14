@@ -1,3 +1,5 @@
+open Ocamlformat_utils.Parsing
+
 let scan_dune_build_path () =
   if not (Sys.is_directory "_build") then
     failwith "Directory '_build' not found."
@@ -9,11 +11,9 @@ let scan_dune_build_path () =
     | [] -> failwith "No index found. Please run 'dune build @ocaml-index'."
     | p -> p
 
+(** Convert from OCaml [Parsing] values that Merlin uses to the corresponding
+    Ocamlformat type. *)
 module Ocaml_to_ocamlformat = struct
-  open Ocamlformat_utils.Parsing
-
-  (** Convert from OCaml [Parsing] values to Ocamlformat types. *)
-
   let location_t { Ocaml_parsing.Location.loc_start; loc_end; loc_ghost } =
     { Location.loc_start; loc_end; loc_ghost }
 
@@ -30,6 +30,8 @@ module Ocaml_to_ocamlformat = struct
   let lid = location_loc longident
 end
 
+(** Lookup every occurrences of [Lwt] in every [.ocaml-index] files in the
+    [_build] directory. *)
 let find_lwt_occurrences () =
   let open Ocaml_index_utils in
   let index_files = scan_dune_build_path () in
@@ -37,28 +39,44 @@ let find_lwt_occurrences () =
   let lwt_occurrences = locs_from_comp_unit index "Lwt" in
   List.map Ocaml_to_ocamlformat.lid lwt_occurrences
 
-let main _paths =
-  try
-    let lwt_occurrences = find_lwt_occurrences () in
-    List.iter
-      (Format.printf "%a@\n"
-         Ocamlformat_utils.Parsing.Printast.fmt_longident_loc)
-      lwt_occurrences
-  with Failure msg ->
-    Format.eprintf "Error: %s\n%!" msg;
-    exit 1
+(** Call [f] for every files that contain occurrences of [Lwt]. *)
+let group_occurrences_by_file lids f =
+  let module Tbl = Hashtbl.Make (String) in
+  let tbl = Tbl.create 64 in
+  List.iter
+    (fun lid ->
+      let file = lid.Location.loc.loc_start.pos_fname in
+      Tbl.replace tbl file
+        (match Tbl.find_opt tbl file with
+        | Some lids -> lid :: lids
+        | None -> [ lid ]))
+    lids;
+  Tbl.iter f tbl
+
+let migrate_file ~formatted ~errors ~modify_ast file =
+  match Ocamlformat_utils.format_structure_in_place ~file ~modify_ast with
+  | Ok () -> incr formatted
+  | Error (`Msg msg) ->
+      Format.eprintf "%s: %s\n%!" file msg;
+      incr errors
+
+let main () =
+  let errors = ref 0 in
+  let formatted = ref 0 in
+  let all_occurrences = find_lwt_occurrences () in
+  group_occurrences_by_file all_occurrences (fun file occurrences ->
+      let modify_ast = Ast_rewrite.rewrite_lwt_uses ~occurrences in
+      migrate_file ~formatted ~errors ~modify_ast file);
+  Format.printf "Formatted %d files, %d errors\n%!" !formatted !errors;
+  if !errors > 0 then exit 1
 
 open Cmdliner
-
-let pos_inputs =
-  let doc = "Path to files or directories to migrate." in
-  Arg.(non_empty & pos_all file [] & info ~doc ~docv:"PATH" [])
 
 let cmd =
   let doc =
     "Migrate your codebase from Lwt to direct-style concurrency libraries."
   in
   let info = Cmd.info "lwt-to-direct-style" ~version:"%%VERSION%%" ~doc in
-  Cmd.v info Term.(const main $ pos_inputs)
+  Cmd.v info Term.(const main $ const ())
 
 let () = exit (Cmd.eval cmd)
