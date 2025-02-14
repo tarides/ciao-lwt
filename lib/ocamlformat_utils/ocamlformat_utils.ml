@@ -177,21 +177,27 @@ let build_config ~file:_ =
       };
   }
 
-exception Syntax_error of Location.t
-
-let parse_and_format ext_fg ~input_name ~source ~modify_ast conf =
-  try parse_and_format ext_fg ~input_name ~source ~modify_ast conf
-  with Syntaxerr.Error err ->
-    raise (Syntax_error (Syntaxerr.location_of_error err))
+let error s = Error (`Msg s)
 
 let format_in_place ast ~file ~modify_ast =
-  let conf = build_config ~file in
-  let source = In_channel.with_open_text file In_channel.input_all in
-  if String.length source = 0 then failwith "Input to 0 length";
-  let fmted = parse_and_format ast ~input_name:file ~source ~modify_ast conf in
-  if String.length fmted = 0 then failwith "Formatted to 0 length";
-  if not (String.equal fmted source) then
-    Out_channel.with_open_bin file (fun oc ->
-        Out_channel.output_string oc fmted)
+  try
+    let conf = build_config ~file in
+    let source = In_channel.with_open_text file In_channel.input_all in
+    let fmted =
+      parse_and_format ast ~input_name:file ~source ~modify_ast conf
+    in
+    if String.length fmted = 0 then error "Formatted to 0 length"
+    else (
+      if not (String.equal fmted source) then
+        Out_channel.with_open_bin file (fun oc ->
+            Out_channel.output_string oc fmted);
+      Ok ())
+  with
+  | Failure msg | Sys_error msg -> error msg
+  | Syntaxerr.Error err ->
+      Format.kasprintf error "Syntax error at %a" Location.print_loc
+        (Syntaxerr.location_of_error err)
+  | exn ->
+      Format.kasprintf error "Unhandled exception: %s" (Printexc.to_string exn)
 
 let format_structure_in_place = format_in_place Extended_ast.Structure

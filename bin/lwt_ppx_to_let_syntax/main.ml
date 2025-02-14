@@ -1,17 +1,9 @@
-let pp_format_exn ppf = function
-  | Failure msg | Sys_error msg -> Format.fprintf ppf "%s" msg
-  | Ocamlformat_utils.Syntax_error loc ->
-      Format.fprintf ppf "Syntax error at %a"
-        Ocamlformat_utils.Parsing.Location.print_loc loc
-  | exn -> Format.fprintf ppf "Unhandled exception: %s" (Printexc.to_string exn)
-
 let migrate_file ~formatted ~errors ~modify_ast file =
-  try
-    Ocamlformat_utils.format_structure_in_place ~file ~modify_ast;
-    incr formatted
-  with exn ->
-    Format.eprintf "%s: %a\n%!" file pp_format_exn exn;
-    incr errors
+  match Ocamlformat_utils.format_structure_in_place ~file ~modify_ast with
+  | Ok () -> incr formatted
+  | Error (`Msg msg) ->
+      Format.eprintf "%s: %s\n%!" file msg;
+      incr errors
 
 let main use_lwt_bind paths =
   let errors = ref 0 in

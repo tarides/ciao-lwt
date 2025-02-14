@@ -7,9 +7,9 @@ end
 
 open Parsing
 
-exception Syntax_error of Location.t
-
 val format_structure_in_place :
-  file:string -> modify_ast:(Parsetree.structure -> Parsetree.structure) -> unit
+  file:string ->
+  modify_ast:(Parsetree.structure -> Parsetree.structure) ->
+  (unit, [ `Msg of string ]) result
 (** Format the content of and overwrite [file]. [modify_ast] can be used to
     apply any change to the program. Raises [Failure] and [Sys_error]. *)
