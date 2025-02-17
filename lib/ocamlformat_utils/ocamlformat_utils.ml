@@ -7,6 +7,7 @@ module Parsing = struct
   include Ocamlformat_parser_extended
 end
 
+module Ast_utils = Ast_utils
 open Parsing
 
 let ( let* ) = Result.bind

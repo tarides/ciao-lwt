@@ -5,6 +5,9 @@ module Parsing : sig
   include module type of Ocamlformat_parser_extended
 end
 
+module Ast_utils : module type of Ast_utils
+(** Utility functions for contructing AST nodes. *)
+
 open Parsing
 
 val format_structure_in_place :
