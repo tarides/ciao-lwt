@@ -55,28 +55,24 @@ let is_fun_with_one_argument = function
       Some (arg_pat, body)
   | _ -> None
 
+(* Rewrite to a let binding or an apply. *)
+let rewrite_continuation cont ~arg:cont_arg =
+  match is_fun_with_one_argument cont with
+  | Some (fun_arg_pat, body) -> Some (mk_let fun_arg_pat cont_arg body)
+  | None -> Some (Exp.apply cont [ (Nolabel, cont_arg) ])
+
 let rewrite_apply_lwt lid args =
   match (Longident.flatten lid.txt, args) with
-  (* [Lwt.bind $promise_arg (fun $fun_arg_pat -> $body)] *)
-  | [ "Lwt"; "bind" ], [ (Nolabel, promise_arg); (Nolabel, fun_arg) ] -> (
-      match is_fun_with_one_argument fun_arg with
-      | Some (fun_arg_pat, body) -> Some (mk_let fun_arg_pat promise_arg body)
-      | None -> None)
-  (* [Lwt.map (fun $fun_arg_pat -> $body) $promise_arg] *)
-  | [ "Lwt"; "map" ], [ (Nolabel, fun_arg); (Nolabel, promise_arg) ] -> (
-      match is_fun_with_one_argument fun_arg with
-      | Some (fun_arg_pat, body) -> Some (mk_let fun_arg_pat promise_arg body)
-      | None -> None)
+  | [ "Lwt"; "bind" ], [ (Nolabel, promise_arg); (Nolabel, fun_arg) ]
+  | [ "Lwt"; "map" ], [ (Nolabel, fun_arg); (Nolabel, promise_arg) ] ->
+      rewrite_continuation fun_arg ~arg:promise_arg
   (* [Lwt.return $value_arg] *)
   | [ "Lwt"; "return" ], [ (Nolabel, value_arg) ] -> Some value_arg
   | _ -> None
 
 let rewrite_infix_lwt op lhs rhs =
   match op.txt with
-  | ">>=" | ">|=" -> (
-      match is_fun_with_one_argument rhs with
-      | Some (arg_pat, rhs_body) -> Some (mk_let arg_pat lhs rhs_body)
-      | None -> None)
+  | ">>=" | ">|=" -> rewrite_continuation rhs ~arg:lhs
   | _ -> None
 
 (** Flatten pipelines before applying rewrites. *)

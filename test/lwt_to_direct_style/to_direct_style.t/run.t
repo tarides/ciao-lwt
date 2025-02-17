@@ -44,7 +44,7 @@ Make a writable directory tree:
   Warning: 2 occurrences have not been rewritten.
     "let*" (bin/main.ml[4,31+2]..[4,31+6])
     "let+" (bin/main.ml[5,73+2]..[5,73+6])
-  Warning: 10 occurrences have not been rewritten.
+  Warning: 9 occurrences have not been rewritten.
     "Lwt.try_bind" (lib/test.ml[5,51+2]..[5,51+14])
     "let*" (lib/test.ml[17,428+2]..[17,428+6])
     "let*" (lib/test.ml[18,441+4]..[18,441+8])
@@ -53,7 +53,6 @@ Make a writable directory tree:
     "<&>" (lib/test.ml[27,662+2]..[27,662+5])
     "Lwt.both" (lib/test.ml[31,775+2]..[31,775+10])
     "Lwt.join" (lib/test.ml[32,840+2]..[32,840+10])
-    ">>=" (lib/test.ml[32,840+35]..[32,840+38])
     "Lwt.return" (lib/test.ml[32,840+39]..[32,840+49])
   Formatted 2 files, 0 errors
 
@@ -104,5 +103,4 @@ Make a writable directory tree:
   let test () =
     let () = Lwt_fmt.printf "Test.test" in
     let _ = Lwt.both (lwt_calls ()) (lwt_calls_point_free ()) in
-  
-    Lwt.join [ letops (); infix () ] >>= Lwt.return
+    Lwt.return (Lwt.join [ letops (); infix () ])
