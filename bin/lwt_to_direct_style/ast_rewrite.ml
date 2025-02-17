@@ -1,8 +1,7 @@
 open Ocamlformat_utils.Parsing
 open Asttypes
 open Parsetree
-
-(* open Ast_helper *)
+open Ast_helper
 open Ocamlformat_utils.Ast_utils
 
 module Occ = struct
@@ -80,8 +79,23 @@ let rewrite_infix_lwt op lhs rhs =
       | None -> None)
   | _ -> None
 
-let rewrite_expression exp =
+(** Flatten pipelines before applying rewrites. *)
+let rec flatten_apply exp =
+  let flatten callee arg =
+    let callee, prefix_args =
+      match (flatten_apply callee).pexp_desc with
+      | Pexp_apply (callee, prefix_args) -> (callee, prefix_args)
+      | _ -> (callee, [])
+    in
+    Exp.apply callee (prefix_args @ [ (Nolabel, arg) ])
+  in
   match exp.pexp_desc with
+  | Pexp_infix ({ txt = "@@"; _ }, lhs, rhs) -> flatten lhs rhs
+  | Pexp_infix ({ txt = "|>"; _ }, lhs, rhs) -> flatten rhs lhs
+  | _ -> exp
+
+let rewrite_expression exp =
+  match (flatten_apply exp).pexp_desc with
   (* Rewrite a call to a [Lwt] function. *)
   | Pexp_apply ({ pexp_desc = Pexp_ident lid; _ }, args) when Occ.check lid ->
       let r = rewrite_apply_lwt lid args in

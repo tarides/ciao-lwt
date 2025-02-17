@@ -45,12 +45,10 @@ Make a writable directory tree:
     "Lwt.Syntax" (bin/main.ml[1,0+5]..[1,0+15])
     "let*" (bin/main.ml[4,31+2]..[4,31+6])
     "let+" (bin/main.ml[5,73+2]..[5,73+6])
-  Warning: 14 occurrences have not been rewritten.
+  Warning: 12 occurrences have not been rewritten.
     "Lwt.Infix" (lib/test.ml[1,0+5]..[1,0+14])
     "Lwt.Syntax" (lib/test.ml[2,15+5]..[2,15+15])
     "Lwt.try_bind" (lib/test.ml[5,51+2]..[5,51+14])
-    "Lwt.bind" (lib/test.ml[13,318+2]..[13,318+10])
-    "Lwt.map" (lib/test.ml[14,363+24]..[14,363+31])
     "let*" (lib/test.ml[17,428+2]..[17,428+6])
     "let*" (lib/test.ml[18,441+4]..[18,441+8])
     "let+" (lib/test.ml[19,477+4]..[19,477+8])
@@ -89,8 +87,10 @@ Make a writable directory tree:
       (fun _ -> ())
   
   let lwt_calls_point_free () =
-    Lwt.bind (Lwt_fmt.printf "1") @@ fun () ->
-    Lwt_fmt.printf "2" |> Lwt.map @@ fun () -> ()
+    let () = Lwt_fmt.printf "1" in
+    let () = Lwt_fmt.printf "2" in
+  
+    ()
   
   let letops () =
     let* `Ok =
