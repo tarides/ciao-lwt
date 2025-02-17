@@ -63,6 +63,11 @@ let rewrite_apply_lwt lid args =
       match is_fun_with_one_argument fun_arg with
       | Some (fun_arg_pat, body) -> Some (mk_let fun_arg_pat promise_arg body)
       | None -> None)
+  (* [Lwt.map (fun $fun_arg_pat -> $body) $promise_arg] *)
+  | [ "Lwt"; "map" ], [ (Nolabel, fun_arg); (Nolabel, promise_arg) ] -> (
+      match is_fun_with_one_argument fun_arg with
+      | Some (fun_arg_pat, body) -> Some (mk_let fun_arg_pat promise_arg body)
+      | None -> None)
   (* [Lwt.return $value_arg] *)
   | [ "Lwt"; "return" ], [ (Nolabel, value_arg) ] -> Some value_arg
   | _ -> None
