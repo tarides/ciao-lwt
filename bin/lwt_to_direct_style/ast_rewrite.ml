@@ -33,11 +33,11 @@ module Occ = struct
     if missing > 0 then (
       Format.eprintf "Warning: %d occurrences have not been rewritten.@\n"
         missing;
-      Hashtbl.iter
-        (fun loc lident ->
-          Format.eprintf "  %a %a@\n" Printast.fmt_longident lident
-            Printast.fmt_location loc)
-        !_tbl;
+      Hashtbl.fold (fun loc lident acc -> (loc, lident) :: acc) !_tbl []
+      |> List.sort compare (* Sort for a reproducible output. *)
+      |> List.iter (fun (loc, lident) ->
+             Format.eprintf "  %a %a@\n" Printast.fmt_longident lident
+               Printast.fmt_location loc);
       Format.eprintf "%!")
 end
 
