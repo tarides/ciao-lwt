@@ -41,13 +41,10 @@ Make a writable directory tree:
     "Lwt.Syntax" (lib/test.ml[2,15+5]..[2,15+15])
 
   $ lwt-to-direct-style --migrate
-  Warning: 3 occurrences have not been rewritten.
-    "Lwt.Syntax" (bin/main.ml[1,0+5]..[1,0+15])
+  Warning: 2 occurrences have not been rewritten.
     "let*" (bin/main.ml[4,31+2]..[4,31+6])
     "let+" (bin/main.ml[5,73+2]..[5,73+6])
-  Warning: 12 occurrences have not been rewritten.
-    "Lwt.Infix" (lib/test.ml[1,0+5]..[1,0+14])
-    "Lwt.Syntax" (lib/test.ml[2,15+5]..[2,15+15])
+  Warning: 10 occurrences have not been rewritten.
     "Lwt.try_bind" (lib/test.ml[5,51+2]..[5,51+14])
     "let*" (lib/test.ml[17,428+2]..[17,428+6])
     "let*" (lib/test.ml[18,441+4]..[18,441+8])
@@ -61,8 +58,6 @@ Make a writable directory tree:
   Formatted 2 files, 0 errors
 
   $ cat bin/main.ml
-  open Lwt.Syntax
-  
   let main () =
     let* () = Lwt_fmt.printf "Main.main" in
     let+ () = Test.test () in
@@ -71,9 +66,6 @@ Make a writable directory tree:
   let () = Lwt_main.run (main ())
 
   $ cat lib/test.ml
-  open Lwt.Infix
-  open Lwt.Syntax
-  
   let lwt_calls () =
     Lwt.try_bind
       (fun () ->

@@ -108,13 +108,23 @@ let rewrite_expression exp =
       r
   | _ -> None
 
+let remove_lwt_opens stri =
+  match stri.pstr_desc with
+  | Pstr_open { popen_expr = { pmod_desc = Pmod_ident lid; _ }; _ }
+    when Occ.pop lid ->
+      false
+  | _ -> true
+
 let rewrite_lwt_uses ~occurrences str =
   Occ.init occurrences;
   let default = Ast_mapper.default_mapper in
   let expr m exp =
     default.expr m (Option.value (rewrite_expression exp) ~default:exp)
   in
-  let m = { default with expr } in
+  let structure m str =
+    default.structure m (List.filter remove_lwt_opens str)
+  in
+  let m = { default with expr; structure } in
   let str = m.structure m str in
   Occ.warn_missing_locs ();
   str
