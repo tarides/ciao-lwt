@@ -26,6 +26,7 @@ let mk_longident = function
       let open Longident in
       mk_loc (List.fold_left (fun acc seg -> Ldot (acc, seg)) (Lident hd) tl)
 
+let mk_constr_exp ?arg cstr = Exp.construct (mk_longident [ cstr ]) arg
 let same_longident a b = Longident.flatten a = b
 let mk_exp_var s = Exp.ident (mk_longident [ s ])
 let mk_unit_ident = mk_longident [ "()" ]

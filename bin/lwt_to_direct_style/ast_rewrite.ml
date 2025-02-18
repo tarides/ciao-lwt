@@ -118,11 +118,27 @@ let rewrite_apply_lwt lid args =
   | ( [ "Lwt"; "try_bind" ],
       [ (Nolabel, thunk); (Nolabel, value_f); (Nolabel, exn_f) ] ) ->
       Some (rewrite_try_bind thunk value_f exn_f)
+  | [ "Lwt"; "return_some" ], [ (Nolabel, value_arg) ] ->
+      Some (mk_constr_exp ~arg:value_arg "Some")
+  | [ "Lwt"; "return_ok" ], [ (Nolabel, value_arg) ] ->
+      Some (mk_constr_exp ~arg:value_arg "Ok")
+  | [ "Lwt"; "return_error" ], [ (Nolabel, value_arg) ] ->
+      Some (mk_constr_exp ~arg:value_arg "Error")
   | _ -> None
 
 let rewrite_infix_lwt op lhs rhs =
   match op.txt with
   | ">>=" | ">|=" -> rewrite_continuation rhs ~arg:lhs
+  | _ -> None
+
+let rewrite_ident_lwt lid =
+  let cstr c = Some (mk_constr_exp c) in
+  match Longident.last lid.txt with
+  | "return_unit" -> cstr "()"
+  | "return_none" -> cstr "None"
+  | "return_nil" -> cstr "[]"
+  | "return_true" -> cstr "true"
+  | "return_false" -> cstr "false"
   | _ -> None
 
 (** Flatten pipelines before applying rewrites. *)
@@ -151,6 +167,11 @@ let rewrite_expression exp =
   | Pexp_infix (op, lhs, rhs) when Occ.check op ->
       let r = rewrite_infix_lwt op lhs rhs in
       if Option.is_some r then Occ.remove op;
+      r
+  (* Rewrite expressions such as [Lwt.return_unit]. *)
+  | Pexp_ident lid when Occ.check lid ->
+      let r = rewrite_ident_lwt lid in
+      if Option.is_some r then Occ.remove lid;
       r
   | _ -> None
 

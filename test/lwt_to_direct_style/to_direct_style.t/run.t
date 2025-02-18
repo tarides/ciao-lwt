@@ -8,13 +8,19 @@ Make a writable directory tree:
   _build/default/bin/.main.eobjs/cctx.ocaml-index
 
   $ lwt-to-direct-style
-  bin/main.ml: (14 occurrences)
+  bin/main.ml: (20 occurrences)
     "Lwt.return" (bin/main.ml[9,150+15]..[9,150+25])
     "Lwt.return" (bin/main.ml[16,317+45]..[16,317+55])
     "Lwt.return" (bin/main.ml[19,410+24]..[19,410+34])
     "Lwt.return" (bin/main.ml[20,475+14]..[20,475+24])
     "Lwt.return_unit" (bin/main.ml[19,410+48]..[19,410+63])
     "Lwt.return_none" (bin/main.ml[16,317+28]..[16,317+43])
+    "Lwt.return_none" (bin/main.ml[24,538+8]..[24,538+23])
+    "Lwt.return_nil" (bin/main.ml[25,562+8]..[25,562+22])
+    "Lwt.return_true" (bin/main.ml[26,585+8]..[26,585+23])
+    "Lwt.return_false" (bin/main.ml[27,609+8]..[27,609+24])
+    "Lwt.return_ok" (bin/main.ml[28,634+8]..[28,634+21])
+    "Lwt.return_error" (bin/main.ml[29,659+8]..[29,659+24])
     "Lwt.reraise" (bin/main.ml[12,254+15]..[12,254+26])
     "Lwt.reraise" (bin/main.ml[16,317+56]..[16,317+67])
     "Lwt.try_bind" (bin/main.ml[4,32+2]..[4,32+14])
@@ -52,13 +58,11 @@ Make a writable directory tree:
     "Lwt.Syntax" (lib/test.ml[2,15+5]..[2,15+15])
 
   $ lwt-to-direct-style --migrate
-  Warning: 6 occurrences have not been rewritten.
+  Warning: 4 occurrences have not been rewritten.
     "let*" (bin/main.ml[6,62+6]..[6,62+10])
     "let+" (bin/main.ml[7,108+6]..[7,108+10])
     "Lwt.reraise" (bin/main.ml[12,254+15]..[12,254+26])
-    "Lwt.return_none" (bin/main.ml[16,317+28]..[16,317+43])
     "Lwt.reraise" (bin/main.ml[16,317+56]..[16,317+67])
-    "Lwt.return_unit" (bin/main.ml[19,410+48]..[19,410+63])
   Warning: 8 occurrences have not been rewritten.
     "let*" (lib/test.ml[17,428+2]..[17,428+6])
     "let*" (lib/test.ml[18,441+4]..[18,441+8])
@@ -81,13 +85,16 @@ Make a writable directory tree:
     | exception Failure msg -> Lwt_fmt.printf "Failure: %s\n%!" msg
   
   let main () =
-    let main () = match Lwt.return_none with v -> v in
-    match main () with
-    | Some _ -> ()
-    | None -> Lwt.return_unit
-    | exception _ -> ()
+    let main () = match None with v -> v in
+    match main () with Some _ -> () | None -> () | exception _ -> ()
   
   let () = Lwt_main.run (main ())
+  let _ = None
+  let _ = []
+  let _ = true
+  let _ = false
+  let _ = Ok ()
+  let _ = Error ()
 
   $ cat lib/test.ml
   let lwt_calls () =
