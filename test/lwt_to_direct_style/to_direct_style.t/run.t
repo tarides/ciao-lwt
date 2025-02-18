@@ -52,19 +52,14 @@ Make a writable directory tree:
     "Lwt.Syntax" (lib/test.ml[2,15+5]..[2,15+15])
 
   $ lwt-to-direct-style --migrate
-  Warning: 10 occurrences have not been rewritten.
-    "Lwt.try_bind" (bin/main.ml[4,32+2]..[4,32+14])
+  Warning: 6 occurrences have not been rewritten.
     "let*" (bin/main.ml[6,62+6]..[6,62+10])
     "let+" (bin/main.ml[7,108+6]..[7,108+10])
     "Lwt.reraise" (bin/main.ml[12,254+15]..[12,254+26])
-    "Lwt.try_bind" (bin/main.ml[16,317+4]..[16,317+16])
     "Lwt.return_none" (bin/main.ml[16,317+28]..[16,317+43])
-    "Lwt.return" (bin/main.ml[16,317+45]..[16,317+55])
     "Lwt.reraise" (bin/main.ml[16,317+56]..[16,317+67])
-    "Lwt.try_bind" (bin/main.ml[18,390+2]..[18,390+14])
     "Lwt.return_unit" (bin/main.ml[19,410+48]..[19,410+63])
-  Warning: 9 occurrences have not been rewritten.
-    "Lwt.try_bind" (lib/test.ml[5,51+2]..[5,51+14])
+  Warning: 8 occurrences have not been rewritten.
     "let*" (lib/test.ml[17,428+2]..[17,428+6])
     "let*" (lib/test.ml[18,441+4]..[18,441+8])
     "let+" (lib/test.ml[19,477+4]..[19,477+8])
@@ -77,38 +72,35 @@ Make a writable directory tree:
 
   $ cat bin/main.ml
   let _main () =
-    Lwt.try_bind
-      (fun () ->
-        let* () = Lwt_fmt.printf "Main.main" in
-        let+ () = Test.test () in
-        ())
-      (fun () -> ())
-      (function
-        | Failure msg -> Lwt_fmt.printf "Failure: %s\n%!" msg
-        | exc -> Lwt.reraise exc)
+    match
+      let* () = Lwt_fmt.printf "Main.main" in
+      let+ () = Test.test () in
+      ()
+    with
+    | () -> ()
+    | exception Failure msg -> Lwt_fmt.printf "Failure: %s\n%!" msg
   
   let main () =
-    let main () =
-      Lwt.try_bind (fun () -> Lwt.return_none) Lwt.return Lwt.reraise
-    in
-    Lwt.try_bind main
-      (function Some _ -> () | None -> Lwt.return_unit)
-      (fun _ -> ())
+    let main () = match Lwt.return_none with v -> v in
+    match main () with
+    | Some _ -> ()
+    | None -> Lwt.return_unit
+    | exception _ -> ()
   
   let () = Lwt_main.run (main ())
 
   $ cat lib/test.ml
   let lwt_calls () =
-    Lwt.try_bind
-      (fun () ->
-        let () = Lwt_fmt.printf "1" in
-        let () = Lwt_fmt.printf "2" in
+    match
+      let () = Lwt_fmt.printf "1" in
+      let () = Lwt_fmt.printf "2" in
   
-        `Ok)
-      (fun `Ok -> let () = Lwt_fmt.printf "3" in
+      `Ok
+    with
+    | `Ok -> let () = Lwt_fmt.printf "3" in
   
-                  ())
-      (fun _ -> ())
+             ()
+    | exception _ -> ()
   
   let lwt_calls_point_free () =
     let () = Lwt_fmt.printf "1" in

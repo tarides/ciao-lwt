@@ -61,13 +61,63 @@ let rewrite_continuation cont ~arg:cont_arg =
   | Some (fun_arg_pat, body) -> Some (mk_let fun_arg_pat cont_arg body)
   | None -> Some (Exp.apply cont [ (Nolabel, cont_arg) ])
 
+let rewrite_exp_into_cases = function
+  | {
+      pexp_desc = Pexp_function ([], None, Pfunction_cases (cases, _, []));
+      pexp_attributes = [];
+      _;
+    } ->
+      cases
+  | {
+      pexp_desc =
+        Pexp_function
+          ( [ { pparam_desc = Pparam_val (Nolabel, None, arg_pat); _ } ],
+            None,
+            Pfunction_body body );
+      pexp_attributes = [];
+      _;
+    } ->
+      [ Exp.case arg_pat body ]
+  | exp ->
+      [
+        Exp.case
+          (Pat.var (mk_loc "v"))
+          (Exp.apply exp [ (Nolabel, mk_exp_var "v") ]);
+      ]
+
+let rewrite_try_bind thunk value_f exn_f =
+  let body =
+    match thunk with
+    | {
+     pexp_desc = Pexp_function ([ _ ], None, Pfunction_body body);
+     pexp_attributes = [];
+     _;
+    } ->
+        body
+    | _ -> Exp.apply thunk [ (Nolabel, mk_unit_val) ]
+  and value_cases = rewrite_exp_into_cases value_f
+  and exn_cases =
+    rewrite_exp_into_cases exn_f
+    |> List.filter_map (fun case ->
+           match case.pc_rhs.pexp_desc with
+           (* Drop cases doing just a [Lwt.reraise]. *)
+           | Pexp_apply
+               ({ pexp_desc = Pexp_ident lid; pexp_attributes = []; _ }, [ _ ])
+             when same_longident lid.txt [ "Lwt"; "reraise" ] ->
+               None
+           | _ -> Some { case with pc_lhs = Pat.exception_ case.pc_lhs })
+  in
+  Exp.match_ body (value_cases @ exn_cases)
+
 let rewrite_apply_lwt lid args =
   match (Longident.flatten lid.txt, args) with
   | [ "Lwt"; "bind" ], [ (Nolabel, promise_arg); (Nolabel, fun_arg) ]
   | [ "Lwt"; "map" ], [ (Nolabel, fun_arg); (Nolabel, promise_arg) ] ->
       rewrite_continuation fun_arg ~arg:promise_arg
-  (* [Lwt.return $value_arg] *)
   | [ "Lwt"; "return" ], [ (Nolabel, value_arg) ] -> Some value_arg
+  | ( [ "Lwt"; "try_bind" ],
+      [ (Nolabel, thunk); (Nolabel, value_f); (Nolabel, exn_f) ] ) ->
+      Some (rewrite_try_bind thunk value_f exn_f)
   | _ -> None
 
 let rewrite_infix_lwt op lhs rhs =
