@@ -126,48 +126,56 @@ end
 
 include Trimmed_translation_unit
 
-let build_config ~file =
-  Unix.putenv "OCAMLFORMAT" "version-check=false";
-  match
-    Bin_conf.build_config ~enable_outside_detected_project:true ~root:None ~file
-      ~is_stdin:false
-  with
-  | Ok conf ->
-      let mk v = Conf_t.Elt.make v `Default in
-      {
-        conf with
-        fmt_opts =
-          {
-            conf.fmt_opts with
-            (* Don't change comments to remove a source of errors and of
-               undesirable changes. *)
-            parse_docstrings = mk false;
-            wrap_comments = mk false;
-          };
-        opr_opts =
-          {
-            conf.opr_opts with
-            comment_check = mk false;
-            disable = mk false;
-            version_check = mk false;
-          };
-      }
-  | Error msg -> failwith msg
-
-(* let build_config ~file:_ = *)
-(*   let mk v = Conf_t.Elt.make v `Default in *)
-(*   { *)
-(*     Conf.default with *)
-(*     opr_opts = *)
+(* let build_config ~file = *)
+(*   Unix.putenv "OCAMLFORMAT" "version-check=false"; *)
+(*   match *)
+(*     Bin_conf.build_config ~enable_outside_detected_project:true ~root:None ~file *)
+(*       ~is_stdin:false *)
+(*   with *)
+(*   | Ok conf -> *)
+(*       let mk v = Conf_t.Elt.make v `Default in *)
 (*       { *)
-(*         Conf.default.opr_opts with *)
-(*         comment_check = mk false; *)
-(*         disable = mk false; *)
-(*         version_check = mk false; *)
-(*         margin_check = mk false; *)
-(*         disable_conf_attrs = mk false; *)
-(*       }; *)
-(*   } *)
+(*         conf with *)
+(*         fmt_opts = *)
+(*           { *)
+(*             conf.fmt_opts with *)
+(*             (1* Don't change comments to remove a source of errors and of *)
+(*                undesirable changes. *1) *)
+(*             parse_docstrings = mk false; *)
+(*             wrap_comments = mk false; *)
+(*           }; *)
+(*         opr_opts = *)
+(*           { *)
+(*             conf.opr_opts with *)
+(*             comment_check = mk false; *)
+(*             disable = mk false; *)
+(*             version_check = mk false; *)
+(*           }; *)
+(*       } *)
+(*   | Error msg -> failwith msg *)
+
+let build_config ~file:_ =
+  let mk v = Conf_t.Elt.make v `Default in
+  {
+    Conf.default with
+    fmt_opts =
+      {
+        Conf.default.fmt_opts with
+        (* Don't change comments to remove a source of errors and of undesirable
+           changes. *)
+        parse_docstrings = mk false;
+        wrap_comments = mk false;
+      };
+    opr_opts =
+      {
+        Conf.default.opr_opts with
+        comment_check = mk false;
+        disable = mk false;
+        version_check = mk false;
+        margin_check = mk false;
+        disable_conf_attrs = mk true;
+      };
+  }
 
 exception Syntax_error of Location.t
 
