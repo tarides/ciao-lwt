@@ -26,7 +26,9 @@ let main use_lwt_bind paths =
   let formatted = ref 0 in
   let modify_ast = Ast_transforms.remove_lwt_ppx ~use_lwt_bind in
   let descend_into path =
-    match Filename.basename path with "_build" | ".git" -> false | _ -> true
+    match Filename.basename path with
+    | "_build" | "_opam" | ".git" -> false
+    | _ -> true
   in
   List.iter
     (Fs_utils.scan_dir ~descend_into
