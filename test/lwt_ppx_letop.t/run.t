@@ -1,6 +1,6 @@
   $ mkdir use_letop use_lwt_bind
-  $ cp --no-preserve=mode *.ml use_letop
-  $ cp --no-preserve=mode *.ml use_lwt_bind
+  $ cp *.ml use_letop
+  $ cp *.ml use_lwt_bind
 
   $ lwt-ppx-to-let-syntax use_letop
   Formatted 3 files, 0 errors

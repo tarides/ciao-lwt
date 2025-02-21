@@ -191,7 +191,7 @@ let format_in_place ast ~file ~modify_ast =
   let fmted = parse_and_format ast ~input_name:file ~source ~modify_ast conf in
   if String.length fmted = 0 then failwith "Formatted to 0 length";
   if not (String.equal fmted source) then
-    Out_channel.with_open_bin file (fun oc ->
+    Fs_utils.with_output_to_file ~mode:[ Open_binary ] file (fun oc ->
         Out_channel.output_string oc fmted)
 
 let format_structure_in_place = format_in_place Extended_ast.Structure
