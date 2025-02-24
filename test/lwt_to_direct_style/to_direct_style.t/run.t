@@ -101,18 +101,16 @@ Make a writable directory tree:
     match
       let () = Lwt_fmt.printf "1" in
       let () = Lwt_fmt.printf "2" in
-  
       `Ok
     with
-    | `Ok -> let () = Lwt_fmt.printf "3" in
-  
-             ()
+    | `Ok ->
+        let () = Lwt_fmt.printf "3" in
+        ()
     | exception _ -> ()
   
   let lwt_calls_point_free () =
     let () = Lwt_fmt.printf "1" in
     let () = Lwt_fmt.printf "2" in
-  
     ()
   
   let letops () =
@@ -126,11 +124,10 @@ Make a writable directory tree:
   let infix () =
     (let () = Lwt_fmt.printf "1" in
      let () = Lwt_fmt.printf "2" in
-  
      ())
-    <&> let () = Lwt_fmt.printf "3" in
-  
-        ()
+    <&>
+    let () = Lwt_fmt.printf "3" in
+    ()
   
   let test () =
     let () = Lwt_fmt.printf "Test.test" in
