@@ -29,28 +29,50 @@ Make a writable directory tree:
     "let*" (bin/main.ml[6,62+6]..[6,62+10])
     "let+" (bin/main.ml[7,108+6]..[7,108+10])
     "Lwt.Syntax" (bin/main.ml[1,0+5]..[1,0+15])
-  lib/test.ml: (26 occurrences)
+  lib/test.ml: (48 occurrences)
     "Lwt.return" (lib/test.ml[9,185+57]..[9,185+67])
     "Lwt.return" (lib/test.ml[10,258+14]..[10,258+24])
     "Lwt.return" (lib/test.ml[22,555+2]..[22,555+12])
     "Lwt.return" (lib/test.ml[27,662+40]..[27,662+50])
-    "Lwt.return" (lib/test.ml[32,840+39]..[32,840+49])
+    "return" (lib/test.ml[34,872+45]..[34,872+51])
+    "return" (lib/test.ml[35,929+14]..[35,929+20])
+    "Lwt.return" (lib/test.ml[42,1102+15]..[42,1102+25])
+    "L.return" (lib/test.ml[54,1424+34]..[54,1424+42])
+    "return" (lib/test.ml[64,1674+45]..[64,1674+51])
+    "return" (lib/test.ml[65,1731+14]..[65,1731+20])
+    "Lwt.return" (lib/test.ml[79,2041+6]..[79,2041+16])
     "Lwt.bind" (lib/test.ml[7,81+6]..[7,81+14])
     "Lwt.bind" (lib/test.ml[9,185+16]..[9,185+24])
     "Lwt.bind" (lib/test.ml[13,318+2]..[13,318+10])
+    "bind" (lib/test.ml[33,793+15]..[33,793+19])
+    "bind" (lib/test.ml[34,872+16]..[34,872+20])
+    "Lwt.bind" (lib/test.ml[39,1008+10]..[39,1008+18])
+    "bind" (lib/test.ml[63,1595+15]..[63,1595+19])
+    "bind" (lib/test.ml[64,1674+16]..[64,1674+20])
     "Lwt.map" (lib/test.ml[8,128+10]..[8,128+17])
     "Lwt.map" (lib/test.ml[14,363+24]..[14,363+31])
+    "map" (lib/test.ml[33,793+44]..[33,793+47])
+    "map" (lib/test.ml[63,1595+44]..[63,1595+47])
     "Lwt.try_bind" (lib/test.ml[5,51+2]..[5,51+14])
-    "Lwt.join" (lib/test.ml[32,840+2]..[32,840+10])
-    "Lwt.both" (lib/test.ml[31,775+2]..[31,775+10])
+    "try_bind" (lib/test.ml[32,782+2]..[32,782+10])
+    "Lwt.try_bind" (lib/test.ml[38,981+11]..[38,981+23])
+    "try_bind" (lib/test.ml[62,1584+2]..[62,1584+10])
+    "Lwt.join" (lib/test.ml[70,1879+2]..[70,1879+10])
+    "Lwt.both" (lib/test.ml[69,1814+2]..[69,1814+10])
     ">>=" (lib/test.ml[26,608+2]..[26,608+5])
     ">>=" (lib/test.ml[27,662+26]..[27,662+29])
-    ">>=" (lib/test.ml[30,732+29]..[30,732+32])
-    ">>=" (lib/test.ml[31,775+52]..[31,775+55])
-    ">>=" (lib/test.ml[32,840+35]..[32,840+38])
+    ">>=" (lib/test.ml[53,1376+2]..[53,1376+5])
+    ">>=" (lib/test.ml[54,1424+20]..[54,1424+23])
+    ">>=" (lib/test.ml[68,1771+29]..[68,1771+32])
+    ">>=" (lib/test.ml[69,1814+52]..[69,1814+55])
+    ">>=" (lib/test.ml[79,2041+2]..[79,2041+5])
     ">|=" (lib/test.ml[26,608+36]..[26,608+39])
+    "Lwt.Infix.>|=" (lib/test.ml[40,1030+15]..[40,1030+32])
+    ">|=" (lib/test.ml[53,1376+30]..[53,1376+33])
     "<&>" (lib/test.ml[27,662+2]..[27,662+5])
+    "<&>" (lib/test.ml[54,1424+2]..[54,1424+5])
     "Lwt.Infix" (lib/test.ml[1,0+5]..[1,0+14])
+    "L.Infix" (lib/test.ml[51,1339+11]..[51,1339+18])
     "let*" (lib/test.ml[17,428+2]..[17,428+6])
     "let*" (lib/test.ml[18,441+4]..[18,441+8])
     "and*" (lib/test.ml[21,521+2]..[21,521+6])
@@ -63,15 +85,34 @@ Make a writable directory tree:
     "let+" (bin/main.ml[7,108+6]..[7,108+10])
     "Lwt.reraise" (bin/main.ml[12,254+15]..[12,254+26])
     "Lwt.reraise" (bin/main.ml[16,317+56]..[16,317+67])
-  Warning: 8 occurrences have not been rewritten.
+  Warning: 27 occurrences have not been rewritten.
     "let*" (lib/test.ml[17,428+2]..[17,428+6])
     "let*" (lib/test.ml[18,441+4]..[18,441+8])
     "let+" (lib/test.ml[19,477+4]..[19,477+8])
     "and*" (lib/test.ml[21,521+2]..[21,521+6])
     "<&>" (lib/test.ml[27,662+2]..[27,662+5])
-    "Lwt.both" (lib/test.ml[31,775+2]..[31,775+10])
-    "Lwt.join" (lib/test.ml[32,840+2]..[32,840+10])
-    "Lwt.return" (lib/test.ml[32,840+39]..[32,840+49])
+    "try_bind" (lib/test.ml[32,782+2]..[32,782+10])
+    "bind" (lib/test.ml[33,793+15]..[33,793+19])
+    "map" (lib/test.ml[33,793+44]..[33,793+47])
+    "bind" (lib/test.ml[34,872+16]..[34,872+20])
+    "return" (lib/test.ml[34,872+45]..[34,872+51])
+    "return" (lib/test.ml[35,929+14]..[35,929+20])
+    "Lwt.try_bind" (lib/test.ml[38,981+11]..[38,981+23])
+    "Lwt.bind" (lib/test.ml[39,1008+10]..[39,1008+18])
+    "Lwt.Infix.>|=" (lib/test.ml[40,1030+15]..[40,1030+32])
+    "Lwt.return" (lib/test.ml[42,1102+15]..[42,1102+25])
+    "L.Infix" (lib/test.ml[51,1339+11]..[51,1339+18])
+    "<&>" (lib/test.ml[54,1424+2]..[54,1424+5])
+    "L.return" (lib/test.ml[54,1424+34]..[54,1424+42])
+    "try_bind" (lib/test.ml[62,1584+2]..[62,1584+10])
+    "bind" (lib/test.ml[63,1595+15]..[63,1595+19])
+    "map" (lib/test.ml[63,1595+44]..[63,1595+47])
+    "bind" (lib/test.ml[64,1674+16]..[64,1674+20])
+    "return" (lib/test.ml[64,1674+45]..[64,1674+51])
+    "return" (lib/test.ml[65,1731+14]..[65,1731+20])
+    "Lwt.both" (lib/test.ml[69,1814+2]..[69,1814+10])
+    "Lwt.join" (lib/test.ml[70,1879+2]..[70,1879+10])
+    "Lwt.return" (lib/test.ml[79,2041+6]..[79,2041+16])
   Formatted 2 files, 0 errors
 
   $ cat bin/main.ml
@@ -129,7 +170,57 @@ Make a writable directory tree:
     let () = Lwt_fmt.printf "3" in
     ()
   
+  let lwt_calls_open () =
+    let open Lwt in
+    let open Lwt_fmt in
+    try_bind
+      (fun () -> bind (printf "1") (fun () -> map (fun () -> `Ok) (printf "2")))
+      (fun `Ok -> bind (printf "3") (fun () -> return ()))
+      (fun _ -> return ())
+  
+  let lwt_calls_rebind () =
+    let tr = Lwt.try_bind in
+    let b = Lwt.bind in
+    let ( >> ) = Lwt.Infix.( >|= ) in
+    let p fmt = Lwt_fmt.printf fmt in
+    let ( ~@ ) = Lwt.return in
+    tr
+      (fun () -> b (p "1") (fun () -> p "2" >> fun () -> `Ok))
+      (fun `Ok -> b (p "3") (fun () -> ~@()))
+      (fun _ -> ~@())
+  
+  let lwt_calls_alias () =
+    let module L = Lwt in
+    let module F = Lwt_fmt in
+    let open L.Infix in
+    (let () = F.printf "1" in
+     let () = F.printf "2" in
+     ())
+    <&>
+    let () = F.printf "3" in
+    L.return ()
+  
+  let lwt_calls_include () =
+    let module L = struct
+      include Lwt
+      include Lwt_fmt
+    end in
+    let open L in
+    try_bind
+      (fun () -> bind (printf "1") (fun () -> map (fun () -> `Ok) (printf "2")))
+      (fun `Ok -> bind (printf "3") (fun () -> return ()))
+      (fun _ -> return ())
+  
   let test () =
     let () = Lwt_fmt.printf "Test.test" in
     let _ = Lwt.both (lwt_calls ()) (lwt_calls_point_free ()) in
-    Lwt.return (Lwt.join [ letops (); infix () ])
+    Lwt.return
+      (Lwt.join
+         [
+           letops ();
+           infix ();
+           lwt_calls_open ();
+           lwt_calls_rebind ();
+           lwt_calls_alias ();
+           lwt_calls_include ();
+         ])
