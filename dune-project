@@ -22,4 +22,4 @@
 (package
  (name lwt_ppx_to_let_syntax)
  (synopsis "A tool for migrating away from lwt_ppx")
- (depends ocaml cmdliner ocamlformat ocamlformat-lib))
+ (depends ocaml cmdliner))
