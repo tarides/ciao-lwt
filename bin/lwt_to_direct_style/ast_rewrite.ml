@@ -7,11 +7,11 @@ open Ocamlformat_utils.Ast_utils
 module Occ = struct
   (** Manage occurrences of Lwt calls that should be migrated. *)
 
-  let _tbl : (Location.t, Longident.t) Hashtbl.t ref = ref (Hashtbl.create 0)
+  let _tbl : (Location.t, string) Hashtbl.t ref = ref (Hashtbl.create 0)
 
   let init lids =
     let new_tbl = Hashtbl.create (List.length lids) in
-    List.iter (fun lid -> Hashtbl.replace new_tbl lid.loc lid.txt) lids;
+    List.iter (fun (ident, lid) -> Hashtbl.replace new_tbl lid.loc ident) lids;
     _tbl := new_tbl
 
   (** Whether the given longident is an occurrence of an Lwt function. This will
@@ -26,16 +26,27 @@ module Occ = struct
   let check lid = Hashtbl.mem !_tbl lid.loc
   let remove lid = Hashtbl.remove !_tbl lid.loc
 
+  (** Calls [f] if [lid] should be rewritten. [f ident] is [Some ast] if a
+      rewrite happened, [None] otherwise. [ident] is the basename of the
+      longident at [lid]. *)
+  let may_rewrite lid f =
+    match Hashtbl.find_opt !_tbl lid.loc with
+    | Some ident ->
+        let r = f ident in
+        if Option.is_some r then Hashtbl.remove !_tbl lid.loc;
+        r
+    | None -> None
+
   (** Warn about locations that have not been rewritten so far. *)
   let warn_missing_locs () =
     let missing = Hashtbl.length !_tbl in
     if missing > 0 then (
       Format.eprintf "Warning: %d occurrences have not been rewritten.@\n"
         missing;
-      Hashtbl.fold (fun loc lident acc -> (loc, lident) :: acc) !_tbl []
+      Hashtbl.fold (fun loc ident acc -> (loc, ident) :: acc) !_tbl []
       |> List.sort compare (* Sort for a reproducible output. *)
-      |> List.iter (fun (loc, lident) ->
-             Format.eprintf "  %a %a@\n" Printast.fmt_longident lident
+      |> List.iter (fun (loc, ident) ->
+             Format.eprintf "  %s %a@\n" ident
                Printast.fmt_location loc);
       Format.eprintf "%!")
 end
@@ -109,31 +120,28 @@ let rewrite_try_bind thunk value_f exn_f =
   in
   Exp.match_ body (value_cases @ exn_cases)
 
-let rewrite_apply_lwt lid args =
-  match (Longident.flatten lid.txt, args) with
-  | [ "Lwt"; "bind" ], [ (Nolabel, promise_arg); (Nolabel, fun_arg) ]
-  | [ "Lwt"; "map" ], [ (Nolabel, fun_arg); (Nolabel, promise_arg) ] ->
+let rewrite_apply_lwt ident args =
+  match (ident, args) with
+  | "bind", [ (Nolabel, promise_arg); (Nolabel, fun_arg) ]
+  | "map", [ (Nolabel, fun_arg); (Nolabel, promise_arg) ] ->
       rewrite_continuation fun_arg ~arg:promise_arg
-  | [ "Lwt"; "return" ], [ (Nolabel, value_arg) ] -> Some value_arg
-  | ( [ "Lwt"; "try_bind" ],
-      [ (Nolabel, thunk); (Nolabel, value_f); (Nolabel, exn_f) ] ) ->
+  | "return", [ (Nolabel, value_arg) ] -> Some value_arg
+  | "try_bind", [ (Nolabel, thunk); (Nolabel, value_f); (Nolabel, exn_f) ] ->
       Some (rewrite_try_bind thunk value_f exn_f)
-  | [ "Lwt"; "return_some" ], [ (Nolabel, value_arg) ] ->
+  | "return_some", [ (Nolabel, value_arg) ] ->
       Some (mk_constr_exp ~arg:value_arg "Some")
-  | [ "Lwt"; "return_ok" ], [ (Nolabel, value_arg) ] ->
+  | "return_ok", [ (Nolabel, value_arg) ] ->
       Some (mk_constr_exp ~arg:value_arg "Ok")
-  | [ "Lwt"; "return_error" ], [ (Nolabel, value_arg) ] ->
+  | "return_error", [ (Nolabel, value_arg) ] ->
       Some (mk_constr_exp ~arg:value_arg "Error")
   | _ -> None
 
 let rewrite_infix_lwt op lhs rhs =
-  match op.txt with
-  | ">>=" | ">|=" -> rewrite_continuation rhs ~arg:lhs
-  | _ -> None
+  match op with ">>=" | ">|=" -> rewrite_continuation rhs ~arg:lhs | _ -> None
 
-let rewrite_ident_lwt lid =
+let rewrite_ident_lwt ident =
   let cstr c = Some (mk_constr_exp c) in
-  match Longident.last lid.txt with
+  match ident with
   | "return_unit" -> cstr "()"
   | "return_none" -> cstr "None"
   | "return_nil" -> cstr "[]"
@@ -159,20 +167,13 @@ let rec flatten_apply exp =
 let rewrite_expression exp =
   match (flatten_apply exp).pexp_desc with
   (* Rewrite a call to a [Lwt] function. *)
-  | Pexp_apply ({ pexp_desc = Pexp_ident lid; _ }, args) when Occ.check lid ->
-      let r = rewrite_apply_lwt lid args in
-      if Option.is_some r then Occ.remove lid;
-      r
+  | Pexp_apply ({ pexp_desc = Pexp_ident lid; _ }, args) ->
+      Occ.may_rewrite lid (fun ident -> rewrite_apply_lwt ident args)
   (* Rewrite the use of a [Lwt] infix operator. *)
   | Pexp_infix (op, lhs, rhs) when Occ.check op ->
-      let r = rewrite_infix_lwt op lhs rhs in
-      if Option.is_some r then Occ.remove op;
-      r
+      Occ.may_rewrite op (fun op -> rewrite_infix_lwt op lhs rhs)
   (* Rewrite expressions such as [Lwt.return_unit]. *)
-  | Pexp_ident lid when Occ.check lid ->
-      let r = rewrite_ident_lwt lid in
-      if Option.is_some r then Occ.remove lid;
-      r
+  | Pexp_ident lid -> Occ.may_rewrite lid rewrite_ident_lwt
   | _ -> None
 
 let remove_lwt_opens stri =

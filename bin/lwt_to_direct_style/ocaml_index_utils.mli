@@ -1,10 +1,9 @@
-open Ocaml_parsing
+open Ocamlformat_utils.Parsing
 
-type t
-
-val of_paths : string list -> t
-(** Build an index from a list of [.ocaml-index] files. *)
-
-val locs_from_comp_unit : t -> string -> Longident.t Location.loc list
-(** Extract every occurrences of identifiers coming from the given compilation
-    unit. *)
+val occurrences :
+  dune_build_dir:string ->
+  package:string ->
+  unit:string ->
+  (string * Longident.t Location.loc) list
+(** Find all the occurrences of values from module [unit] of package [package]
+    in the [.ocaml-index] files found in Dune's [_build] directory. *)
