@@ -149,6 +149,13 @@ let rewrite_ident_lwt ident =
   | "return_false" -> cstr "false"
   | _ -> None
 
+let rewrite_letop let_ body = function
+  | "let*" | "let+" ->
+      Some
+        (mk_let ~is_pun:let_.pbop_is_pun ?value_constraint:let_.pbop_typ
+           let_.pbop_pat ~args:let_.pbop_args let_.pbop_exp body)
+  | _ -> None
+
 (** Flatten pipelines before applying rewrites. *)
 let rec flatten_apply exp =
   let flatten callee arg =
@@ -174,6 +181,9 @@ let rewrite_expression exp =
       Occ.may_rewrite op (fun op -> rewrite_infix_lwt op lhs rhs)
   (* Rewrite expressions such as [Lwt.return_unit]. *)
   | Pexp_ident lid -> Occ.may_rewrite lid rewrite_ident_lwt
+  (* Simple [let*]. *)
+  | Pexp_letop { let_; ands = []; body; _ } ->
+      Occ.may_rewrite let_.pbop_op (rewrite_letop let_ body)
   | _ -> None
 
 let remove_lwt_opens stri =

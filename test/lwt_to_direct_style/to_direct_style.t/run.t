@@ -76,15 +76,11 @@ Make a writable directory tree:
     "let+" (lib/test.ml[19,477+4]..[19,477+8])
 
   $ lwt-to-direct-style --migrate
-  Warning: 4 occurrences have not been rewritten.
-    let* (bin/main.ml[6,62+6]..[6,62+10])
-    let+ (bin/main.ml[7,108+6]..[7,108+10])
+  Warning: 2 occurrences have not been rewritten.
     reraise (bin/main.ml[12,254+15]..[12,254+26])
     reraise (bin/main.ml[16,317+56]..[16,317+67])
-  Warning: 13 occurrences have not been rewritten.
+  Warning: 11 occurrences have not been rewritten.
     let* (lib/test.ml[17,428+2]..[17,428+6])
-    let* (lib/test.ml[18,441+4]..[18,441+8])
-    let+ (lib/test.ml[19,477+4]..[19,477+8])
     and* (lib/test.ml[21,521+2]..[21,521+6])
     <&> (lib/test.ml[27,662+2]..[27,662+5])
     try_bind (lib/test.ml[38,981+11]..[38,981+23])
@@ -102,8 +98,8 @@ Make a writable directory tree:
   
   let _main () =
     match
-      let* () = Lwt_fmt.printf "Main.main" in
-      let+ () = Test.test () in
+      let () = Lwt_fmt.printf "Main.main" in
+      let () = Test.test () in
       ()
     with
     | () -> ()
@@ -143,8 +139,8 @@ Make a writable directory tree:
   
   let letops () =
     let* `Ok =
-      let* () = Lwt_fmt.printf "1" in
-      let+ () = Lwt_fmt.printf "2" in
+      let () = Lwt_fmt.printf "1" in
+      let () = Lwt_fmt.printf "2" in
       `Ok
     and* () = Lwt_fmt.printf "3" in
     ()
