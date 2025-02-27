@@ -255,8 +255,10 @@ let remove_lwt_opens stri =
 let rewrite_lwt_uses ~occurrences str =
   Occ.init occurrences;
   let default = Ast_mapper.default_mapper in
-  let expr m exp =
-    default.expr m (Option.value (rewrite_expression exp) ~default:exp)
+  let rec expr m exp =
+    match rewrite_expression exp with
+    | Some exp -> expr m exp
+    | None -> default.expr m exp
   in
   let structure m str =
     default.structure m (List.filter remove_lwt_opens str)

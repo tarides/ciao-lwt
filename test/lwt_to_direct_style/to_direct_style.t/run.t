@@ -203,13 +203,12 @@ Make a writable directory tree:
   let test () =
     let () = Lwt_fmt.printf "Test.test" in
     let _ = Lwt.both (lwt_calls ()) (lwt_calls_point_free ()) in
-    (fun x1 -> x1)
-      (Lwt.join
-         [
-           letops ();
-           infix ();
-           lwt_calls_open ();
-           lwt_calls_rebind ();
-           lwt_calls_alias ();
-           lwt_calls_include ();
-         ])
+    Lwt.join
+      [
+        letops ();
+        infix ();
+        lwt_calls_open ();
+        lwt_calls_rebind ();
+        lwt_calls_alias ();
+        lwt_calls_include ();
+      ]
