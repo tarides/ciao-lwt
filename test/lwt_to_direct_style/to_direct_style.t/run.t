@@ -79,18 +79,14 @@ Make a writable directory tree:
   Warning: 2 occurrences have not been rewritten.
     reraise (bin/main.ml[12,254+15]..[12,254+26])
     reraise (bin/main.ml[16,317+56]..[16,317+67])
-  Warning: 11 occurrences have not been rewritten.
+  Warning: 7 occurrences have not been rewritten.
     let* (lib/test.ml[17,428+2]..[17,428+6])
     and* (lib/test.ml[21,521+2]..[21,521+6])
     <&> (lib/test.ml[27,662+2]..[27,662+5])
-    try_bind (lib/test.ml[38,981+11]..[38,981+23])
-    bind (lib/test.ml[39,1008+10]..[39,1008+18])
     >|= (lib/test.ml[40,1030+15]..[40,1030+32])
-    return (lib/test.ml[42,1102+15]..[42,1102+25])
     <&> (lib/test.ml[54,1424+2]..[54,1424+5])
     both (lib/test.ml[69,1814+2]..[69,1814+10])
     join (lib/test.ml[70,1879+2]..[70,1879+10])
-    return (lib/test.ml[79,2041+6]..[79,2041+16])
   Formatted 2 files, 0 errors
 
   $ cat bin/main.ml
@@ -167,11 +163,11 @@ Make a writable directory tree:
     | exception _ -> ()
   
   let lwt_calls_rebind () =
-    let tr = Lwt.try_bind in
-    let b = Lwt.bind in
+    let tr = fun x1 x2 x3 -> match x1 () with v -> x2 v | exception v -> x3 v in
+    let b = fun x1 x2 -> x2 x1 in
     let ( >> ) = Lwt.Infix.( >|= ) in
     let p fmt = Lwt_fmt.printf fmt in
-    let ( ~@ ) = Lwt.return in
+    let ( ~@ ) = fun x1 -> x1 in
     tr
       (fun () -> b (p "1") (fun () -> p "2" >> fun () -> `Ok))
       (fun `Ok -> b (p "3") (fun () -> ~@()))
@@ -207,7 +203,7 @@ Make a writable directory tree:
   let test () =
     let () = Lwt_fmt.printf "Test.test" in
     let _ = Lwt.both (lwt_calls ()) (lwt_calls_point_free ()) in
-    Lwt.return
+    (fun x1 -> x1)
       (Lwt.join
          [
            letops ();

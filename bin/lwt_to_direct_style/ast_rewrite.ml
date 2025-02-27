@@ -120,34 +120,91 @@ let rewrite_try_bind thunk value_f exn_f =
   in
   Exp.match_ body (value_cases @ exn_cases)
 
+let mk_cstr c = Some (mk_constr_exp c)
+
+module Unpack_apply : sig
+  type t
+
+  val unapply : (arg_label * expression) list -> t -> expression option
+  (** Decode a list of arguments matching a sequence of [take] instructions
+      ending in a [return]. If the argument list is smaller than expected, a
+      function node is generated to respect the arity and allow the expression
+      to be rewritten. Return [None] if the argument list couldn't be unapplied.
+  *)
+
+  val take : (expression -> t) -> t
+  (** Accept one argument. *)
+
+  val return : expression option -> t
+  (** Stop accepting arguments. [return (Some exp)] rewrites the apply
+      expression to [exp] while [return None] leaves the original expression.
+      The "too many arguments" warning is not triggered with [return None]. *)
+end = struct
+  type t = Arg of (expression -> t) | End of expression option
+
+  let rec apply_remaining_args params i k =
+    let ident = "x" ^ string_of_int i in
+    let params = mk_function_param (Pat.var (mk_loc ident)) :: params in
+    match k (Exp.ident (mk_longident [ ident ])) with
+    | Arg k -> apply_remaining_args params (i + 1) k
+    | End None -> None
+    | End (Some body) ->
+        Some (Exp.function_ (List.rev params) None (Pfunction_body body))
+
+  let rec unapply args t =
+    match (args, t) with
+    | (Nolabel, arg) :: args_tl, Arg k -> unapply args_tl (k arg)
+    | [], End (Some _ as r) -> r
+    | _, End None -> None
+    | [], Arg k -> apply_remaining_args [] 1 k
+    | ((Labelled lbl | Optional lbl), _) :: _, Arg _ ->
+        Format.eprintf "Error: Unexpected label %S at %a\n%!" lbl.txt
+          Printast.fmt_location lbl.loc;
+        None
+    | (_, arg) :: _, End (Some _) ->
+        Format.eprintf "Error: Too many arguments at %a\n%!"
+          Printast.fmt_location arg.pexp_loc;
+        None
+
+  let take k = Arg k
+  let return r = End r
+end
+
 let rewrite_apply_lwt ident args =
-  match (ident, args) with
-  | "bind", [ (Nolabel, promise_arg); (Nolabel, fun_arg) ]
-  | "map", [ (Nolabel, fun_arg); (Nolabel, promise_arg) ] ->
-      rewrite_continuation fun_arg ~arg:promise_arg
-  | "return", [ (Nolabel, value_arg) ] -> Some value_arg
-  | "try_bind", [ (Nolabel, thunk); (Nolabel, value_f); (Nolabel, exn_f) ] ->
-      Some (rewrite_try_bind thunk value_f exn_f)
-  | "return_some", [ (Nolabel, value_arg) ] ->
-      Some (mk_constr_exp ~arg:value_arg "Some")
-  | "return_ok", [ (Nolabel, value_arg) ] ->
-      Some (mk_constr_exp ~arg:value_arg "Ok")
-  | "return_error", [ (Nolabel, value_arg) ] ->
-      Some (mk_constr_exp ~arg:value_arg "Error")
-  | _ -> None
+  let open Unpack_apply in
+  unapply args
+  @@
+  match ident with
+  | "bind" ->
+      take @@ fun promise_arg ->
+      take @@ fun fun_arg ->
+      return (rewrite_continuation fun_arg ~arg:promise_arg)
+  | "map" ->
+      take @@ fun fun_arg ->
+      take @@ fun promise_arg ->
+      return (rewrite_continuation fun_arg ~arg:promise_arg)
+  | "return" -> take @@ fun value_arg -> return (Some value_arg)
+  | "try_bind" ->
+      take @@ fun thunk ->
+      take @@ fun value_f ->
+      take @@ fun exn_f -> return (Some (rewrite_try_bind thunk value_f exn_f))
+  | "return_some" ->
+      take @@ fun value_arg ->
+      return (Some (mk_constr_exp ~arg:value_arg "Some"))
+  | "return_ok" ->
+      take @@ fun value_arg -> return (Some (mk_constr_exp ~arg:value_arg "Ok"))
+  | "return_error" ->
+      take @@ fun value_arg ->
+      return (Some (mk_constr_exp ~arg:value_arg "Error"))
+  | "return_unit" -> return (mk_cstr "()")
+  | "return_none" -> return (mk_cstr "None")
+  | "return_nil" -> return (mk_cstr "[]")
+  | "return_true" -> return (mk_cstr "true")
+  | "return_false" -> return (mk_cstr "false")
+  | _ -> return None
 
 let rewrite_infix_lwt op lhs rhs =
   match op with ">>=" | ">|=" -> rewrite_continuation rhs ~arg:lhs | _ -> None
-
-let rewrite_ident_lwt ident =
-  let cstr c = Some (mk_constr_exp c) in
-  match ident with
-  | "return_unit" -> cstr "()"
-  | "return_none" -> cstr "None"
-  | "return_nil" -> cstr "[]"
-  | "return_true" -> cstr "true"
-  | "return_false" -> cstr "false"
-  | _ -> None
 
 let rewrite_letop let_ body = function
   | "let*" | "let+" ->
@@ -179,8 +236,10 @@ let rewrite_expression exp =
   (* Rewrite the use of a [Lwt] infix operator. *)
   | Pexp_infix (op, lhs, rhs) when Occ.check op ->
       Occ.may_rewrite op (fun op -> rewrite_infix_lwt op lhs rhs)
-  (* Rewrite expressions such as [Lwt.return_unit]. *)
-  | Pexp_ident lid -> Occ.may_rewrite lid rewrite_ident_lwt
+  (* Rewrite expressions such as [Lwt.return_unit], but also any partially
+     applied [Lwt] function. *)
+  | Pexp_ident lid ->
+      Occ.may_rewrite lid (fun ident -> rewrite_apply_lwt ident [])
   (* Simple [let*]. *)
   | Pexp_letop { let_; ands = []; body; _ } ->
       Occ.may_rewrite let_.pbop_op (rewrite_letop let_ body)
