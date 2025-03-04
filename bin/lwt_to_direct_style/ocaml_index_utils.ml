@@ -3,7 +3,7 @@ let fail fmt = Printf.ksprintf failwith fmt
 (** Convert from OCaml [Parsing] values that Merlin uses to the corresponding
     Ocamlformat type. *)
 module Ocaml_to_ocamlformat = struct
-open Ocamlformat_utils.Parsing
+  open Ocamlformat_utils.Parsing
 
   let location_t { Ocaml_parsing.Location.loc_start; loc_end; loc_ghost } =
     { Location.loc_start; loc_end; loc_ghost }
@@ -100,7 +100,5 @@ let extract_occurrences_of_unit ~unit ~lookup_ident paths =
 
 let occurrences ~dune_build_dir ~package ~unit =
   let paths = scan_dune_build_path ~dune_build_dir in
-  let lookup_ident =
-    uid_map_of_unit ~package ~unit
-  in
+  let lookup_ident = uid_map_of_unit ~package ~unit in
   extract_occurrences_of_unit ~unit ~lookup_ident paths

@@ -46,8 +46,7 @@ module Occ = struct
       Hashtbl.fold (fun loc ident acc -> (loc, ident) :: acc) !_tbl []
       |> List.sort compare (* Sort for a reproducible output. *)
       |> List.iter (fun (loc, ident) ->
-             Format.eprintf "  %s %a@\n" ident
-               Printast.fmt_location loc);
+             Format.eprintf "  %s %a@\n" ident Printast.fmt_location loc);
       Format.eprintf "%!")
 end
 
