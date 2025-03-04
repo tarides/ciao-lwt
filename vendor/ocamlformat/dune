@@ -1,0 +1,27 @@
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;                                                                        ;
+;                              OCamlFormat                               ;
+;                                                                        ;
+;            Copyright (c) Facebook, Inc. and its affiliates.            ;
+;                                                                        ;
+;      This source code is licensed under the MIT license found in       ;
+;      the LICENSE file in the root directory of this source tree.       ;
+;                                                                        ;
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
+(env
+ (release
+  (flags
+   (:standard -noassert))))
+
+(data_only_dirs test-extra)
+
+(rule
+ (with-stdout-to
+  dune-project.formatted
+  (run dune format-dune-file %{dep:dune-project})))
+
+(rule
+ (alias fmt)
+ (action
+  (diff dune-project dune-project.formatted)))
