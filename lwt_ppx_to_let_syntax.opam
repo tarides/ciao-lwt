@@ -13,8 +13,6 @@ depends: [
   "dune" {>= "3.17"}
   "ocaml"
   "cmdliner"
-  "ocamlformat"
-  "ocamlformat-lib"
   "odoc" {with-doc}
 ]
 build: [

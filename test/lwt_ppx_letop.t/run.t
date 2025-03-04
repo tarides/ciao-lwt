@@ -19,34 +19,37 @@
     let* b = Lwt.return v2 in
     let* c = Lwt.return v3 in
     let* d = Lwt.return v4 in
-  
     binding_body
   
   let _ =
     let* n1 = v1 and* n2 = v2 in
     let* n1 = v1 and* n2 = v2 and* v3 = v3 and* v4 : t = v4 in
-  
     let%lwt v5 : t :> t' = v5 and v6 : t :> t' = v6 in
     ()
   
   (* Let bindings in different contextes. *)
   let _ =
-    let* a = let* b = c in
-  
-             d in
+    let* a =
+      let* b = c in
+      d
+    in
     let* _ =
       Lwt.try_bind
         (fun () -> x)
-        (function c -> let* a = b in
-  
-                       c)
+        (function
+          | c ->
+              let* a = b in
+              c)
         (function E -> () | exc -> Lwt.reraise exc)
     in
-    let* () = Lwt.catch (fun () -> let* a = b in
-  
-                                   c) (fun _ -> d) in
+    let* () =
+      Lwt.catch
+        (fun () ->
+          let* a = b in
+          c)
+        (fun _ -> d)
+    in
     let* x = x in
-  
     ()
 
   $ cat use_letop/dont_use_bind.ml
@@ -58,9 +61,9 @@
   
   (* This file already has [open Lwt.Syntax], no need to add one more. *)
   
-  let _ = let* a = b in
-  
-          c
+  let _ =
+    let* a = b in
+    c
 
   $ cat use_lwt_bind/test.ml
   let _ = Lwt.bind (Lwt.return binding_value) (fun binding_name -> binding_body)

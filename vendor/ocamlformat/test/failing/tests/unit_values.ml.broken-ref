@@ -1,0 +1,5 @@
+ocamlformat: ignoring "tests/unit_values.ml" (syntax error)
+File "tests/unit_values.ml", line 6, characters 10-23:
+6 | let i32 = −1073741824, 1073741823
+              ^^^^^^^^^^^^^
+Error: Invalid character U+2212 in identifier

@@ -1,0 +1,78 @@
+name: Build mingw64 binary
+
+on:
+  release:
+    types: [released]
+  workflow_dispatch:
+    inputs:
+      ref:
+        required: true
+        default: 'main'
+
+jobs:
+  build:
+    runs-on: windows-latest
+    steps:
+      - name: Set ref for release builds
+        if: github.event_name == 'release'
+        run: |
+          "build_ref=${{ github.ref }}" >> $env:GITHUB_ENV
+
+      - name: Set ref for manual builds
+        if: github.event_name == 'workflow_dispatch'
+        run: |
+          "build_ref=${{ github.event.inputs.ref }}" >> $env:GITHUB_ENV
+
+      - name: Set artifact name
+        shell: bash
+        run: |
+          echo "artifact_name=ocamlformat-${build_ref##*/}.exe" >> $GITHUB_ENV
+
+      - name: Disable Git EOL Conversion
+        run: |
+          git config --global core.autocrlf false
+
+      - name: Checkout Repository
+        uses: actions/checkout@v3
+        with:
+          ref: ${{ env.build_ref }}
+
+      - uses: ocaml/setup-ocaml@v3
+        with:
+          ocaml-compiler: 4.14.x
+
+      - name: Install dependencies
+        run: |
+          opam pin add -yn ocamlformat-lib.dev .
+          opam pin add -yn ocamlformat.dev .
+          opam install -y --deps-only ocamlformat
+
+      - name: Build
+        run: |
+          opam exec -- dune subst
+          opam exec -- dune build -p ocamlformat-lib,ocamlformat @install
+          opam exec -- dune install --prefix=install ocamlformat
+          Copy-Item ${{ github.workspace }}\\install\\bin\\ocamlformat.exe -Destination .\${{ env.artifact_name }}
+
+      - name: Version check
+        run: |
+          echo "Version check:"
+          install/bin/ocamlformat.exe --version
+
+      - name: Upload Artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: ${{ env.artifact_name }}
+          path: ${{ env.artifact_name }}
+          if-no-files-found: error
+
+      - name: Upload Release Asset
+        if: github.event_name == 'release'
+        run: >
+          curl.exe
+          --data-binary '@${{ env.artifact_name }}'
+          -X POST
+          -H "Content-Type: application/octet-stream"
+          -H "Accept: application/vnd.github+json"
+          -H "Authorization: Bearer ${{ github.token }}"
+          "https://uploads.github.com/repos/${{ github.repository }}/releases/${{ github.event.release.id }}/assets?name=${{ env.artifact_name }}"

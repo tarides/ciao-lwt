@@ -1,0 +1,5 @@
+ocamlformat: ignoring "tests/unit_lex.ml" (syntax error)
+File "tests/unit_lex.ml", line 18, characters 4-10:
+18 |     йзижща (* this file must be iso-8859-1 *)
+         ^^^^^^
+Error: Invalid encoding of identifier йзижща.
