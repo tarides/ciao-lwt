@@ -4,8 +4,25 @@ open Parsetree
 open Ast_helper
 open Ocamlformat_utils.Ast_utils
 
+type eliom_scope = Default | Client | Server | Shared
+
+(** Keep track of whether we are in a %client, %server or %shared in eliom
+    files. *)
+let eliom_scope = ref Default
+
 (** Whether [let*] was used and an [open Lwt.Syntax] is required. *)
-let letop_was_used = ref false
+let letop_was_used = ref None
+
+let update_letop_was_used () =
+  let s =
+    match (!letop_was_used, !eliom_scope) with
+    | None, s -> s
+    | Some ((Default | Server) as s), (Default | Server)
+    | Some (Client as s), Client ->
+        s
+    | Some _, _ -> Shared
+  in
+  letop_was_used := Some s
 
 (** Whether to use [Lwt.bind] instead of [let*]. *)
 let use_lwt_bind = ref false
@@ -22,7 +39,7 @@ let mk_lwt_bind input ?(param = mk_unit_pat) body =
     mk_lwt_bind_expr input
       (Exp.function_ [ mk_function_param param ] None (Pfunction_body body))
   else (
-    letop_was_used := true;
+    update_letop_was_used ();
     Exp.letop ~loc_in:!default_loc
       (mk_binding_op (mk_loc "let*") param input)
       [] body)
@@ -170,7 +187,7 @@ let rewrite_lwt_let_expression bindings body =
     match decode_bindings with
     | [] -> None
     | let_ :: ands ->
-        letop_was_used := true;
+        update_letop_was_used ();
         let let_ = let_ "let*"
         and ands = List.map (fun and_ -> and_ "and*") ands in
         Some (Exp.letop ~loc_in:!default_loc let_ ands body)
@@ -302,7 +319,17 @@ let rewrite_expression exp =
   | _ -> None
 
 let mk_lwt_syntax_ident = mk_longident [ "Lwt"; "Syntax" ]
-let mk_open_lwt_syntax = Str.open_ (Opn.mk (Mod.ident mk_lwt_syntax_ident))
+
+let mk_open_lwt_syntax scope =
+  let attrs =
+    let mk s = Some (Attr.ext_attrs ~ext:(mk_loc s) ()) in
+    match scope with
+    | Default -> None
+    | Client -> mk "client"
+    | Server -> mk "server"
+    | Shared -> mk "shared"
+  in
+  Str.open_ (Opn.mk ?attrs (Mod.ident mk_lwt_syntax_ident))
 
 let structure_has_open_lwt_syntax =
   List.exists (function
@@ -314,15 +341,38 @@ let structure_has_open_lwt_syntax =
         opn_ident.txt = mk_lwt_syntax_ident.txt
     | _ -> false)
 
+let with_scoped_ext ext f =
+  let scoped s =
+    let orig = !eliom_scope in
+    eliom_scope := s;
+    Fun.protect ~finally:(fun () -> eliom_scope := orig) f
+  in
+  match ext with
+  | "client" -> scoped Client
+  | "server" -> scoped Server
+  | "shared" -> scoped Shared
+  | _ -> f ()
+
 let remove_lwt_ppx ~use_lwt_bind:use_lwt_bind_ str =
   use_lwt_bind := use_lwt_bind_;
-  letop_was_used := false;
+  letop_was_used := None;
   let default = Ast_mapper.default_mapper in
   let expr m exp =
     default.expr m (Option.value (rewrite_expression exp) ~default:exp)
   in
-  let m = { default with expr } in
+  let extension m (ext, payload) =
+    with_scoped_ext ext.txt (fun () ->
+        (Ast_mapper.map_loc m ext, m.payload m payload))
+  in
+  let value_binding m vb =
+    let cont () = default.value_binding m vb in
+    match vb.pvb_attributes.attrs_extension with
+    | Some s -> with_scoped_ext s.txt cont
+    | None -> cont ()
+  in
+  let m = { default with expr; extension; value_binding } in
   let str = m.structure m str in
-  if !letop_was_used && not (structure_has_open_lwt_syntax str) then
-    mk_open_lwt_syntax :: str
-  else str
+  match !letop_was_used with
+  | Some scope when not (structure_has_open_lwt_syntax str) ->
+      mk_open_lwt_syntax scope :: str
+  | _ -> str
