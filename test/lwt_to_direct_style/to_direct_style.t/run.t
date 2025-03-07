@@ -83,9 +83,6 @@ Make a writable directory tree:
     "let+" (lib/test.ml[24,604+4]..[24,604+8])
 
   $ lwt-to-direct-style --migrate
-  Warning: 2 occurrences have not been rewritten.
-    reraise (bin/main.ml[12,254+15]..[12,254+26])
-    reraise (bin/main.ml[16,317+56]..[16,317+67])
   Warning: 1 occurrences have not been rewritten.
     join (lib/test.ml[79,2128+2]..[79,2128+10])
   Formatted 2 files, 0 errors

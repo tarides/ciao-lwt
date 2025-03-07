@@ -111,6 +111,7 @@ let rewrite_try_bind thunk value_f exn_f =
            | Pexp_apply
                ({ pexp_desc = Pexp_ident lid; pexp_attributes = []; _ }, [ _ ])
              when same_longident lid.txt [ "Lwt"; "reraise" ] ->
+               Occ.remove lid;
                None
            | _ -> Some { case with pc_lhs = Pat.exception_ case.pc_lhs })
   in
