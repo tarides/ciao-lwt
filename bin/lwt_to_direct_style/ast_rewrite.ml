@@ -218,13 +218,13 @@ let rewrite_apply_lwt ~backend ident args =
   | "return_nil" -> return (mk_cstr "[]")
   | "return_true" -> return (mk_cstr "true")
   | "return_false" -> return (mk_cstr "false")
+  | ">>=" | ">|=" ->
+      take @@ fun lhs ->
+      take @@ fun rhs -> return (rewrite_continuation rhs ~arg:lhs)
+  | "<&>" ->
+      take @@ fun lhs ->
+      take @@ fun rhs -> return (rewrite_lwt_both ~backend lhs rhs)
   | _ -> return None
-
-let rewrite_infix_lwt ~backend op lhs rhs =
-  match op with
-  | ">>=" | ">|=" -> rewrite_continuation rhs ~arg:lhs
-  | "<&>" -> rewrite_lwt_both ~backend lhs rhs
-  | _ -> None
 
 (** Transform a [binding_op] into a [pattern] and an [expression] while
     preserving the type annotation. *)
@@ -290,7 +290,8 @@ let rewrite_expression ~backend exp =
       Occ.may_rewrite lid (fun ident -> rewrite_apply_lwt ~backend ident args)
   (* Rewrite the use of a [Lwt] infix operator. *)
   | Pexp_infix (op, lhs, rhs) when Occ.check op ->
-      Occ.may_rewrite op (fun op -> rewrite_infix_lwt ~backend op lhs rhs)
+      let args = [ (Nolabel, lhs); (Nolabel, rhs) ] in
+      Occ.may_rewrite op (fun op -> rewrite_apply_lwt ~backend op args)
   (* Rewrite expressions such as [Lwt.return_unit], but also any partially
      applied [Lwt] function. *)
   | Pexp_ident lid ->

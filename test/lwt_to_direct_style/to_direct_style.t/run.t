@@ -86,8 +86,7 @@ Make a writable directory tree:
   Warning: 2 occurrences have not been rewritten.
     reraise (bin/main.ml[12,254+15]..[12,254+26])
     reraise (bin/main.ml[16,317+56]..[16,317+67])
-  Warning: 2 occurrences have not been rewritten.
-    >|= (lib/test.ml[46,1188+15]..[46,1188+32])
+  Warning: 1 occurrences have not been rewritten.
     join (lib/test.ml[79,2128+2]..[79,2128+10])
   Formatted 2 files, 0 errors
 
@@ -186,7 +185,7 @@ Make a writable directory tree:
   let lwt_calls_rebind () =
     let tr = fun x1 x2 x3 -> match x1 () with v -> x2 v | exception v -> x3 v in
     let b = fun x1 x2 -> x2 x1 in
-    let ( >> ) = Lwt.Infix.( >|= ) in
+    let ( >> ) = fun x1 x2 -> x2 x1 in
     let p fmt = Lwt_fmt.printf fmt in
     let ( ~@ ) = fun x1 -> x1 in
     tr
