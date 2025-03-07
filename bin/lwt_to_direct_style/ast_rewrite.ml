@@ -221,11 +221,46 @@ let rewrite_apply_lwt ~backend ident args =
 let rewrite_infix_lwt op lhs rhs =
   match op with ">>=" | ">|=" -> rewrite_continuation rhs ~arg:lhs | _ -> None
 
-let rewrite_letop let_ body = function
-  | "let*" | "let+" ->
-      Some
-        (mk_let ~is_pun:let_.pbop_is_pun ?value_constraint:let_.pbop_typ
-           let_.pbop_pat ~args:let_.pbop_args let_.pbop_exp body)
+(** Transform a [binding_op] into a [pattern] and an [expression] while
+    preserving the type annotation. *)
+let split_binding_op pb =
+  let exp =
+    match pb.pbop_args with
+    | [] -> pb.pbop_exp
+    | args -> Exp.function_ args None (Pfunction_body pb.pbop_exp)
+  and pat =
+    match pb.pbop_typ with
+    | Some (Pvc_constraint { typ; locally_abstract_univars = [] }) ->
+        Pat.constraint_ pb.pbop_pat typ
+    | Some _ ->
+        Comments.add pb.pbop_pat.ppat_loc
+          " TODO: Type annotation was lost during transformation. ";
+        pb.pbop_pat
+    | None -> pb.pbop_pat
+  in
+  (pat, exp)
+
+let rewrite_letop ~backend let_ ands body = function
+  | "let*" | "let+" -> (
+      match ands with
+      | [] ->
+          Some
+            (mk_let ~is_pun:let_.pbop_is_pun ?value_constraint:let_.pbop_typ
+               let_.pbop_pat ~args:let_.pbop_args let_.pbop_exp body)
+      | _ :: _ ->
+          List.iter (fun and_ -> Occ.remove and_.pbop_op) ands;
+          let let_pat, let_exp = split_binding_op let_
+          and ands_pats, ands_exps =
+            List.map split_binding_op ands |> List.split
+          in
+          let pat =
+            List.fold_right (fun a b -> Pat.tuple [ a; b ]) ands_pats let_pat
+          and exp =
+            List.fold_right
+              (fun a b -> backend.both ~left:a ~right:b)
+              ands_exps let_exp
+          in
+          Some (mk_let pat exp body))
   | _ -> None
 
 (** Flatten pipelines before applying rewrites. *)
@@ -256,8 +291,8 @@ let rewrite_expression ~backend exp =
   | Pexp_ident lid ->
       Occ.may_rewrite lid (fun ident -> rewrite_apply_lwt ~backend ident [])
   (* Simple [let*]. *)
-  | Pexp_letop { let_; ands = []; body; _ } ->
-      Occ.may_rewrite let_.pbop_op (rewrite_letop let_ body)
+  | Pexp_letop { let_; ands; body; _ } ->
+      Occ.may_rewrite let_.pbop_op (rewrite_letop ~backend let_ ands body)
   | _ -> None
 
 let remove_lwt_opens stri =

@@ -28,66 +28,69 @@ Make a writable directory tree:
     "try_bind" (bin/main.ml[18,390+2]..[18,390+14])
     "let*" (bin/main.ml[6,62+6]..[6,62+10])
     "let+" (bin/main.ml[7,108+6]..[7,108+10])
-  lib/test.ml: (47 occurrences)
+  lib/test.ml: (52 occurrences)
     "return" (lib/test.ml[9,185+57]..[9,185+67])
     "return" (lib/test.ml[10,258+14]..[10,258+24])
-    "return" (lib/test.ml[22,555+2]..[22,555+12])
-    "return" (lib/test.ml[27,662+40]..[27,662+50])
-    "return" (lib/test.ml[34,872+45]..[34,872+51])
-    "return" (lib/test.ml[35,929+14]..[35,929+20])
-    "return" (lib/test.ml[42,1102+15]..[42,1102+25])
-    "return" (lib/test.ml[54,1424+34]..[54,1424+42])
-    "return" (lib/test.ml[64,1674+45]..[64,1674+51])
-    "return" (lib/test.ml[65,1731+14]..[65,1731+20])
-    "return" (lib/test.ml[82,2132+6]..[82,2132+16])
+    "return" (lib/test.ml[28,713+2]..[28,713+12])
+    "return" (lib/test.ml[33,820+40]..[33,820+50])
+    "return" (lib/test.ml[40,1030+45]..[40,1030+51])
+    "return" (lib/test.ml[41,1087+14]..[41,1087+20])
+    "return" (lib/test.ml[48,1260+15]..[48,1260+25])
+    "return" (lib/test.ml[60,1582+34]..[60,1582+42])
+    "return" (lib/test.ml[70,1832+45]..[70,1832+51])
+    "return" (lib/test.ml[71,1889+14]..[71,1889+20])
+    "return" (lib/test.ml[88,2290+6]..[88,2290+16])
     "bind" (lib/test.ml[7,81+6]..[7,81+14])
     "bind" (lib/test.ml[9,185+16]..[9,185+24])
     "bind" (lib/test.ml[13,318+2]..[13,318+10])
-    "bind" (lib/test.ml[33,793+15]..[33,793+19])
-    "bind" (lib/test.ml[34,872+16]..[34,872+20])
-    "bind" (lib/test.ml[39,1008+10]..[39,1008+18])
-    "bind" (lib/test.ml[63,1595+15]..[63,1595+19])
-    "bind" (lib/test.ml[64,1674+16]..[64,1674+20])
+    "bind" (lib/test.ml[39,951+15]..[39,951+19])
+    "bind" (lib/test.ml[40,1030+16]..[40,1030+20])
+    "bind" (lib/test.ml[45,1166+10]..[45,1166+18])
+    "bind" (lib/test.ml[69,1753+15]..[69,1753+19])
+    "bind" (lib/test.ml[70,1832+16]..[70,1832+20])
     "map" (lib/test.ml[8,128+10]..[8,128+17])
     "map" (lib/test.ml[14,363+24]..[14,363+31])
-    "map" (lib/test.ml[33,793+44]..[33,793+47])
-    "map" (lib/test.ml[63,1595+44]..[63,1595+47])
+    "map" (lib/test.ml[39,951+44]..[39,951+47])
+    "map" (lib/test.ml[69,1753+44]..[69,1753+47])
     "try_bind" (lib/test.ml[5,51+2]..[5,51+14])
-    "try_bind" (lib/test.ml[32,782+2]..[32,782+10])
-    "try_bind" (lib/test.ml[38,981+11]..[38,981+23])
-    "try_bind" (lib/test.ml[62,1584+2]..[62,1584+10])
-    "join" (lib/test.ml[73,1970+2]..[73,1970+10])
-    "both" (lib/test.ml[69,1814+2]..[69,1814+10])
-    "both" (lib/test.ml[71,1938+3]..[71,1938+11])
-    ">>=" (lib/test.ml[26,608+2]..[26,608+5])
-    ">>=" (lib/test.ml[27,662+26]..[27,662+29])
-    ">>=" (lib/test.ml[53,1376+2]..[53,1376+5])
-    ">>=" (lib/test.ml[54,1424+20]..[54,1424+23])
-    ">>=" (lib/test.ml[68,1771+29]..[68,1771+32])
-    ">>=" (lib/test.ml[69,1814+52]..[69,1814+55])
-    ">>=" (lib/test.ml[72,1955+2]..[72,1955+5])
-    ">>=" (lib/test.ml[82,2132+2]..[82,2132+5])
-    ">|=" (lib/test.ml[26,608+36]..[26,608+39])
-    ">|=" (lib/test.ml[40,1030+15]..[40,1030+32])
-    ">|=" (lib/test.ml[53,1376+30]..[53,1376+33])
-    "<&>" (lib/test.ml[27,662+2]..[27,662+5])
-    "<&>" (lib/test.ml[54,1424+2]..[54,1424+5])
+    "try_bind" (lib/test.ml[38,940+2]..[38,940+10])
+    "try_bind" (lib/test.ml[44,1139+11]..[44,1139+23])
+    "try_bind" (lib/test.ml[68,1742+2]..[68,1742+10])
+    "join" (lib/test.ml[79,2128+2]..[79,2128+10])
+    "both" (lib/test.ml[75,1972+2]..[75,1972+10])
+    "both" (lib/test.ml[77,2096+3]..[77,2096+11])
+    ">>=" (lib/test.ml[32,766+2]..[32,766+5])
+    ">>=" (lib/test.ml[33,820+26]..[33,820+29])
+    ">>=" (lib/test.ml[59,1534+2]..[59,1534+5])
+    ">>=" (lib/test.ml[60,1582+20]..[60,1582+23])
+    ">>=" (lib/test.ml[74,1929+29]..[74,1929+32])
+    ">>=" (lib/test.ml[75,1972+52]..[75,1972+55])
+    ">>=" (lib/test.ml[78,2113+2]..[78,2113+5])
+    ">>=" (lib/test.ml[88,2290+2]..[88,2290+5])
+    ">|=" (lib/test.ml[32,766+36]..[32,766+39])
+    ">|=" (lib/test.ml[46,1188+15]..[46,1188+32])
+    ">|=" (lib/test.ml[59,1534+30]..[59,1534+33])
+    "<&>" (lib/test.ml[33,820+2]..[33,820+5])
+    "<&>" (lib/test.ml[60,1582+2]..[60,1582+5])
     "let*" (lib/test.ml[17,428+2]..[17,428+6])
     "let*" (lib/test.ml[18,441+4]..[18,441+8])
+    "let*" (lib/test.ml[22,555+2]..[22,555+6])
+    "let*" (lib/test.ml[23,568+4]..[23,568+8])
     "and*" (lib/test.ml[21,521+2]..[21,521+6])
+    "and*" (lib/test.ml[26,648+2]..[26,648+6])
+    "and*" (lib/test.ml[27,679+2]..[27,679+6])
     "let+" (lib/test.ml[19,477+4]..[19,477+8])
+    "let+" (lib/test.ml[24,604+4]..[24,604+8])
 
   $ lwt-to-direct-style --migrate
   Warning: 2 occurrences have not been rewritten.
     reraise (bin/main.ml[12,254+15]..[12,254+26])
     reraise (bin/main.ml[16,317+56]..[16,317+67])
-  Warning: 6 occurrences have not been rewritten.
-    let* (lib/test.ml[17,428+2]..[17,428+6])
-    and* (lib/test.ml[21,521+2]..[21,521+6])
-    <&> (lib/test.ml[27,662+2]..[27,662+5])
-    >|= (lib/test.ml[40,1030+15]..[40,1030+32])
-    <&> (lib/test.ml[54,1424+2]..[54,1424+5])
-    join (lib/test.ml[73,1970+2]..[73,1970+10])
+  Warning: 4 occurrences have not been rewritten.
+    <&> (lib/test.ml[33,820+2]..[33,820+5])
+    >|= (lib/test.ml[46,1188+15]..[46,1188+32])
+    <&> (lib/test.ml[60,1582+2]..[60,1582+5])
+    join (lib/test.ml[79,2128+2]..[79,2128+10])
   Formatted 2 files, 0 errors
 
   $ cat bin/main.ml
@@ -137,11 +140,19 @@ Make a writable directory tree:
     ()
   
   let letops () =
-    let* `Ok =
-      let () = Lwt_fmt.printf "1" in
-      let () = Lwt_fmt.printf "2" in
-      `Ok
-    and* () = Lwt_fmt.printf "3" in
+    let (), `Ok =
+      Fiber.pair (Lwt_fmt.printf "3")
+        (let () = Lwt_fmt.printf "1" in
+         let () = Lwt_fmt.printf "2" in
+         `Ok)
+    in
+    let (), ((), `Ok) =
+      Fiber.pair (Lwt_fmt.printf "6")
+        (Fiber.pair (Lwt_fmt.printf "7")
+           (let () = Lwt_fmt.printf "4" in
+            let () = Lwt_fmt.printf "5" in
+            `Ok))
+    in
     ()
   
   let infix () =

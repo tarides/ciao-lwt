@@ -19,6 +19,12 @@ let letops () =
     let+ () = Lwt_fmt.printf "2" in
     `Ok
   and* () = Lwt_fmt.printf "3" in
+  let* `Ok =
+    let* () = Lwt_fmt.printf "4" in
+    let+ () = Lwt_fmt.printf "5" in
+    `Ok
+  and* () = Lwt_fmt.printf "6"
+  and* () = Lwt_fmt.printf "7" in
   Lwt.return ()
 
 let infix () =
