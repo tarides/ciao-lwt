@@ -86,10 +86,8 @@ Make a writable directory tree:
   Warning: 2 occurrences have not been rewritten.
     reraise (bin/main.ml[12,254+15]..[12,254+26])
     reraise (bin/main.ml[16,317+56]..[16,317+67])
-  Warning: 4 occurrences have not been rewritten.
-    <&> (lib/test.ml[33,820+2]..[33,820+5])
+  Warning: 2 occurrences have not been rewritten.
     >|= (lib/test.ml[46,1188+15]..[46,1188+32])
-    <&> (lib/test.ml[60,1582+2]..[60,1582+5])
     join (lib/test.ml[79,2128+2]..[79,2128+10])
   Formatted 2 files, 0 errors
 
@@ -156,12 +154,21 @@ Make a writable directory tree:
     ()
   
   let infix () =
-    (let () = Lwt_fmt.printf "1" in
-     let () = Lwt_fmt.printf "2" in
-     ())
-    <&>
-    let () = Lwt_fmt.printf "3" in
-    ()
+    Fiber.pair
+      (fun () ->
+        let () =
+          Lwt_fmt.printf
+            (* TODO: This computation might not be suspended correctly. *)
+            "1"
+        in
+        let () = Lwt_fmt.printf "2" in
+        ())
+      (fun () ->
+        let () =
+          (* TODO: This computation might not be suspended correctly. *)
+          Lwt_fmt.printf "3"
+        in
+        ())
   
   let lwt_calls_open () =
     let open Lwt in
@@ -191,12 +198,20 @@ Make a writable directory tree:
     let module L = Lwt in
     let module F = Lwt_fmt in
     let open L.Infix in
-    (let () = F.printf "1" in
-     let () = F.printf "2" in
-     ())
-    <&>
-    let () = F.printf "3" in
-    ()
+    Fiber.pair
+      (fun () ->
+        let () =
+          F.printf (* TODO: This computation might not be suspended correctly. *)
+            "1"
+        in
+        let () = F.printf "2" in
+        ())
+      (fun () ->
+        let () =
+          (* TODO: This computation might not be suspended correctly. *)
+          F.printf "3"
+        in
+        ())
   
   let lwt_calls_include () =
     let module L = struct

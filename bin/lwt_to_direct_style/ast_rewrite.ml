@@ -131,6 +131,9 @@ let suspend exp =
       " TODO: This computation might not be suspended correctly. ";
   mk_thunk exp
 
+let rewrite_lwt_both ~backend left right =
+  Some (backend.both ~left:(suspend left) ~right:(suspend right))
+
 let mk_cstr c = Some (mk_constr_exp c)
 
 module Unpack_apply : sig
@@ -201,8 +204,7 @@ let rewrite_apply_lwt ~backend ident args =
       take @@ fun exn_f -> return (Some (rewrite_try_bind thunk value_f exn_f))
   | "both" ->
       take @@ fun left ->
-      take @@ fun right ->
-      return (Some (backend.both ~left:(suspend left) ~right:(suspend right)))
+      take @@ fun right -> return (rewrite_lwt_both ~backend left right)
   | "return_some" ->
       take @@ fun value_arg ->
       return (Some (mk_constr_exp ~arg:value_arg "Some"))
@@ -218,8 +220,11 @@ let rewrite_apply_lwt ~backend ident args =
   | "return_false" -> return (mk_cstr "false")
   | _ -> return None
 
-let rewrite_infix_lwt op lhs rhs =
-  match op with ">>=" | ">|=" -> rewrite_continuation rhs ~arg:lhs | _ -> None
+let rewrite_infix_lwt ~backend op lhs rhs =
+  match op with
+  | ">>=" | ">|=" -> rewrite_continuation rhs ~arg:lhs
+  | "<&>" -> rewrite_lwt_both ~backend lhs rhs
+  | _ -> None
 
 (** Transform a [binding_op] into a [pattern] and an [expression] while
     preserving the type annotation. *)
@@ -285,7 +290,7 @@ let rewrite_expression ~backend exp =
       Occ.may_rewrite lid (fun ident -> rewrite_apply_lwt ~backend ident args)
   (* Rewrite the use of a [Lwt] infix operator. *)
   | Pexp_infix (op, lhs, rhs) when Occ.check op ->
-      Occ.may_rewrite op (fun op -> rewrite_infix_lwt op lhs rhs)
+      Occ.may_rewrite op (fun op -> rewrite_infix_lwt ~backend op lhs rhs)
   (* Rewrite expressions such as [Lwt.return_unit], but also any partially
      applied [Lwt] function. *)
   | Pexp_ident lid ->
