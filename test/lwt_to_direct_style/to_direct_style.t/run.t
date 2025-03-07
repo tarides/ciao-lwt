@@ -28,7 +28,7 @@ Make a writable directory tree:
     "try_bind" (bin/main.ml[18,390+2]..[18,390+14])
     "let*" (bin/main.ml[6,62+6]..[6,62+10])
     "let+" (bin/main.ml[7,108+6]..[7,108+10])
-  lib/test.ml: (45 occurrences)
+  lib/test.ml: (47 occurrences)
     "return" (lib/test.ml[9,185+57]..[9,185+67])
     "return" (lib/test.ml[10,258+14]..[10,258+24])
     "return" (lib/test.ml[22,555+2]..[22,555+12])
@@ -39,7 +39,7 @@ Make a writable directory tree:
     "return" (lib/test.ml[54,1424+34]..[54,1424+42])
     "return" (lib/test.ml[64,1674+45]..[64,1674+51])
     "return" (lib/test.ml[65,1731+14]..[65,1731+20])
-    "return" (lib/test.ml[79,2041+6]..[79,2041+16])
+    "return" (lib/test.ml[82,2132+6]..[82,2132+16])
     "bind" (lib/test.ml[7,81+6]..[7,81+14])
     "bind" (lib/test.ml[9,185+16]..[9,185+24])
     "bind" (lib/test.ml[13,318+2]..[13,318+10])
@@ -56,15 +56,17 @@ Make a writable directory tree:
     "try_bind" (lib/test.ml[32,782+2]..[32,782+10])
     "try_bind" (lib/test.ml[38,981+11]..[38,981+23])
     "try_bind" (lib/test.ml[62,1584+2]..[62,1584+10])
-    "join" (lib/test.ml[70,1879+2]..[70,1879+10])
+    "join" (lib/test.ml[73,1970+2]..[73,1970+10])
     "both" (lib/test.ml[69,1814+2]..[69,1814+10])
+    "both" (lib/test.ml[71,1938+3]..[71,1938+11])
     ">>=" (lib/test.ml[26,608+2]..[26,608+5])
     ">>=" (lib/test.ml[27,662+26]..[27,662+29])
     ">>=" (lib/test.ml[53,1376+2]..[53,1376+5])
     ">>=" (lib/test.ml[54,1424+20]..[54,1424+23])
     ">>=" (lib/test.ml[68,1771+29]..[68,1771+32])
     ">>=" (lib/test.ml[69,1814+52]..[69,1814+55])
-    ">>=" (lib/test.ml[79,2041+2]..[79,2041+5])
+    ">>=" (lib/test.ml[72,1955+2]..[72,1955+5])
+    ">>=" (lib/test.ml[82,2132+2]..[82,2132+5])
     ">|=" (lib/test.ml[26,608+36]..[26,608+39])
     ">|=" (lib/test.ml[40,1030+15]..[40,1030+32])
     ">|=" (lib/test.ml[53,1376+30]..[53,1376+33])
@@ -79,17 +81,17 @@ Make a writable directory tree:
   Warning: 2 occurrences have not been rewritten.
     reraise (bin/main.ml[12,254+15]..[12,254+26])
     reraise (bin/main.ml[16,317+56]..[16,317+67])
-  Warning: 7 occurrences have not been rewritten.
+  Warning: 6 occurrences have not been rewritten.
     let* (lib/test.ml[17,428+2]..[17,428+6])
     and* (lib/test.ml[21,521+2]..[21,521+6])
     <&> (lib/test.ml[27,662+2]..[27,662+5])
     >|= (lib/test.ml[40,1030+15]..[40,1030+32])
     <&> (lib/test.ml[54,1424+2]..[54,1424+5])
-    both (lib/test.ml[69,1814+2]..[69,1814+10])
-    join (lib/test.ml[70,1879+2]..[70,1879+10])
+    join (lib/test.ml[73,1970+2]..[73,1970+10])
   Formatted 2 files, 0 errors
 
   $ cat bin/main.ml
+  open Eio
   open Lwt.Syntax
   
   let _main () =
@@ -114,6 +116,7 @@ Make a writable directory tree:
   let _ = Error ()
 
   $ cat lib/test.ml
+  open Eio
   open Lwt.Infix
   open Lwt.Syntax
   
@@ -186,6 +189,7 @@ Make a writable directory tree:
   
   let lwt_calls_include () =
     let module L = struct
+      open Eio
       include Lwt
       include Lwt_fmt
     end in
@@ -202,7 +206,17 @@ Make a writable directory tree:
   
   let test () =
     let () = Lwt_fmt.printf "Test.test" in
-    let _ = Lwt.both (lwt_calls ()) (lwt_calls_point_free ()) in
+    let _ =
+      Fiber.pair (fun () -> lwt_calls ()) (fun () -> lwt_calls_point_free ())
+    in
+    let _ =
+      let a = lwt_calls () and b = lwt_calls_point_free () in
+      Fiber.pair
+        (fun () ->
+          a (* TODO: This computation might not be suspended correctly. *))
+        (fun () ->
+          b (* TODO: This computation might not be suspended correctly. *))
+    in
     Lwt.join
       [
         letops ();

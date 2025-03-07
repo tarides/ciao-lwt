@@ -15,6 +15,7 @@ let ( let* ) = Result.bind
 (** Trimmed down version of [Translation_unit] that allows to modify the AST. *)
 module Trimmed_translation_unit = struct
   open Ocamlformat_lib.Parse_with_comments
+  module Cmt = Cmt
 
   let with_optional_box_debug ~box_debug k =
     if box_debug then Fmt.with_box_debug k else k
@@ -118,7 +119,10 @@ module Trimmed_translation_unit = struct
     let ext_parsed =
       parse (parse_ast conf) ~disable_w50:true ext_fg conf ~source ~input_name
     in
-    let ext_parsed = { ext_parsed with ast = modify_ast ext_parsed.ast } in
+    let ast, extra_comments = modify_ast ext_parsed.ast in
+    let ext_parsed =
+      { ext_parsed with ast; comments = extra_comments @ ext_parsed.comments }
+    in
     let strlocs, formatted =
       format ext_fg ~input_name ~prev_source:source ~ext_parsed conf
     in

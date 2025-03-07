@@ -8,7 +8,7 @@ let migrate_file ~formatted ~errors ~modify_ast file =
 let main use_lwt_bind paths =
   let errors = ref 0 in
   let formatted = ref 0 in
-  let modify_ast = Ast_transforms.remove_lwt_ppx ~use_lwt_bind in
+  let modify_ast ast = (Ast_transforms.remove_lwt_ppx ~use_lwt_bind ast, []) in
   List.iter
     (Fs_utils.find_ml_files (migrate_file ~formatted ~errors ~modify_ast))
     paths;

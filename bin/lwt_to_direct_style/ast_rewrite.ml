@@ -3,6 +3,7 @@ open Asttypes
 open Parsetree
 open Ast_helper
 open Ocamlformat_utils.Ast_utils
+open Concurrency_backend
 
 module Occ = struct
   (** Manage occurrences of Lwt calls that should be migrated. *)
@@ -50,20 +51,16 @@ module Occ = struct
       Format.eprintf "%!")
 end
 
-(** Whether an expression is a [fun] with one argument that can safely be
-    translated into a [let] binding. Returns [None] if that's not the case. *)
-let is_fun_with_one_argument = function
-  | {
-      pexp_desc =
-        Pexp_function
-          ( [ { pparam_desc = Pparam_val (Nolabel, None, arg_pat); _ } ],
-            None,
-            Pfunction_body body );
-      pexp_attributes = [];
-      _;
-    } ->
-      Some (arg_pat, body)
-  | _ -> None
+module Comments = struct
+  let acc = ref []
+  let add loc cmt = acc := Ocamlformat_utils.Cmt.create_comment cmt loc :: !acc
+  let add_all = List.iter (fun (loc, cmt) -> add loc cmt)
+
+  let get () =
+    let r = !acc in
+    acc := [];
+    r
+end
 
 (* Rewrite to a let binding or an apply. *)
 let rewrite_continuation cont ~arg:cont_arg =
@@ -119,6 +116,21 @@ let rewrite_try_bind thunk value_f exn_f =
   in
   Exp.match_ body (value_cases @ exn_cases)
 
+(* Suspend an expression into a thunk. Some expressions cannot be suspended this
+   way and a "TODO" comment is generated to indicate that the program is changed
+   in an undefined way. *)
+let suspend exp =
+  let is_suspended =
+    match exp.pexp_desc with
+    | Pexp_ident _ -> false
+    | Pexp_apply _ -> true
+    | _ -> false
+  in
+  if not is_suspended then
+    Comments.add exp.pexp_loc
+      " TODO: This computation might not be suspended correctly. ";
+  mk_thunk exp
+
 let mk_cstr c = Some (mk_constr_exp c)
 
 module Unpack_apply : sig
@@ -169,7 +181,7 @@ end = struct
   let return r = End r
 end
 
-let rewrite_apply_lwt ident args =
+let rewrite_apply_lwt ~backend ident args =
   let open Unpack_apply in
   unapply args
   @@
@@ -187,6 +199,10 @@ let rewrite_apply_lwt ident args =
       take @@ fun thunk ->
       take @@ fun value_f ->
       take @@ fun exn_f -> return (Some (rewrite_try_bind thunk value_f exn_f))
+  | "both" ->
+      take @@ fun left ->
+      take @@ fun right ->
+      return (Some (backend.both ~left:(suspend left) ~right:(suspend right)))
   | "return_some" ->
       take @@ fun value_arg ->
       return (Some (mk_constr_exp ~arg:value_arg "Some"))
@@ -227,18 +243,18 @@ let rec flatten_apply exp =
   | Pexp_infix ({ txt = "|>"; _ }, lhs, rhs) -> flatten rhs lhs
   | _ -> exp
 
-let rewrite_expression exp =
+let rewrite_expression ~backend exp =
   match (flatten_apply exp).pexp_desc with
   (* Rewrite a call to a [Lwt] function. *)
   | Pexp_apply ({ pexp_desc = Pexp_ident lid; _ }, args) ->
-      Occ.may_rewrite lid (fun ident -> rewrite_apply_lwt ident args)
+      Occ.may_rewrite lid (fun ident -> rewrite_apply_lwt ~backend ident args)
   (* Rewrite the use of a [Lwt] infix operator. *)
   | Pexp_infix (op, lhs, rhs) when Occ.check op ->
       Occ.may_rewrite op (fun op -> rewrite_infix_lwt op lhs rhs)
   (* Rewrite expressions such as [Lwt.return_unit], but also any partially
      applied [Lwt] function. *)
   | Pexp_ident lid ->
-      Occ.may_rewrite lid (fun ident -> rewrite_apply_lwt ident [])
+      Occ.may_rewrite lid (fun ident -> rewrite_apply_lwt ~backend ident [])
   (* Simple [let*]. *)
   | Pexp_letop { let_; ands = []; body; _ } ->
       Occ.may_rewrite let_.pbop_op (rewrite_letop let_ body)
@@ -251,18 +267,33 @@ let remove_lwt_opens stri =
       false
   | _ -> true
 
-let rewrite_lwt_uses ~occurrences str =
+let add_extra_opens ~backend str =
+  let extra_opens =
+    List.fold_left
+      (fun extra_opens stri ->
+        match stri.pstr_desc with
+        | Pstr_open { popen_expr = { pmod_desc = Pmod_ident opn_ident; _ }; _ }
+          ->
+            List.filter (( <> ) opn_ident.txt) extra_opens
+        | _ -> extra_opens)
+      backend.extra_opens str
+    |> List.map (fun ident -> Str.open_ (Opn.mk (Mod.ident (mk_loc ident))))
+  in
+  extra_opens @ str
+
+let rewrite_lwt_uses ~occurrences ~backend str =
   Occ.init occurrences;
   let default = Ast_mapper.default_mapper in
   let rec expr m exp =
-    match rewrite_expression exp with
+    match rewrite_expression ~backend exp with
     | Some exp -> expr m exp
     | None -> default.expr m exp
   in
   let structure m str =
-    default.structure m (List.filter remove_lwt_opens str)
+    default.structure m
+      (add_extra_opens ~backend (List.filter remove_lwt_opens str))
   in
   let m = { default with expr; structure } in
   let str = m.structure m str in
   Occ.warn_missing_locs ();
-  str
+  (str, Comments.get ())

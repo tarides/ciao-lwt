@@ -24,8 +24,9 @@ let migrate_file ~formatted ~errors ~modify_ast file =
 let do_migration occurs =
   let errors = ref 0 in
   let formatted = ref 0 in
+  let backend = Concurrency_backend.eio in
   group_occurrences_by_file occurs (fun file occurrences ->
-      let modify_ast = Ast_rewrite.rewrite_lwt_uses ~occurrences in
+      let modify_ast = Ast_rewrite.rewrite_lwt_uses ~occurrences ~backend in
       migrate_file ~formatted ~errors ~modify_ast file);
   Format.printf "Formatted %d files, %d errors\n%!" !formatted !errors;
   if !errors > 0 then exit 1

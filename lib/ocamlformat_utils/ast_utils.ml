@@ -21,12 +21,13 @@ let mk_let ?loc_in ?rec_ ?(is_pun = false) ?value_constraint pat ?(args = [])
 let mk_function_cases ?(loc = !default_loc) ?(attrs = []) cases =
   Exp.function_ [] None (Pfunction_cases (cases, loc, attrs))
 
-let mk_longident = function
+let mk_longident' = function
   | [] -> assert false
   | hd :: tl ->
       let open Longident in
-      mk_loc (List.fold_left (fun acc seg -> Ldot (acc, seg)) (Lident hd) tl)
+      List.fold_left (fun acc seg -> Ldot (acc, seg)) (Lident hd) tl
 
+let mk_longident ident = mk_loc (mk_longident' ident)
 let mk_constr_exp ?arg cstr = Exp.construct (mk_longident [ cstr ]) arg
 let same_longident a b = Longident.flatten a = b
 let mk_exp_var s = Exp.ident (mk_longident [ s ])
@@ -45,3 +46,22 @@ let mk_if if_cond if_body else_body =
 let mk_binding_op ?(loc = !default_loc) ?(is_pun = false) op pat ?(args = [])
     ?(typ = None) exp =
   Exp.binding_op op pat args typ exp is_pun loc
+
+let mk_apply_simple f_ident args =
+  let f = Exp.ident (mk_longident f_ident) in
+  Exp.apply f (List.map (fun x -> (Nolabel, x)) args)
+
+(** Whether an expression is a [fun] with one argument that can safely be
+    translated into a [let] binding. Returns [None] if that's not the case. *)
+let is_fun_with_one_argument = function
+  | {
+      pexp_desc =
+        Pexp_function
+          ( [ { pparam_desc = Pparam_val (Nolabel, None, arg_pat); _ } ],
+            None,
+            Pfunction_body body );
+      pexp_attributes = [];
+      _;
+    } ->
+      Some (arg_pat, body)
+  | _ -> None
