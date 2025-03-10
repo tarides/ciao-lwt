@@ -87,10 +87,21 @@ let test () =
     ]
   >>= Lwt.return
 
+let x = Lwt.return ()
+
 let _ =
-  let x = Lwt.return () in
   let xs = [ x ] in
   let* _ = Lwt.choose [ Lwt.return (); Lwt.return () ] in
   let* _ = Lwt.choose [ x; Lwt.return (); x ] in
   let* _ = Lwt.choose xs in
+  x
+
+let _ =
+  let handle _ = x in
+  let* _ = Lwt.catch (fun () -> x) (fun _ -> x) in
+  let* _ = Lwt.catch (fun _ -> x) handle in
+  let* _ = Lwt.catch (fun _ : unit Lwt.t -> x) handle in
+  let* _ = Lwt.catch (function () -> x) handle in
+  let* _ = Lwt.catch (fun () -> x) (function Not_found -> x | _ -> x) in
+  let* _ = Lwt.catch handle handle in
   x
