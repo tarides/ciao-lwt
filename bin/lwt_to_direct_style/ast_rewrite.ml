@@ -160,6 +160,7 @@ let suspend_list lst =
 let rewrite_lwt_both ~backend left right =
   Some (backend.both ~left:(suspend left) ~right:(suspend right))
 
+let rewrite_lwt_choose ~backend lst = Some (backend.choose (suspend_list lst))
 let mk_cstr c = Some (mk_constr_exp c)
 
 module Unpack_apply : sig
@@ -242,8 +243,7 @@ let rewrite_apply_lwt ~backend ident args =
   | "both" ->
       take @@ fun left ->
       take @@ fun right -> return (rewrite_lwt_both ~backend left right)
-  | "choose" ->
-      take @@ fun lst -> return (Some (backend.choose (suspend_list lst)))
+  | "choose" -> take @@ fun lst -> return (rewrite_lwt_choose ~backend lst)
   | "return_some" ->
       take @@ fun value_arg ->
       return (Some (mk_constr_exp ~arg:value_arg "Some"))
@@ -260,9 +260,16 @@ let rewrite_apply_lwt ~backend ident args =
   | ">>=" | ">|=" ->
       take @@ fun lhs ->
       take @@ fun rhs -> return (rewrite_continuation rhs ~arg:lhs)
+  | "=<<" | "=|<" ->
+      take @@ fun lhs ->
+      take @@ fun rhs -> return (rewrite_continuation lhs ~arg:rhs)
   | "<&>" ->
       take @@ fun lhs ->
       take @@ fun rhs -> return (rewrite_lwt_both ~backend lhs rhs)
+  | "<?>" ->
+      take @@ fun lhs ->
+      take @@ fun rhs ->
+      return (rewrite_lwt_choose ~backend (Exp.list [ lhs; rhs ]))
   | _ -> return None
 
 (** Transform a [binding_op] into a [pattern] and an [expression] while

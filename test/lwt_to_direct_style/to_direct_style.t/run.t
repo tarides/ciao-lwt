@@ -28,7 +28,7 @@ Make a writable directory tree:
     "try_bind" (bin/main.ml[18,390+2]..[18,390+14])
     "let*" (bin/main.ml[6,62+6]..[6,62+10])
     "let+" (bin/main.ml[7,108+6]..[7,108+10])
-  lib/test.ml: (76 occurrences)
+  lib/test.ml: (80 occurrences)
     "return" (lib/test.ml[9,185+57]..[9,185+67])
     "return" (lib/test.ml[10,258+14]..[10,258+24])
     "return" (lib/test.ml[28,713+2]..[28,713+12])
@@ -44,6 +44,7 @@ Make a writable directory tree:
     "return" (lib/test.ml[94,2359+24]..[94,2359+34])
     "return" (lib/test.ml[94,2359+39]..[94,2359+49])
     "return" (lib/test.ml[95,2417+27]..[95,2417+37])
+    "return" (lib/test.ml[111,2908+8]..[111,2908+18])
     "fail" (lib/test.ml[109,2847+8]..[109,2847+16])
     "fail_with" (lib/test.ml[110,2874+8]..[110,2874+21])
     "bind" (lib/test.ml[7,81+6]..[7,81+14])
@@ -82,11 +83,14 @@ Make a writable directory tree:
     ">>=" (lib/test.ml[75,1972+52]..[75,1972+55])
     ">>=" (lib/test.ml[78,2113+2]..[78,2113+5])
     ">>=" (lib/test.ml[88,2290+2]..[88,2290+5])
+    "=<<" (lib/test.ml[111,2908+19]..[111,2908+22])
     ">|=" (lib/test.ml[32,766+36]..[32,766+39])
     ">|=" (lib/test.ml[46,1188+15]..[46,1188+32])
     ">|=" (lib/test.ml[59,1534+30]..[59,1534+33])
+    "=|<" (lib/test.ml[112,2933+15]..[112,2933+18])
     "<&>" (lib/test.ml[33,820+2]..[33,820+5])
     "<&>" (lib/test.ml[60,1582+2]..[60,1582+5])
+    "<?>" (lib/test.ml[113,2954+10]..[113,2954+13])
     "let*" (lib/test.ml[17,428+2]..[17,428+6])
     "let*" (lib/test.ml[18,441+4]..[18,441+8])
     "let*" (lib/test.ml[22,555+2]..[22,555+6])
@@ -306,3 +310,14 @@ Make a writable directory tree:
   
   let _ = raise Not_found
   let _ = failwith "not found"
+  let _ = x
+  let _ = Fun.id x
+  
+  let _ =
+    Fiber.any
+      [
+        (fun () ->
+          x (* TODO: This computation might not be suspended correctly. *));
+        (fun () ->
+          x (* TODO: This computation might not be suspended correctly. *));
+      ]
