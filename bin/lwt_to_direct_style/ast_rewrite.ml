@@ -225,6 +225,7 @@ let rewrite_apply_lwt ~backend ident args =
       take @@ fun promise_arg ->
       return (rewrite_continuation fun_arg ~arg:promise_arg)
   | "return" -> take @@ fun value_arg -> return (Some value_arg)
+  | "pause" -> take @@ fun _unit -> return (Some (backend.pause ()))
   | "try_bind" ->
       take @@ fun thunk ->
       take @@ fun value_f ->

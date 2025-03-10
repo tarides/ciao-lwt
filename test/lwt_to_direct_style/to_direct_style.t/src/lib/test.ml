@@ -111,3 +111,4 @@ let _ = Lwt.fail_with "not found"
 let _ = Lwt.return =<< x
 let _ = Fun.id =|< x
 let _ = x <?> x
+let _ = Lwt.pause ()

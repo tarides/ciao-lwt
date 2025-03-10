@@ -28,7 +28,7 @@ Make a writable directory tree:
     "try_bind" (bin/main.ml[18,390+2]..[18,390+14])
     "let*" (bin/main.ml[6,62+6]..[6,62+10])
     "let+" (bin/main.ml[7,108+6]..[7,108+10])
-  lib/test.ml: (80 occurrences)
+  lib/test.ml: (81 occurrences)
     "return" (lib/test.ml[9,185+57]..[9,185+67])
     "return" (lib/test.ml[10,258+14]..[10,258+24])
     "return" (lib/test.ml[28,713+2]..[28,713+12])
@@ -75,6 +75,7 @@ Make a writable directory tree:
     "choose" (lib/test.ml[94,2359+11]..[94,2359+21])
     "choose" (lib/test.ml[95,2417+11]..[95,2417+21])
     "choose" (lib/test.ml[96,2466+11]..[96,2466+21])
+    "pause" (lib/test.ml[114,2970+8]..[114,2970+17])
     ">>=" (lib/test.ml[32,766+2]..[32,766+5])
     ">>=" (lib/test.ml[33,820+26]..[33,820+29])
     ">>=" (lib/test.ml[59,1534+2]..[59,1534+5])
@@ -321,3 +322,5 @@ Make a writable directory tree:
         (fun () ->
           x (* TODO: This computation might not be suspended correctly. *));
       ]
+  
+  let _ = Fiber.yield ()
