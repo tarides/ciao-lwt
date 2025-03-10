@@ -105,3 +105,6 @@ let _ =
   let* _ = Lwt.catch (fun () -> x) (function Not_found -> x | _ -> x) in
   let* _ = Lwt.catch handle handle in
   x
+
+let _ = Lwt.fail Not_found
+let _ = Lwt.fail_with "not found"

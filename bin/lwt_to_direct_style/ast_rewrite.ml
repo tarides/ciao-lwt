@@ -235,6 +235,10 @@ let rewrite_apply_lwt ~backend ident args =
         (Some
            (Exp.try_ (call_thunk thunk)
               (rewrite_exp_into_cases_no_reraise exn_f)))
+  | "fail" ->
+      take @@ fun exn -> return (Some (mk_apply_simple [ "raise" ] [ exn ]))
+  | "fail_with" ->
+      take @@ fun msg -> return (Some (mk_apply_simple [ "failwith" ] [ msg ]))
   | "both" ->
       take @@ fun left ->
       take @@ fun right -> return (rewrite_lwt_both ~backend left right)

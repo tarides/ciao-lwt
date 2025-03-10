@@ -28,7 +28,7 @@ Make a writable directory tree:
     "try_bind" (bin/main.ml[18,390+2]..[18,390+14])
     "let*" (bin/main.ml[6,62+6]..[6,62+10])
     "let+" (bin/main.ml[7,108+6]..[7,108+10])
-  lib/test.ml: (74 occurrences)
+  lib/test.ml: (76 occurrences)
     "return" (lib/test.ml[9,185+57]..[9,185+67])
     "return" (lib/test.ml[10,258+14]..[10,258+24])
     "return" (lib/test.ml[28,713+2]..[28,713+12])
@@ -44,6 +44,8 @@ Make a writable directory tree:
     "return" (lib/test.ml[94,2359+24]..[94,2359+34])
     "return" (lib/test.ml[94,2359+39]..[94,2359+49])
     "return" (lib/test.ml[95,2417+27]..[95,2417+37])
+    "fail" (lib/test.ml[109,2847+8]..[109,2847+16])
+    "fail_with" (lib/test.ml[110,2874+8]..[110,2874+21])
     "bind" (lib/test.ml[7,81+6]..[7,81+14])
     "bind" (lib/test.ml[9,185+16]..[9,185+24])
     "bind" (lib/test.ml[13,318+2]..[13,318+10])
@@ -301,3 +303,6 @@ Make a writable directory tree:
     let _ = try x with Not_found -> x | _ -> x in
     let _ = try handle () with v -> handle v in
     x
+  
+  let _ = raise Not_found
+  let _ = failwith "not found"
