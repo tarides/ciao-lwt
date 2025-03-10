@@ -28,7 +28,7 @@ Make a writable directory tree:
     "try_bind" (bin/main.ml[18,390+2]..[18,390+14])
     "let*" (bin/main.ml[6,62+6]..[6,62+10])
     "let+" (bin/main.ml[7,108+6]..[7,108+10])
-  lib/test.ml: (81 occurrences)
+  lib/test.ml: (82 occurrences)
     "return" (lib/test.ml[9,185+57]..[9,185+67])
     "return" (lib/test.ml[10,258+14]..[10,258+24])
     "return" (lib/test.ml[28,713+2]..[28,713+12])
@@ -41,12 +41,12 @@ Make a writable directory tree:
     "return" (lib/test.ml[71,1889+14]..[71,1889+20])
     "return" (lib/test.ml[88,2290+6]..[88,2290+16])
     "return" (lib/test.ml[90,2308+8]..[90,2308+18])
-    "return" (lib/test.ml[94,2359+24]..[94,2359+34])
-    "return" (lib/test.ml[94,2359+39]..[94,2359+49])
-    "return" (lib/test.ml[95,2417+27]..[95,2417+37])
-    "return" (lib/test.ml[111,2908+8]..[111,2908+18])
-    "fail" (lib/test.ml[109,2847+8]..[109,2847+16])
-    "fail_with" (lib/test.ml[110,2874+8]..[110,2874+21])
+    "return" (lib/test.ml[94,2359+22]..[94,2359+32])
+    "return" (lib/test.ml[94,2359+37]..[94,2359+47])
+    "return" (lib/test.ml[95,2415+25]..[95,2415+35])
+    "return" (lib/test.ml[111,2902+8]..[111,2902+18])
+    "fail" (lib/test.ml[109,2841+8]..[109,2841+16])
+    "fail_with" (lib/test.ml[110,2868+8]..[110,2868+21])
     "bind" (lib/test.ml[7,81+6]..[7,81+14])
     "bind" (lib/test.ml[9,185+16]..[9,185+24])
     "bind" (lib/test.ml[13,318+2]..[13,318+10])
@@ -59,12 +59,12 @@ Make a writable directory tree:
     "map" (lib/test.ml[14,363+24]..[14,363+31])
     "map" (lib/test.ml[39,951+44]..[39,951+47])
     "map" (lib/test.ml[69,1753+44]..[69,1753+47])
-    "catch" (lib/test.ml[101,2529+11]..[101,2529+20])
-    "catch" (lib/test.ml[102,2580+11]..[102,2580+20])
-    "catch" (lib/test.ml[103,2624+11]..[103,2624+20])
-    "catch" (lib/test.ml[104,2681+11]..[104,2681+20])
-    "catch" (lib/test.ml[105,2731+11]..[105,2731+20])
-    "catch" (lib/test.ml[106,2804+11]..[106,2804+20])
+    "catch" (lib/test.ml[101,2523+11]..[101,2523+20])
+    "catch" (lib/test.ml[102,2574+11]..[102,2574+20])
+    "catch" (lib/test.ml[103,2618+11]..[103,2618+20])
+    "catch" (lib/test.ml[104,2675+11]..[104,2675+20])
+    "catch" (lib/test.ml[105,2725+11]..[105,2725+20])
+    "catch" (lib/test.ml[106,2798+11]..[106,2798+20])
     "try_bind" (lib/test.ml[5,51+2]..[5,51+14])
     "try_bind" (lib/test.ml[38,940+2]..[38,940+10])
     "try_bind" (lib/test.ml[44,1139+11]..[44,1139+23])
@@ -72,10 +72,11 @@ Make a writable directory tree:
     "join" (lib/test.ml[79,2128+2]..[79,2128+10])
     "both" (lib/test.ml[75,1972+2]..[75,1972+10])
     "both" (lib/test.ml[77,2096+3]..[77,2096+11])
-    "choose" (lib/test.ml[94,2359+11]..[94,2359+21])
-    "choose" (lib/test.ml[95,2417+11]..[95,2417+21])
-    "choose" (lib/test.ml[96,2466+11]..[96,2466+21])
-    "pause" (lib/test.ml[114,2970+8]..[114,2970+17])
+    "choose" (lib/test.ml[115,2985+8]..[115,2985+18])
+    "pick" (lib/test.ml[94,2359+11]..[94,2359+19])
+    "pick" (lib/test.ml[95,2415+11]..[95,2415+19])
+    "pick" (lib/test.ml[96,2462+11]..[96,2462+19])
+    "pause" (lib/test.ml[114,2964+8]..[114,2964+17])
     ">>=" (lib/test.ml[32,766+2]..[32,766+5])
     ">>=" (lib/test.ml[33,820+26]..[33,820+29])
     ">>=" (lib/test.ml[59,1534+2]..[59,1534+5])
@@ -84,27 +85,27 @@ Make a writable directory tree:
     ">>=" (lib/test.ml[75,1972+52]..[75,1972+55])
     ">>=" (lib/test.ml[78,2113+2]..[78,2113+5])
     ">>=" (lib/test.ml[88,2290+2]..[88,2290+5])
-    "=<<" (lib/test.ml[111,2908+19]..[111,2908+22])
+    "=<<" (lib/test.ml[111,2902+19]..[111,2902+22])
     ">|=" (lib/test.ml[32,766+36]..[32,766+39])
     ">|=" (lib/test.ml[46,1188+15]..[46,1188+32])
     ">|=" (lib/test.ml[59,1534+30]..[59,1534+33])
-    "=|<" (lib/test.ml[112,2933+15]..[112,2933+18])
+    "=|<" (lib/test.ml[112,2927+15]..[112,2927+18])
     "<&>" (lib/test.ml[33,820+2]..[33,820+5])
     "<&>" (lib/test.ml[60,1582+2]..[60,1582+5])
-    "<?>" (lib/test.ml[113,2954+10]..[113,2954+13])
+    "<?>" (lib/test.ml[113,2948+10]..[113,2948+13])
     "let*" (lib/test.ml[17,428+2]..[17,428+6])
     "let*" (lib/test.ml[18,441+4]..[18,441+8])
     "let*" (lib/test.ml[22,555+2]..[22,555+6])
     "let*" (lib/test.ml[23,568+4]..[23,568+8])
     "let*" (lib/test.ml[94,2359+2]..[94,2359+6])
-    "let*" (lib/test.ml[95,2417+2]..[95,2417+6])
-    "let*" (lib/test.ml[96,2466+2]..[96,2466+6])
-    "let*" (lib/test.ml[101,2529+2]..[101,2529+6])
-    "let*" (lib/test.ml[102,2580+2]..[102,2580+6])
-    "let*" (lib/test.ml[103,2624+2]..[103,2624+6])
-    "let*" (lib/test.ml[104,2681+2]..[104,2681+6])
-    "let*" (lib/test.ml[105,2731+2]..[105,2731+6])
-    "let*" (lib/test.ml[106,2804+2]..[106,2804+6])
+    "let*" (lib/test.ml[95,2415+2]..[95,2415+6])
+    "let*" (lib/test.ml[96,2462+2]..[96,2462+6])
+    "let*" (lib/test.ml[101,2523+2]..[101,2523+6])
+    "let*" (lib/test.ml[102,2574+2]..[102,2574+6])
+    "let*" (lib/test.ml[103,2618+2]..[103,2618+6])
+    "let*" (lib/test.ml[104,2675+2]..[104,2675+6])
+    "let*" (lib/test.ml[105,2725+2]..[105,2725+6])
+    "let*" (lib/test.ml[106,2798+2]..[106,2798+6])
     "and*" (lib/test.ml[21,521+2]..[21,521+6])
     "and*" (lib/test.ml[26,648+2]..[26,648+6])
     "and*" (lib/test.ml[27,679+2]..[27,679+6])
@@ -112,8 +113,10 @@ Make a writable directory tree:
     "let+" (lib/test.ml[24,604+4]..[24,604+8])
 
   $ lwt-to-direct-style --migrate
-  Warning: 1 occurrences have not been rewritten.
+  Warning: 3 occurrences have not been rewritten.
     join (lib/test.ml[79,2128+2]..[79,2128+10])
+    <?> (lib/test.ml[113,2948+10]..[113,2948+13])
+    choose (lib/test.ml[115,2985+8]..[115,2985+18])
   Formatted 2 files, 0 errors
 
   $ cat bin/main.ml
@@ -143,6 +146,8 @@ Make a writable directory tree:
 
   $ cat lib/test.ml
   open Eio
+  
+  (* TODO: [Lwt.choose] can't be automatically translated. Use Eio.Promise instead. *)
   open Lwt.Infix
   open Lwt.Syntax
   
@@ -315,12 +320,16 @@ Make a writable directory tree:
   let _ = Fun.id x
   
   let _ =
-    Fiber.any
-      [
-        (fun () ->
-          x (* TODO: This computation might not be suspended correctly. *));
-        (fun () ->
-          x (* TODO: This computation might not be suspended correctly. *));
-      ]
+    x
+    (* TODO: [<?>] can't be automatically translated. Use Eio.Promise instead. *)
+    <?> x
   
   let _ = Fiber.yield ()
+  
+  let _ =
+    Lwt.choose
+      [
+        (* TODO: [Lwt.choose] can't be automatically translated. Use Eio.Promise instead. *)
+        x;
+        x;
+      ]

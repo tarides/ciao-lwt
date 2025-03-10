@@ -160,7 +160,6 @@ let suspend_list lst =
 let rewrite_lwt_both ~backend left right =
   Some (backend.both ~left:(suspend left) ~right:(suspend right))
 
-let rewrite_lwt_choose ~backend lst = Some (backend.choose (suspend_list lst))
 let mk_cstr c = Some (mk_constr_exp c)
 
 module Unpack_apply : sig
@@ -244,7 +243,13 @@ let rewrite_apply_lwt ~backend ident args =
   | "both" ->
       take @@ fun left ->
       take @@ fun right -> return (rewrite_lwt_both ~backend left right)
-  | "choose" -> take @@ fun lst -> return (rewrite_lwt_choose ~backend lst)
+  | "pick" -> take @@ fun lst -> return (Some (backend.pick (suspend_list lst)))
+  | "choose" ->
+      take @@ fun lst ->
+      Comments.add lst.pexp_loc
+        (" TODO: [Lwt.choose] can't be automatically translated. "
+       ^ backend.choose_comment_hint);
+      return None
   | "return_some" ->
       take @@ fun value_arg ->
       return (Some (mk_constr_exp ~arg:value_arg "Some"))
@@ -269,8 +274,11 @@ let rewrite_apply_lwt ~backend ident args =
       take @@ fun rhs -> return (rewrite_lwt_both ~backend lhs rhs)
   | "<?>" ->
       take @@ fun lhs ->
-      take @@ fun rhs ->
-      return (rewrite_lwt_choose ~backend (Exp.list [ lhs; rhs ]))
+      take @@ fun _rhs ->
+      Comments.add lhs.pexp_loc
+        (" TODO: [<?>] can't be automatically translated. "
+       ^ backend.choose_comment_hint);
+      return None
   | _ -> return None
 
 (** Transform a [binding_op] into a [pattern] and an [expression] while

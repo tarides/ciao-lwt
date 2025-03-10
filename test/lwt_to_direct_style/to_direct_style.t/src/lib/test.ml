@@ -91,9 +91,9 @@ let x = Lwt.return ()
 
 let _ =
   let xs = [ x ] in
-  let* _ = Lwt.choose [ Lwt.return (); Lwt.return () ] in
-  let* _ = Lwt.choose [ x; Lwt.return (); x ] in
-  let* _ = Lwt.choose xs in
+  let* _ = Lwt.pick [ Lwt.return (); Lwt.return () ] in
+  let* _ = Lwt.pick [ x; Lwt.return (); x ] in
+  let* _ = Lwt.pick xs in
   x
 
 let _ =
@@ -112,3 +112,4 @@ let _ = Lwt.return =<< x
 let _ = Fun.id =|< x
 let _ = x <?> x
 let _ = Lwt.pause ()
+let _ = Lwt.choose [ x; x ]
