@@ -287,7 +287,7 @@ let fmt_constant c ?epi {pconst_desc; pconst_loc= loc} =
         then str_as 1000
         else str )
         (Format_.sprintf "{%s|%s|%s}" delim s delim)
-  | Pconst_string (_, loc', None) -> (
+  | Pconst_string (orig_s, loc', None) -> (
       let delim = ["@,"; "@;"] in
       let contains_pp_commands s =
         let is_substring substring = String.is_substring s ~substring in
@@ -343,7 +343,10 @@ let fmt_constant c ?epi {pconst_desc; pconst_loc= loc} =
         | `Never -> `Preserve
         | `Auto -> `Normalize
       in
-      let s = Source.string_literal c.source preserve_or_normalize loc in
+      let s =
+        if loc.loc_ghost then String.escaped orig_s
+        else Source.string_literal c.source preserve_or_normalize loc
+      in
       Cmts.fmt c loc'
       @@
       match c.conf.fmt_opts.break_string_literals.v with
@@ -4619,7 +4622,14 @@ and fmt_value_binding c ~ctx0 ~rec_flag ?in_ ?epi
   in
   let ext = lb_attrs.attrs_extension in
   let should_break_after_keyword =
-    Cmts.has_before c.cmts lb_pat.ast.ppat_loc || Option.is_some ext
+    Cmts.has_before c.cmts lb_pat.ast.ppat_loc
+    || Option.is_some ext
+       &&
+       match lb_pat.ast with
+       | {ppat_desc= Ppat_record _ | Ppat_list _ | Ppat_array _; _}
+         when c.conf.fmt_opts.dock_collection_brackets.v ->
+           false
+       | _ -> true
   in
   let decl =
     let decl =
