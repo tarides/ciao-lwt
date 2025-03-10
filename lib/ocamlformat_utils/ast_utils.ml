@@ -37,6 +37,11 @@ let mk_unit_arg = mk_function_param mk_unit_pat
 let mk_unit_val = Exp.construct mk_unit_ident None
 let mk_thunk body = Exp.function_ [ mk_unit_arg ] None (Pfunction_body body)
 
+let is_unit_val = function
+  | { pexp_desc = Pexp_construct (ident, None); _ } ->
+      same_longident ident.txt [ "()" ]
+  | _ -> false
+
 let mk_if if_cond if_body else_body =
   let mk_if_cond ?(loc_then = !default_loc) ?(attrs = []) if_cond if_body =
     { if_cond; if_body; if_attrs = attrs; if_loc_then = loc_then }

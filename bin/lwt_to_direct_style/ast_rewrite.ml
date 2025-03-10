@@ -143,7 +143,9 @@ let suspend exp =
   if not is_suspended then
     Comments.add exp.pexp_loc
       " TODO: This computation might not be suspended correctly. ";
-  mk_thunk exp
+  match exp.pexp_desc with
+  | Pexp_apply (f_exp, [ (Nolabel, arg) ]) when is_unit_val arg -> f_exp
+  | _ -> mk_thunk exp
 
 (* The expression [lst] hoping that it is a literal list and suspend its
    elements. *)

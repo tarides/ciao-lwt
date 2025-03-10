@@ -264,9 +264,7 @@ Make a writable directory tree:
   
   let test () =
     let () = Lwt_fmt.printf "Test.test" in
-    let _ =
-      Fiber.pair (fun () -> lwt_calls ()) (fun () -> lwt_calls_point_free ())
-    in
+    let _ = Fiber.pair lwt_calls lwt_calls_point_free in
     let _ =
       let a = lwt_calls () and b = lwt_calls_point_free () in
       Fiber.pair
@@ -277,25 +275,25 @@ Make a writable directory tree:
     in
     Fiber.all
       [
-        (fun () -> letops ());
-        (fun () -> infix ());
-        (fun () -> lwt_calls_open ());
-        (fun () -> lwt_calls_rebind ());
-        (fun () -> lwt_calls_alias ());
-        (fun () -> lwt_calls_include ());
+        letops;
+        infix;
+        lwt_calls_open;
+        lwt_calls_rebind;
+        lwt_calls_alias;
+        lwt_calls_include;
       ]
   
   let x = ()
   
   let _ =
     let xs = [ x ] in
-    let _ = Fiber.any [ (fun () -> ()); (fun () -> ()) ] in
+    let _ = Fiber.any [ (fun x1 -> x1); (fun x1 -> x1) ] in
     let _ =
       Fiber.any
         [
           (fun () ->
             x (* TODO: This computation might not be suspended correctly. *));
-          (fun () -> ());
+          (fun x1 -> x1);
           (fun () ->
             x (* TODO: This computation might not be suspended correctly. *));
         ]
@@ -345,4 +343,4 @@ Make a writable directory tree:
           x (* TODO: This computation might not be suspended correctly. *));
       ]
   
-  let _ = Fiber.all [ (fun () -> ()) ]
+  let _ = Fiber.all [ (fun x1 -> x1) ]
