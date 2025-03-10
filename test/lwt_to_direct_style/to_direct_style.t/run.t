@@ -28,7 +28,7 @@ Make a writable directory tree:
     "try_bind" (bin/main.ml[18,390+2]..[18,390+14])
     "let*" (bin/main.ml[6,62+6]..[6,62+10])
     "let+" (bin/main.ml[7,108+6]..[7,108+10])
-  lib/test.ml: (52 occurrences)
+  lib/test.ml: (62 occurrences)
     "return" (lib/test.ml[9,185+57]..[9,185+67])
     "return" (lib/test.ml[10,258+14]..[10,258+24])
     "return" (lib/test.ml[28,713+2]..[28,713+12])
@@ -40,6 +40,10 @@ Make a writable directory tree:
     "return" (lib/test.ml[70,1832+45]..[70,1832+51])
     "return" (lib/test.ml[71,1889+14]..[71,1889+20])
     "return" (lib/test.ml[88,2290+6]..[88,2290+16])
+    "return" (lib/test.ml[91,2316+10]..[91,2316+20])
+    "return" (lib/test.ml[93,2363+24]..[93,2363+34])
+    "return" (lib/test.ml[93,2363+39]..[93,2363+49])
+    "return" (lib/test.ml[94,2421+27]..[94,2421+37])
     "bind" (lib/test.ml[7,81+6]..[7,81+14])
     "bind" (lib/test.ml[9,185+16]..[9,185+24])
     "bind" (lib/test.ml[13,318+2]..[13,318+10])
@@ -59,6 +63,9 @@ Make a writable directory tree:
     "join" (lib/test.ml[79,2128+2]..[79,2128+10])
     "both" (lib/test.ml[75,1972+2]..[75,1972+10])
     "both" (lib/test.ml[77,2096+3]..[77,2096+11])
+    "choose" (lib/test.ml[93,2363+11]..[93,2363+21])
+    "choose" (lib/test.ml[94,2421+11]..[94,2421+21])
+    "choose" (lib/test.ml[95,2470+11]..[95,2470+21])
     ">>=" (lib/test.ml[32,766+2]..[32,766+5])
     ">>=" (lib/test.ml[33,820+26]..[33,820+29])
     ">>=" (lib/test.ml[59,1534+2]..[59,1534+5])
@@ -76,6 +83,9 @@ Make a writable directory tree:
     "let*" (lib/test.ml[18,441+4]..[18,441+8])
     "let*" (lib/test.ml[22,555+2]..[22,555+6])
     "let*" (lib/test.ml[23,568+4]..[23,568+8])
+    "let*" (lib/test.ml[93,2363+2]..[93,2363+6])
+    "let*" (lib/test.ml[94,2421+2]..[94,2421+6])
+    "let*" (lib/test.ml[95,2470+2]..[95,2470+6])
     "and*" (lib/test.ml[21,521+2]..[21,521+6])
     "and*" (lib/test.ml[26,648+2]..[26,648+6])
     "and*" (lib/test.ml[27,679+2]..[27,679+6])
@@ -248,3 +258,23 @@ Make a writable directory tree:
         lwt_calls_alias ();
         lwt_calls_include ();
       ]
+  
+  let _ =
+    let x = () in
+    let xs = [ x ] in
+    let _ = Fiber.any [ (fun () -> ()); (fun () -> ()) ] in
+    let _ =
+      Fiber.any
+        [
+          (fun () ->
+            x (* TODO: This computation might not be suspended correctly. *));
+          (fun () -> ());
+          (fun () ->
+            x (* TODO: This computation might not be suspended correctly. *));
+        ]
+    in
+    let _ =
+      Fiber.any xs
+      (* TODO: This expression is a ['a Lwt.t list] but a [(unit -> 'a) list] is expected. *)
+    in
+    x

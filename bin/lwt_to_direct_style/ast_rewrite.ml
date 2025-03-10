@@ -132,6 +132,18 @@ let suspend exp =
       " TODO: This computation might not be suspended correctly. ";
   mk_thunk exp
 
+(* The expression [lst] hoping that it is a literal list and suspend its
+   elements. *)
+let suspend_list lst =
+  match lst.pexp_desc with
+  | Pexp_list exprs ->
+      { lst with pexp_desc = Pexp_list (List.map suspend exprs) }
+  | _ ->
+      Comments.add lst.pexp_loc
+        " TODO: This expression is a ['a Lwt.t list] but a [(unit -> 'a) list] \
+         is expected. ";
+      lst
+
 let rewrite_lwt_both ~backend left right =
   Some (backend.both ~left:(suspend left) ~right:(suspend right))
 
@@ -206,6 +218,8 @@ let rewrite_apply_lwt ~backend ident args =
   | "both" ->
       take @@ fun left ->
       take @@ fun right -> return (rewrite_lwt_both ~backend left right)
+  | "choose" ->
+      take @@ fun lst -> return (Some (backend.choose (suspend_list lst)))
   | "return_some" ->
       take @@ fun value_arg ->
       return (Some (mk_constr_exp ~arg:value_arg "Some"))

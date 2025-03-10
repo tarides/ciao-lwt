@@ -86,3 +86,11 @@ let test () =
       lwt_calls_include ();
     ]
   >>= Lwt.return
+
+let _ =
+  let x = Lwt.return () in
+  let xs = [ x ] in
+  let* _ = Lwt.choose [ Lwt.return (); Lwt.return () ] in
+  let* _ = Lwt.choose [ x; Lwt.return (); x ] in
+  let* _ = Lwt.choose xs in
+  x
