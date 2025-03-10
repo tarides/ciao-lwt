@@ -28,7 +28,7 @@ Make a writable directory tree:
     "try_bind" (bin/main.ml[18,390+2]..[18,390+14])
     "let*" (bin/main.ml[6,62+6]..[6,62+10])
     "let+" (bin/main.ml[7,108+6]..[7,108+10])
-  lib/test.ml: (82 occurrences)
+  lib/test.ml: (85 occurrences)
     "return" (lib/test.ml[9,185+57]..[9,185+67])
     "return" (lib/test.ml[10,258+14]..[10,258+24])
     "return" (lib/test.ml[28,713+2]..[28,713+12])
@@ -45,6 +45,7 @@ Make a writable directory tree:
     "return" (lib/test.ml[94,2359+37]..[94,2359+47])
     "return" (lib/test.ml[95,2415+25]..[95,2415+35])
     "return" (lib/test.ml[111,2902+8]..[111,2902+18])
+    "return" (lib/test.ml[117,3039+19]..[117,3039+29])
     "fail" (lib/test.ml[109,2841+8]..[109,2841+16])
     "fail_with" (lib/test.ml[110,2868+8]..[110,2868+21])
     "bind" (lib/test.ml[7,81+6]..[7,81+14])
@@ -70,6 +71,8 @@ Make a writable directory tree:
     "try_bind" (lib/test.ml[44,1139+11]..[44,1139+23])
     "try_bind" (lib/test.ml[68,1742+2]..[68,1742+10])
     "join" (lib/test.ml[79,2128+2]..[79,2128+10])
+    "join" (lib/test.ml[116,3013+8]..[116,3013+16])
+    "join" (lib/test.ml[117,3039+8]..[117,3039+16])
     "both" (lib/test.ml[75,1972+2]..[75,1972+10])
     "both" (lib/test.ml[77,2096+3]..[77,2096+11])
     "choose" (lib/test.ml[115,2985+8]..[115,2985+18])
@@ -113,8 +116,7 @@ Make a writable directory tree:
     "let+" (lib/test.ml[24,604+4]..[24,604+8])
 
   $ lwt-to-direct-style --migrate
-  Warning: 3 occurrences have not been rewritten.
-    join (lib/test.ml[79,2128+2]..[79,2128+10])
+  Warning: 2 occurrences have not been rewritten.
     <?> (lib/test.ml[113,2948+10]..[113,2948+13])
     choose (lib/test.ml[115,2985+8]..[115,2985+18])
   Formatted 2 files, 0 errors
@@ -273,14 +275,14 @@ Make a writable directory tree:
         (fun () ->
           b (* TODO: This computation might not be suspended correctly. *))
     in
-    Lwt.join
+    Fiber.all
       [
-        letops ();
-        infix ();
-        lwt_calls_open ();
-        lwt_calls_rebind ();
-        lwt_calls_alias ();
-        lwt_calls_include ();
+        (fun () -> letops ());
+        (fun () -> infix ());
+        (fun () -> lwt_calls_open ());
+        (fun () -> lwt_calls_rebind ());
+        (fun () -> lwt_calls_alias ());
+        (fun () -> lwt_calls_include ());
       ]
   
   let x = ()
@@ -333,3 +335,14 @@ Make a writable directory tree:
         x;
         x;
       ]
+  
+  let _ =
+    Fiber.all
+      [
+        (fun () ->
+          x (* TODO: This computation might not be suspended correctly. *));
+        (fun () ->
+          x (* TODO: This computation might not be suspended correctly. *));
+      ]
+  
+  let _ = Fiber.all [ (fun () -> ()) ]

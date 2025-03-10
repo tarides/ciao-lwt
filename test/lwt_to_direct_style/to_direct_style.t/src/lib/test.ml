@@ -113,3 +113,5 @@ let _ = Fun.id =|< x
 let _ = x <?> x
 let _ = Lwt.pause ()
 let _ = Lwt.choose [ x; x ]
+let _ = Lwt.join [ x; x ]
+let _ = Lwt.join [ Lwt.return () ]

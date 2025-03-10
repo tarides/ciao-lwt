@@ -250,6 +250,7 @@ let rewrite_apply_lwt ~backend ident args =
         (" TODO: [Lwt.choose] can't be automatically translated. "
        ^ backend.choose_comment_hint);
       return None
+  | "join" -> take @@ fun lst -> return (Some (backend.join (suspend_list lst)))
   | "return_some" ->
       take @@ fun value_arg ->
       return (Some (mk_constr_exp ~arg:value_arg "Some"))
