@@ -28,7 +28,7 @@ Make a writable directory tree:
     "try_bind" (bin/main.ml[18,390+2]..[18,390+14])
     "let*" (bin/main.ml[6,62+6]..[6,62+10])
     "let+" (bin/main.ml[7,108+6]..[7,108+10])
-  lib/test.ml: (85 occurrences)
+  lib/test.ml: (87 occurrences)
     "return" (lib/test.ml[9,185+57]..[9,185+67])
     "return" (lib/test.ml[10,258+14]..[10,258+24])
     "return" (lib/test.ml[28,713+2]..[28,713+12])
@@ -48,6 +48,7 @@ Make a writable directory tree:
     "return" (lib/test.ml[117,3039+19]..[117,3039+29])
     "fail" (lib/test.ml[109,2841+8]..[109,2841+16])
     "fail_with" (lib/test.ml[110,2868+8]..[110,2868+21])
+    "fail_invalid_arg" (lib/test.ml[118,3074+32]..[118,3074+52])
     "bind" (lib/test.ml[7,81+6]..[7,81+14])
     "bind" (lib/test.ml[9,185+16]..[9,185+24])
     "bind" (lib/test.ml[13,318+2]..[13,318+10])
@@ -70,6 +71,7 @@ Make a writable directory tree:
     "try_bind" (lib/test.ml[38,940+2]..[38,940+10])
     "try_bind" (lib/test.ml[44,1139+11]..[44,1139+23])
     "try_bind" (lib/test.ml[68,1742+2]..[68,1742+10])
+    "finalize" (lib/test.ml[118,3074+8]..[118,3074+20])
     "join" (lib/test.ml[79,2128+2]..[79,2128+10])
     "join" (lib/test.ml[116,3013+8]..[116,3013+16])
     "join" (lib/test.ml[117,3039+8]..[117,3039+16])
@@ -342,3 +344,4 @@ Make a writable directory tree:
       ]
   
   let _ = Fiber.all [ (fun x1 -> x1) ]
+  let _ = Fun.protect ~finally:(fun () -> x) (fun () -> invalid_arg "")

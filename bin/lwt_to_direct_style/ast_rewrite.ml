@@ -258,6 +258,17 @@ let rewrite_apply_lwt ~backend ident args =
       take @@ fun exn -> return (Some (mk_apply_simple [ "raise" ] [ exn ]))
   | "fail_with" ->
       take @@ fun msg -> return (Some (mk_apply_simple [ "failwith" ] [ msg ]))
+  | "fail_invalid_arg" ->
+      take @@ fun msg ->
+      return (Some (mk_apply_simple [ "invalid_arg" ] [ msg ]))
+  | "finalize" ->
+      take @@ fun f ->
+      take @@ fun finally_f ->
+      return
+        (Some
+           (Exp.apply
+              (Exp.ident (mk_longident [ "Fun"; "protect" ]))
+              [ (Labelled (mk_loc "finally"), finally_f); (Nolabel, f) ]))
   | "both" ->
       take @@ fun left ->
       take @@ fun right -> return (rewrite_lwt_both ~backend left right)
