@@ -117,3 +117,9 @@ let _ = Lwt.join [ x; x ]
 let _ = Lwt.join [ Lwt.return () ]
 let _ = Lwt.finalize (fun () -> Lwt.fail_invalid_arg "") (fun () -> x)
 let _ = Lwt.async (fun () -> x)
+
+let _ =
+  let t, u = Lwt.wait () in
+  Lwt.async (fun () -> t);
+  Lwt.wakeup u ();
+  Lwt.wakeup_later u ()

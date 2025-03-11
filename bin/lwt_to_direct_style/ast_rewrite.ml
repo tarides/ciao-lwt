@@ -257,8 +257,8 @@ let rewrite_apply_lwt ~backend ident args =
       take @@ fun lst ->
       return (Some ((Backend.get backend).pick (suspend_list lst)))
   | "choose" ->
-      take @@ fun lst ->
-      Comments.add lst.pexp_loc
+      take @@ fun _lst ->
+      Comments.add_default_loc
         ("[Lwt.choose] can't be automatically translated."
        ^ (Backend.get_without_using backend).choose_comment_hint);
       return None
@@ -271,6 +271,10 @@ let rewrite_apply_lwt ~backend ident args =
       return (Some ((Backend.get backend).async process_f))
   | "pause" ->
       take @@ fun _unit -> return (Some ((Backend.get backend).pause ()))
+  | "wait" -> take @@ fun _unit -> return (Some ((Backend.get backend).wait ()))
+  | "wakeup" | "wakeup_later" ->
+      take @@ fun u ->
+      take @@ fun arg -> return (Some ((Backend.get backend).wakeup u arg))
   (* Return *)
   | "return" -> take @@ fun value_arg -> return (Some value_arg)
   | "return_some" ->
@@ -304,9 +308,9 @@ let rewrite_apply_lwt ~backend ident args =
       take @@ fun lhs ->
       take @@ fun rhs -> return (rewrite_lwt_both ~backend lhs rhs)
   | "<?>" ->
-      take @@ fun lhs ->
+      take @@ fun _lhs ->
       take @@ fun _rhs ->
-      Comments.add lhs.pexp_loc
+      Comments.add_default_loc
         ("[<?>] can't be automatically translated."
        ^ (Backend.get_without_using backend).choose_comment_hint);
       return None
@@ -370,8 +374,7 @@ let rec flatten_apply exp =
   | _ -> exp
 
 let rewrite_expression ~backend exp =
-  (* The default loc will be used for placing comments. *)
-  default_loc := { exp.pexp_loc with loc_ghost = true };
+  Comments.default_loc := exp.pexp_loc;
   match (flatten_apply exp).pexp_desc with
   (* Rewrite a call to a [Lwt] function. *)
   | Pexp_apply ({ pexp_desc = Pexp_ident lid; _ }, args) ->
