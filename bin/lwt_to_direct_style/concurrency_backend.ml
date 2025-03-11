@@ -20,6 +20,7 @@ module Eio = struct
   let pick lst = mk_apply_simple [ "Fiber"; "any" ] [ lst ]
 
   let async process_f =
+    Comments.add !default_loc "[sw] must be propagated here.";
     Exp.apply
       (mk_exp_ident [ "Fiber"; "fork" ])
       [ (Labelled (mk_loc "sw"), mk_exp_ident [ "sw" ]); (Nolabel, process_f) ]

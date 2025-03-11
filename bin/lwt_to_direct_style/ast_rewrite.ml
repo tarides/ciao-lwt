@@ -51,17 +51,6 @@ module Occ = struct
       Format.eprintf "%!")
 end
 
-module Comments = struct
-  let acc = ref []
-  let add loc cmt = acc := Ocamlformat_utils.Cmt.create_comment cmt loc :: !acc
-  let add_all = List.iter (fun (loc, cmt) -> add loc cmt)
-
-  let get () =
-    let r = !acc in
-    acc := [];
-    r
-end
-
 (** Keep track of whether backend functions have been used and [open] items must
     be added. *)
 module Backend = struct
@@ -157,7 +146,7 @@ let suspend exp =
   in
   if not is_suspended then
     Comments.add exp.pexp_loc
-      " TODO: This computation might not be suspended correctly. ";
+      "This computation might not be suspended correctly.";
   match exp.pexp_desc with
   | Pexp_apply (f_exp, [ (Nolabel, arg) ]) when is_unit_val arg -> f_exp
   | _ -> mk_thunk exp
@@ -170,8 +159,8 @@ let suspend_list lst =
       { lst with pexp_desc = Pexp_list (List.map suspend exprs) }
   | _ ->
       Comments.add lst.pexp_loc
-        " TODO: This expression is a ['a Lwt.t list] but a [(unit -> 'a) list] \
-         is expected. ";
+        "This expression is a ['a Lwt.t list] but a [(unit -> 'a) list] is \
+         expected.";
       lst
 
 let rewrite_lwt_both ~backend left right =
@@ -270,7 +259,7 @@ let rewrite_apply_lwt ~backend ident args =
   | "choose" ->
       take @@ fun lst ->
       Comments.add lst.pexp_loc
-        (" TODO: [Lwt.choose] can't be automatically translated. "
+        ("[Lwt.choose] can't be automatically translated."
        ^ (Backend.get_without_using backend).choose_comment_hint);
       return None
   | "join" ->
@@ -318,7 +307,7 @@ let rewrite_apply_lwt ~backend ident args =
       take @@ fun lhs ->
       take @@ fun _rhs ->
       Comments.add lhs.pexp_loc
-        (" TODO: [<?>] can't be automatically translated. "
+        ("[<?>] can't be automatically translated."
        ^ (Backend.get_without_using backend).choose_comment_hint);
       return None
   | _ -> return None
@@ -336,7 +325,7 @@ let split_binding_op pb =
         Pat.constraint_ pb.pbop_pat typ
     | Some _ ->
         Comments.add pb.pbop_pat.ppat_loc
-          " TODO: Type annotation was lost during transformation. ";
+          "Type annotation was lost during transformation.";
         pb.pbop_pat
     | None -> pb.pbop_pat
   in
@@ -381,6 +370,8 @@ let rec flatten_apply exp =
   | _ -> exp
 
 let rewrite_expression ~backend exp =
+  (* The default loc will be used for placing comments. *)
+  default_loc := { exp.pexp_loc with loc_ghost = true };
   match (flatten_apply exp).pexp_desc with
   (* Rewrite a call to a [Lwt] function. *)
   | Pexp_apply ({ pexp_desc = Pexp_ident lid; _ }, args) ->

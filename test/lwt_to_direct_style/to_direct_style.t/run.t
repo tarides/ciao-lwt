@@ -150,8 +150,6 @@ Make a writable directory tree:
 
   $ cat lib/test.ml
   open Eio
-  
-  (* TODO: [Lwt.choose] can't be automatically translated. Use Eio.Promise instead. *)
   open Lwt.Infix
   open Lwt.Syntax
   
@@ -192,14 +190,14 @@ Make a writable directory tree:
       (fun () ->
         let () =
           Lwt_fmt.printf
-            (* TODO: This computation might not be suspended correctly. *)
+            (* TODO: lwt-to-direct-style: This computation might not be suspended correctly. *)
             "1"
         in
         let () = Lwt_fmt.printf "2" in
         ())
       (fun () ->
         let () =
-          (* TODO: This computation might not be suspended correctly. *)
+          (* TODO: lwt-to-direct-style: This computation might not be suspended correctly. *)
           Lwt_fmt.printf "3"
         in
         ())
@@ -235,14 +233,15 @@ Make a writable directory tree:
     Fiber.pair
       (fun () ->
         let () =
-          F.printf (* TODO: This computation might not be suspended correctly. *)
+          F.printf
+            (* TODO: lwt-to-direct-style: This computation might not be suspended correctly. *)
             "1"
         in
         let () = F.printf "2" in
         ())
       (fun () ->
         let () =
-          (* TODO: This computation might not be suspended correctly. *)
+          (* TODO: lwt-to-direct-style: This computation might not be suspended correctly. *)
           F.printf "3"
         in
         ())
@@ -270,9 +269,11 @@ Make a writable directory tree:
       let a = lwt_calls () and b = lwt_calls_point_free () in
       Fiber.pair
         (fun () ->
-          a (* TODO: This computation might not be suspended correctly. *))
+          a
+          (* TODO: lwt-to-direct-style: This computation might not be suspended correctly. *))
         (fun () ->
-          b (* TODO: This computation might not be suspended correctly. *))
+          b
+          (* TODO: lwt-to-direct-style: This computation might not be suspended correctly. *))
     in
     Fiber.all
       [
@@ -293,15 +294,17 @@ Make a writable directory tree:
       Fiber.any
         [
           (fun () ->
-            x (* TODO: This computation might not be suspended correctly. *));
+            x
+            (* TODO: lwt-to-direct-style: This computation might not be suspended correctly. *));
           (fun x1 -> x1);
           (fun () ->
-            x (* TODO: This computation might not be suspended correctly. *));
+            x
+            (* TODO: lwt-to-direct-style: This computation might not be suspended correctly. *));
         ]
     in
     let _ =
       Fiber.any xs
-      (* TODO: This expression is a ['a Lwt.t list] but a [(unit -> 'a) list] is expected. *)
+      (* TODO: lwt-to-direct-style: This expression is a ['a Lwt.t list] but a [(unit -> 'a) list] is expected. *)
     in
     x
   
@@ -322,15 +325,16 @@ Make a writable directory tree:
   
   let _ =
     x
-    (* TODO: [<?>] can't be automatically translated. Use Eio.Promise instead. *)
+    (* TODO: lwt-to-direct-style: [<?>] can't be automatically translated.Use Eio.Promise instead.  *)
     <?> x
   
   let _ = Fiber.yield ()
   
   let _ =
     Lwt.choose
+      (* TODO: lwt-to-direct-style: [Lwt.choose] can't be automatically translated.Use Eio.Promise instead.  *)
       [
-        (* TODO: [Lwt.choose] can't be automatically translated. Use Eio.Promise instead. *)
+        (* TODO: lwt-to-direct-style: [Lwt.choose] can't be automatically translated.Use Eio.Promise instead.  *)
         x;
         x;
       ]
@@ -339,11 +343,17 @@ Make a writable directory tree:
     Fiber.all
       [
         (fun () ->
-          x (* TODO: This computation might not be suspended correctly. *));
+          x
+          (* TODO: lwt-to-direct-style: This computation might not be suspended correctly. *));
         (fun () ->
-          x (* TODO: This computation might not be suspended correctly. *));
+          x
+          (* TODO: lwt-to-direct-style: This computation might not be suspended correctly. *));
       ]
   
   let _ = Fiber.all [ (fun x1 -> x1) ]
   let _ = Fun.protect ~finally:(fun () -> x) (fun () -> invalid_arg "")
-  let _ = Fiber.fork ~sw (fun () -> x)
+  
+  let _ =
+    Fiber.fork ~sw
+      (* TODO: lwt-to-direct-style: [sw] must be propagated here. *)
+      (fun () -> x)
