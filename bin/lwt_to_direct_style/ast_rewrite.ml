@@ -62,6 +62,21 @@ module Comments = struct
     r
 end
 
+(** Keep track of whether backend functions have been used and [open] items must
+    be added. *)
+module Backend = struct
+  type t = { backend : Concurrency_backend.t; mutable used : bool }
+
+  let v backend = { backend; used = false }
+
+  let get t =
+    t.used <- true;
+    t.backend
+
+  let get_without_using t = t.backend
+  let is_used t = t.used
+end
+
 (* Rewrite to a let binding or an apply. *)
 let rewrite_continuation cont ~arg:cont_arg =
   match is_fun_with_one_argument cont with
@@ -160,7 +175,7 @@ let suspend_list lst =
       lst
 
 let rewrite_lwt_both ~backend left right =
-  Some (backend.both ~left:(suspend left) ~right:(suspend right))
+  Some ((Backend.get backend).both ~left:(suspend left) ~right:(suspend right))
 
 let mk_cstr c = Some (mk_constr_exp c)
 
@@ -226,7 +241,8 @@ let rewrite_apply_lwt ~backend ident args =
       take @@ fun promise_arg ->
       return (rewrite_continuation fun_arg ~arg:promise_arg)
   | "return" -> take @@ fun value_arg -> return (Some value_arg)
-  | "pause" -> take @@ fun _unit -> return (Some (backend.pause ()))
+  | "pause" ->
+      take @@ fun _unit -> return (Some ((Backend.get backend).pause ()))
   | "try_bind" ->
       take @@ fun thunk ->
       take @@ fun value_f ->
@@ -245,14 +261,18 @@ let rewrite_apply_lwt ~backend ident args =
   | "both" ->
       take @@ fun left ->
       take @@ fun right -> return (rewrite_lwt_both ~backend left right)
-  | "pick" -> take @@ fun lst -> return (Some (backend.pick (suspend_list lst)))
+  | "pick" ->
+      take @@ fun lst ->
+      return (Some ((Backend.get backend).pick (suspend_list lst)))
   | "choose" ->
       take @@ fun lst ->
       Comments.add lst.pexp_loc
         (" TODO: [Lwt.choose] can't be automatically translated. "
-       ^ backend.choose_comment_hint);
+       ^ (Backend.get_without_using backend).choose_comment_hint);
       return None
-  | "join" -> take @@ fun lst -> return (Some (backend.join (suspend_list lst)))
+  | "join" ->
+      take @@ fun lst ->
+      return (Some ((Backend.get backend).join (suspend_list lst)))
   | "return_some" ->
       take @@ fun value_arg ->
       return (Some (mk_constr_exp ~arg:value_arg "Some"))
@@ -280,7 +300,7 @@ let rewrite_apply_lwt ~backend ident args =
       take @@ fun _rhs ->
       Comments.add lhs.pexp_loc
         (" TODO: [<?>] can't be automatically translated. "
-       ^ backend.choose_comment_hint);
+       ^ (Backend.get_without_using backend).choose_comment_hint);
       return None
   | _ -> return None
 
@@ -320,7 +340,7 @@ let rewrite_letop ~backend let_ ands body = function
             List.fold_right (fun a b -> Pat.tuple [ a; b ]) ands_pats let_pat
           and exp =
             List.fold_right
-              (fun a b -> backend.both ~left:a ~right:b)
+              (fun a b -> (Backend.get backend).both ~left:a ~right:b)
               ands_exps let_exp
           in
           Some (mk_let pat exp body))
@@ -375,13 +395,14 @@ let add_extra_opens ~backend str =
           ->
             List.filter (( <> ) opn_ident.txt) extra_opens
         | _ -> extra_opens)
-      backend.extra_opens str
+      (Backend.get_without_using backend).extra_opens str
     |> List.map (fun ident -> Str.open_ (Opn.mk (Mod.ident (mk_loc ident))))
   in
   extra_opens @ str
 
 let rewrite_lwt_uses ~occurrences ~backend str =
   Occ.init occurrences;
+  let backend = Backend.v backend in
   let default = Ast_mapper.default_mapper in
   let rec expr m exp =
     match rewrite_expression ~backend exp with
@@ -389,10 +410,12 @@ let rewrite_lwt_uses ~occurrences ~backend str =
     | None -> default.expr m exp
   in
   let structure m str =
-    default.structure m
-      (add_extra_opens ~backend (List.filter remove_lwt_opens str))
+    default.structure m (List.filter remove_lwt_opens str)
   in
   let m = { default with expr; structure } in
   let str = m.structure m str in
+  let str =
+    if Backend.is_used backend then add_extra_opens ~backend str else str
+  in
   Occ.warn_missing_locs ();
   (str, Comments.get ())

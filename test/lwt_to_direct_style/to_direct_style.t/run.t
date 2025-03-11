@@ -122,7 +122,6 @@ Make a writable directory tree:
   Formatted 2 files, 0 errors
 
   $ cat bin/main.ml
-  open Eio
   open Lwt.Syntax
   
   let _main () =
@@ -247,7 +246,6 @@ Make a writable directory tree:
   
   let lwt_calls_include () =
     let module L = struct
-      open Eio
       include Lwt
       include Lwt_fmt
     end in
