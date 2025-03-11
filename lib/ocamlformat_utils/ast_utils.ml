@@ -30,7 +30,8 @@ let mk_longident' = function
 let mk_longident ident = mk_loc (mk_longident' ident)
 let mk_constr_exp ?arg cstr = Exp.construct (mk_longident [ cstr ]) arg
 let same_longident a b = Longident.flatten a = b
-let mk_exp_var s = Exp.ident (mk_longident [ s ])
+let mk_exp_ident ident = Exp.ident (mk_longident ident)
+let mk_exp_var s = mk_exp_ident [ s ]
 let mk_unit_ident = mk_longident [ "()" ]
 let mk_unit_pat = Pat.construct mk_unit_ident None
 let mk_unit_arg = mk_function_param mk_unit_pat
@@ -53,7 +54,7 @@ let mk_binding_op ?(loc = !default_loc) ?(is_pun = false) op pat ?(args = [])
   Exp.binding_op op pat args typ exp is_pun loc
 
 let mk_apply_simple f_ident args =
-  let f = Exp.ident (mk_longident f_ident) in
+  let f = mk_exp_ident f_ident in
   Exp.apply f (List.map (fun x -> (Nolabel, x)) args)
 
 (** Whether an expression is a [fun] with one argument that can safely be

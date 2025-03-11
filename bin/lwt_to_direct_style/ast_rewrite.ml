@@ -202,7 +202,7 @@ end = struct
   let rec apply_remaining_args params i k =
     let ident = "x" ^ string_of_int i in
     let params = mk_function_param (Pat.var (mk_loc ident)) :: params in
-    match k (Exp.ident (mk_longident [ ident ])) with
+    match k (mk_exp_ident [ ident ]) with
     | Arg k -> apply_remaining_args params (i + 1) k
     | End None -> None
     | End (Some body) ->
@@ -232,6 +232,7 @@ let rewrite_apply_lwt ~backend ident args =
   unapply args
   @@
   match ident with
+  (* Control flow *)
   | "bind" ->
       take @@ fun promise_arg ->
       take @@ fun fun_arg ->
@@ -240,9 +241,6 @@ let rewrite_apply_lwt ~backend ident args =
       take @@ fun fun_arg ->
       take @@ fun promise_arg ->
       return (rewrite_continuation fun_arg ~arg:promise_arg)
-  | "return" -> take @@ fun value_arg -> return (Some value_arg)
-  | "pause" ->
-      take @@ fun _unit -> return (Some ((Backend.get backend).pause ()))
   | "try_bind" ->
       take @@ fun thunk ->
       take @@ fun value_f ->
@@ -254,21 +252,15 @@ let rewrite_apply_lwt ~backend ident args =
         (Some
            (Exp.try_ (call_thunk thunk)
               (rewrite_exp_into_cases_no_reraise exn_f)))
-  | "fail" ->
-      take @@ fun exn -> return (Some (mk_apply_simple [ "raise" ] [ exn ]))
-  | "fail_with" ->
-      take @@ fun msg -> return (Some (mk_apply_simple [ "failwith" ] [ msg ]))
-  | "fail_invalid_arg" ->
-      take @@ fun msg ->
-      return (Some (mk_apply_simple [ "invalid_arg" ] [ msg ]))
   | "finalize" ->
       take @@ fun f ->
       take @@ fun finally_f ->
       return
         (Some
            (Exp.apply
-              (Exp.ident (mk_longident [ "Fun"; "protect" ]))
+              (mk_exp_ident [ "Fun"; "protect" ])
               [ (Labelled (mk_loc "finally"), finally_f); (Nolabel, f) ]))
+  (* Async composition *)
   | "both" ->
       take @@ fun left ->
       take @@ fun right -> return (rewrite_lwt_both ~backend left right)
@@ -284,6 +276,14 @@ let rewrite_apply_lwt ~backend ident args =
   | "join" ->
       take @@ fun lst ->
       return (Some ((Backend.get backend).join (suspend_list lst)))
+  (* Async primitives *)
+  | "async" ->
+      take @@ fun process_f ->
+      return (Some ((Backend.get backend).async process_f))
+  | "pause" ->
+      take @@ fun _unit -> return (Some ((Backend.get backend).pause ()))
+  (* Return *)
+  | "return" -> take @@ fun value_arg -> return (Some value_arg)
   | "return_some" ->
       take @@ fun value_arg ->
       return (Some (mk_constr_exp ~arg:value_arg "Some"))
@@ -297,6 +297,14 @@ let rewrite_apply_lwt ~backend ident args =
   | "return_nil" -> return (mk_cstr "[]")
   | "return_true" -> return (mk_cstr "true")
   | "return_false" -> return (mk_cstr "false")
+  | "fail" ->
+      take @@ fun exn -> return (Some (mk_apply_simple [ "raise" ] [ exn ]))
+  | "fail_with" ->
+      take @@ fun msg -> return (Some (mk_apply_simple [ "failwith" ] [ msg ]))
+  | "fail_invalid_arg" ->
+      take @@ fun msg ->
+      return (Some (mk_apply_simple [ "invalid_arg" ] [ msg ]))
+  (* Operators *)
   | ">>=" | ">|=" ->
       take @@ fun lhs ->
       take @@ fun rhs -> return (rewrite_continuation rhs ~arg:lhs)

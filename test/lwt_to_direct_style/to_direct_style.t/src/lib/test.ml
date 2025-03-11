@@ -116,3 +116,4 @@ let _ = Lwt.choose [ x; x ]
 let _ = Lwt.join [ x; x ]
 let _ = Lwt.join [ Lwt.return () ]
 let _ = Lwt.finalize (fun () -> Lwt.fail_invalid_arg "") (fun () -> x)
+let _ = Lwt.async (fun () -> x)
