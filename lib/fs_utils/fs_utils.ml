@@ -1,3 +1,15 @@
+(** List files in a directory. Returns an empty array on error. *)
+let list_dir p =
+  match Sys.readdir p with
+  | exception Sys_error msg ->
+      Printf.eprintf "%s\n%!" msg;
+      [||]
+  | files ->
+      (* Sorted to ensure reproducibility. *)
+      Array.sort String.compare files;
+      Array.iteri (fun i fname -> files.(i) <- Filename.concat p fname) files;
+      files
+
 let rec scan_dir ~descend_into f acc path =
   match Sys.is_directory path with
   | exception Sys_error msg ->
@@ -8,16 +20,7 @@ let rec scan_dir ~descend_into f acc path =
   | false -> f acc path
 
 and _scan_dir ~descend_into f acc parent =
-  match Sys.readdir parent with
-  | exception Sys_error msg ->
-      Printf.eprintf "%s\n%!" msg;
-      acc
-  | files ->
-      Array.sort String.compare files;
-      Array.fold_left
-        (fun acc child ->
-          scan_dir ~descend_into f acc (Filename.concat parent child))
-        acc files
+  Array.fold_left (scan_dir ~descend_into f) acc (list_dir parent)
 
 (** Call [f] on every files found recursively into [path]. [descend_into] is
     called on every directories. Directories for which [descend_into] is [false]

@@ -27,3 +27,7 @@ let _ = Lwt.return_true
 let _ = Lwt.return_false
 let _ = Lwt.return_ok ()
 let _ = Lwt.return_error ()
+
+let _ = Lwt_fmt.printf ""
+let _ = Lwt_fmt.eprintf ""
+let _ = Lwt_unix.sleep 1.0

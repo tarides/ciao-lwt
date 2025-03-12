@@ -8,7 +8,8 @@ open Concurrency_backend
 module Occ = struct
   (** Manage occurrences of Lwt calls that should be migrated. *)
 
-  let _tbl : (Location.t, string) Hashtbl.t ref = ref (Hashtbl.create 0)
+  let _tbl : (Location.t, string * string) Hashtbl.t ref =
+    ref (Hashtbl.create 0)
 
   let init lids =
     let new_tbl = Hashtbl.create (List.length lids) in
@@ -44,7 +45,10 @@ module Occ = struct
     if missing > 0 then (
       Format.eprintf "Warning: %d occurrences have not been rewritten.@\n"
         missing;
-      Hashtbl.fold (fun loc ident acc -> (loc, ident) :: acc) !_tbl []
+      Hashtbl.fold
+        (fun loc (unit_name, ident) acc ->
+          (loc, unit_name ^ "." ^ ident) :: acc)
+        !_tbl []
       |> List.sort compare (* Sort for a reproducible output. *)
       |> List.iter (fun (loc, ident) ->
              Format.eprintf "  %s %a@\n" ident Printast.fmt_location loc);
@@ -216,6 +220,8 @@ end = struct
   let return r = End r
 end
 
+(* Rewrite calls to functions from the [Lwt] module. See [rewrite_apply] for
+   the other modules. *)
 let rewrite_apply_lwt ~backend ident args =
   let open Unpack_apply in
   unapply args
@@ -316,6 +322,11 @@ let rewrite_apply_lwt ~backend ident args =
       return None
   | _ -> return None
 
+let rewrite_apply ~backend (unit_name, ident) args =
+  match unit_name with
+  | "Lwt" -> rewrite_apply_lwt ~backend ident args
+  | _ -> None
+
 (** Transform a [binding_op] into a [pattern] and an [expression] while
     preserving the type annotation. *)
 let split_binding_op pb =
@@ -336,7 +347,7 @@ let split_binding_op pb =
   (pat, exp)
 
 let rewrite_letop ~backend let_ ands body = function
-  | "let*" | "let+" -> (
+  | "Lwt", ("let*" | "let+") -> (
       match ands with
       | [] ->
           Some
@@ -378,15 +389,15 @@ let rewrite_expression ~backend exp =
   match (flatten_apply exp).pexp_desc with
   (* Rewrite a call to a [Lwt] function. *)
   | Pexp_apply ({ pexp_desc = Pexp_ident lid; _ }, args) ->
-      Occ.may_rewrite lid (fun ident -> rewrite_apply_lwt ~backend ident args)
+      Occ.may_rewrite lid (fun ident -> rewrite_apply ~backend ident args)
   (* Rewrite the use of a [Lwt] infix operator. *)
   | Pexp_infix (op, lhs, rhs) when Occ.check op ->
       let args = [ (Nolabel, lhs); (Nolabel, rhs) ] in
-      Occ.may_rewrite op (fun op -> rewrite_apply_lwt ~backend op args)
+      Occ.may_rewrite op (fun op -> rewrite_apply ~backend op args)
   (* Rewrite expressions such as [Lwt.return_unit], but also any partially
      applied [Lwt] function. *)
   | Pexp_ident lid ->
-      Occ.may_rewrite lid (fun ident -> rewrite_apply_lwt ~backend ident [])
+      Occ.may_rewrite lid (fun ident -> rewrite_apply ~backend ident [])
   (* Simple [let*]. *)
   | Pexp_letop { let_; ands; body; _ } ->
       Occ.may_rewrite let_.pbop_op (rewrite_letop ~backend let_ ands body)

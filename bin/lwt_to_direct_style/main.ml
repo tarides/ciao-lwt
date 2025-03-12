@@ -32,8 +32,9 @@ let do_migration occurs =
   if !errors > 0 then exit 1
 
 let print_occurrences occurs =
-  let pp_occurrence ppf (ident, lid) =
-    Format.fprintf ppf "%S %a" ident Printast.fmt_location lid.Location.loc
+  let pp_occurrence ppf ((unit_name, ident), lid) =
+    Format.fprintf ppf "%s.%s %a" unit_name ident Printast.fmt_location
+      lid.Location.loc
   in
   group_occurrences_by_file occurs (fun file occurrences ->
       Format.printf "@[<v 2>%s: (%d occurrences)@ %a@]@\n" file
@@ -42,9 +43,13 @@ let print_occurrences occurs =
         occurrences)
 
 let main migrate =
+  let units = function
+    | "Lwt" -> true
+    | unit -> String.starts_with ~prefix:"Lwt_" unit
+  in
   let all_occurrences =
-    Ocaml_index_utils.occurrences ~dune_build_dir:"_build" ~package:"lwt"
-      ~unit:"Lwt"
+    Ocaml_index_utils.occurrences ~dune_build_dir:"_build"
+      ~packages:[ "lwt"; "lwt.unix" ] ~units
   in
   if migrate then do_migration all_occurrences
   else print_occurrences all_occurrences
