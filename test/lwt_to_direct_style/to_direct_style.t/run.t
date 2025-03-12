@@ -155,40 +155,10 @@ Make a writable directory tree:
     Lwt_fmt.printf (lib/test.ml[74,1929+2]..[74,1929+16])
 
   $ lwt-to-direct-style --migrate
-  Warning: 6 occurrences have not been rewritten.
-    Lwt_fmt.printf (bin/main.ml[6,62+16]..[6,62+30])
-    Lwt_fmt.printf (bin/main.ml[11,194+23]..[11,194+37])
+  Warning: 2 occurrences have not been rewritten.
     Lwt_main.run (bin/main.ml[22,505+9]..[22,505+21])
-    Lwt_fmt.printf (bin/main.ml[31,688+8]..[31,688+22])
-    Lwt_fmt.eprintf (bin/main.ml[32,714+8]..[32,714+23])
     Lwt_unix.sleep (bin/main.ml[33,741+8]..[33,741+22])
-  Warning: 28 occurrences have not been rewritten.
-    Lwt_fmt.printf (lib/test.ml[7,81+16]..[7,81+30])
-    Lwt_fmt.printf (lib/test.ml[8,128+35]..[8,128+49])
-    Lwt_fmt.printf (lib/test.ml[9,185+26]..[9,185+40])
-    Lwt_fmt.printf (lib/test.ml[13,318+12]..[13,318+26])
-    Lwt_fmt.printf (lib/test.ml[14,363+2]..[14,363+16])
-    Lwt_fmt.printf (lib/test.ml[18,441+14]..[18,441+28])
-    Lwt_fmt.printf (lib/test.ml[19,477+14]..[19,477+28])
-    Lwt_fmt.printf (lib/test.ml[21,521+12]..[21,521+26])
-    Lwt_fmt.printf (lib/test.ml[23,568+14]..[23,568+28])
-    Lwt_fmt.printf (lib/test.ml[24,604+14]..[24,604+28])
-    Lwt_fmt.printf (lib/test.ml[26,648+12]..[26,648+26])
-    Lwt_fmt.printf (lib/test.ml[27,679+12]..[27,679+26])
-    Lwt_fmt.printf (lib/test.ml[31,745+2]..[31,745+16])
-    Lwt_fmt.printf (lib/test.ml[32,766+17]..[32,766+31])
-    Lwt_fmt.printf (lib/test.ml[33,820+7]..[33,820+21])
-    Lwt_fmt.printf (lib/test.ml[39,951+21]..[39,951+27])
-    Lwt_fmt.printf (lib/test.ml[39,951+65]..[39,951+71])
-    Lwt_fmt.printf (lib/test.ml[40,1030+22]..[40,1030+28])
-    Lwt_fmt.printf (lib/test.ml[47,1224+14]..[47,1224+28])
-    Lwt_fmt.printf (lib/test.ml[58,1519+2]..[58,1519+10])
-    Lwt_fmt.printf (lib/test.ml[59,1534+17]..[59,1534+25])
-    Lwt_fmt.printf (lib/test.ml[60,1582+7]..[60,1582+15])
-    Lwt_fmt.printf (lib/test.ml[69,1753+21]..[69,1753+27])
-    Lwt_fmt.printf (lib/test.ml[69,1753+65]..[69,1753+71])
-    Lwt_fmt.printf (lib/test.ml[70,1832+22]..[70,1832+28])
-    Lwt_fmt.printf (lib/test.ml[74,1929+2]..[74,1929+16])
+  Warning: 2 occurrences have not been rewritten.
     Lwt.<?> (lib/test.ml[113,2948+10]..[113,2948+13])
     Lwt.choose (lib/test.ml[115,2985+8]..[115,2985+18])
   Formatted 2 files, 0 errors
@@ -198,12 +168,12 @@ Make a writable directory tree:
   
   let _main () =
     match
-      let () = Lwt_fmt.printf "Main.main" in
+      let () = Format.printf "Main.main" in
       let () = Test.test () in
       ()
     with
     | () -> ()
-    | exception Failure msg -> Lwt_fmt.printf "Failure: %s\n%!" msg
+    | exception Failure msg -> Format.printf "Failure: %s\n%!" msg
   
   let main () =
     let main () = match None with v -> v in
@@ -216,8 +186,8 @@ Make a writable directory tree:
   let _ = false
   let _ = Ok ()
   let _ = Error ()
-  let _ = Lwt_fmt.printf ""
-  let _ = Lwt_fmt.eprintf ""
+  let _ = Format.printf ""
+  let _ = Format.eprintf ""
   let _ = Lwt_unix.sleep 1.0
 
   $ cat lib/test.ml
@@ -227,32 +197,32 @@ Make a writable directory tree:
   
   let lwt_calls () =
     match
-      let () = Lwt_fmt.printf "1" in
-      let () = Lwt_fmt.printf "2" in
+      let () = Format.printf "1" in
+      let () = Format.printf "2" in
       `Ok
     with
     | `Ok ->
-        let () = Lwt_fmt.printf "3" in
+        let () = Format.printf "3" in
         ()
     | exception _ -> ()
   
   let lwt_calls_point_free () =
-    let () = Lwt_fmt.printf "1" in
-    let () = Lwt_fmt.printf "2" in
+    let () = Format.printf "1" in
+    let () = Format.printf "2" in
     ()
   
   let letops () =
     let (), `Ok =
-      Fiber.pair (Lwt_fmt.printf "3")
-        (let () = Lwt_fmt.printf "1" in
-         let () = Lwt_fmt.printf "2" in
+      Fiber.pair (Format.printf "3")
+        (let () = Format.printf "1" in
+         let () = Format.printf "2" in
          `Ok)
     in
     let (), ((), `Ok) =
-      Fiber.pair (Lwt_fmt.printf "6")
-        (Fiber.pair (Lwt_fmt.printf "7")
-           (let () = Lwt_fmt.printf "4" in
-            let () = Lwt_fmt.printf "5" in
+      Fiber.pair (Format.printf "6")
+        (Fiber.pair (Format.printf "7")
+           (let () = Format.printf "4" in
+            let () = Format.printf "5" in
             `Ok))
     in
     ()
@@ -261,16 +231,17 @@ Make a writable directory tree:
     Fiber.pair
       (fun () ->
         let () =
-          Lwt_fmt.printf
+          Format.printf
             (* TODO: lwt-to-direct-style: This computation might not be suspended correctly. *)
             "1"
         in
-        let () = Lwt_fmt.printf "2" in
+        let () = Format.printf "2" in
         ())
       (fun () ->
         let () =
-          (* TODO: lwt-to-direct-style: This computation might not be suspended correctly. *)
-          Lwt_fmt.printf "3"
+          Format.printf
+            (* TODO: lwt-to-direct-style: This computation might not be suspended correctly. *)
+            "3"
         in
         ())
   
@@ -278,12 +249,12 @@ Make a writable directory tree:
     let open Lwt in
     let open Lwt_fmt in
     match
-      let () = printf "1" in
-      let () = printf "2" in
+      let () = Format.printf "1" in
+      let () = Format.printf "2" in
       `Ok
     with
     | `Ok ->
-        let () = printf "3" in
+        let () = Format.printf "3" in
         ()
     | exception _ -> ()
   
@@ -291,7 +262,7 @@ Make a writable directory tree:
     let tr = fun x1 x2 x3 -> match x1 () with v -> x2 v | exception v -> x3 v in
     let b = fun x1 x2 -> x2 x1 in
     let ( >> ) = fun x1 x2 -> x2 x1 in
-    let p fmt = Lwt_fmt.printf fmt in
+    let p fmt = Format.printf fmt in
     let ( ~@ ) = fun x1 -> x1 in
     tr
       (fun () -> b (p "1") (fun () -> p "2" >> fun () -> `Ok))
@@ -305,16 +276,17 @@ Make a writable directory tree:
     Fiber.pair
       (fun () ->
         let () =
-          F.printf
+          Format.printf
             (* TODO: lwt-to-direct-style: This computation might not be suspended correctly. *)
             "1"
         in
-        let () = F.printf "2" in
+        let () = Format.printf "2" in
         ())
       (fun () ->
         let () =
-          (* TODO: lwt-to-direct-style: This computation might not be suspended correctly. *)
-          F.printf "3"
+          Format.printf
+            (* TODO: lwt-to-direct-style: This computation might not be suspended correctly. *)
+            "3"
         in
         ())
   
@@ -325,17 +297,17 @@ Make a writable directory tree:
     end in
     let open L in
     match
-      let () = printf "1" in
-      let () = printf "2" in
+      let () = Format.printf "1" in
+      let () = Format.printf "2" in
       `Ok
     with
     | `Ok ->
-        let () = printf "3" in
+        let () = Format.printf "3" in
         ()
     | exception _ -> ()
   
   let test () =
-    let () = Lwt_fmt.printf "Test.test" in
+    let () = Format.printf "Test.test" in
     let _ = Fiber.pair lwt_calls lwt_calls_point_free in
     let _ =
       let a = lwt_calls () and b = lwt_calls_point_free () in

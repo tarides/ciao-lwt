@@ -325,6 +325,12 @@ let rewrite_apply_lwt ~backend ident args =
 let rewrite_apply ~backend (unit_name, ident) args =
   match unit_name with
   | "Lwt" -> rewrite_apply_lwt ~backend ident args
+  | "Lwt_fmt" -> (
+      match ident with
+      | "printf" | "eprintf" | "stdout" | "stderr" | "fprintf" | "kfprintf"
+      | "ifprintf" | "ikfprintf" ->
+          Some (Exp.apply (mk_exp_ident [ "Format"; ident ]) args)
+      | _ -> None)
   | _ -> None
 
 (** Transform a [binding_op] into a [pattern] and an [expression] while
