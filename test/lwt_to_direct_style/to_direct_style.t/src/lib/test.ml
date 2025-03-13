@@ -125,3 +125,5 @@ let _ =
   Lwt.wakeup_later u ()
 
 let _ = Lwt_list.iter_s (fun _ -> x) []
+let _ = Lwt_list.iter_p (fun _ -> x) []
+let _ = Lwt_list.iteri_p (fun _ _ -> x) []

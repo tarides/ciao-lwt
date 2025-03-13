@@ -349,17 +349,21 @@ let rewrite_apply_lwt ~backend ident args =
       return None
   | _ -> return None
 
+let string_drop_suffix ~suffix s =
+  if String.ends_with ~suffix s then
+    Some (String.sub s 0 (String.length s - String.length suffix))
+  else None
+
 (* Rewrite occurrences of [Lwt_list] functions. *)
-let rewrite_apply_lwt_list ~backend:_ ident args =
-  let open Unpack_apply in
-  let transparent ident =
-    take_all @@ fun args -> Some (mk_apply_ident [ "List"; ident ] args)
-  in
-  unapply args
-  @@
-  if String.ends_with ~suffix:"_s" ident then
-    transparent (String.sub ident 0 (String.length ident - 2))
-  else return None
+let rewrite_apply_lwt_list ~backend ident args =
+  let ( >>= ) = Option.bind in
+  let transparent ident = Some (mk_apply_ident ident args) in
+  match string_drop_suffix ~suffix:"_s" ident with
+  | Some ident -> transparent [ "List"; ident ]
+  | None ->
+      string_drop_suffix ~suffix:"_p" ident >>= fun ident ->
+      (* Backend.get performs side effects. *)
+      (Backend.get backend).list_parallel ident >>= transparent
 
 let rewrite_apply ~backend (unit_name, ident) args =
   match unit_name with

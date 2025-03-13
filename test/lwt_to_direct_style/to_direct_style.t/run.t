@@ -34,7 +34,7 @@ Make a writable directory tree:
     Lwt_fmt.eprintf (bin/main.ml[32,714+8]..[32,714+23])
     Lwt_main.run (bin/main.ml[22,505+9]..[22,505+21])
     Lwt_unix.sleep (bin/main.ml[33,741+8]..[33,741+22])
-  lib/test.ml: (119 occurrences)
+  lib/test.ml: (121 occurrences)
     Lwt.wakeup (lib/test.ml[124,3241+2]..[124,3241+12])
     Lwt.wakeup_later (lib/test.ml[125,3260+2]..[125,3260+18])
     Lwt.return (lib/test.ml[9,185+57]..[9,185+67])
@@ -154,14 +154,17 @@ Make a writable directory tree:
     Lwt_fmt.printf (lib/test.ml[70,1832+22]..[70,1832+28])
     Lwt_fmt.printf (lib/test.ml[74,1929+2]..[74,1929+16])
     Lwt_list.iter_s (lib/test.ml[127,3285+8]..[127,3285+23])
+    Lwt_list.iter_p (lib/test.ml[128,3325+8]..[128,3325+23])
+    Lwt_list.iteri_p (lib/test.ml[129,3365+8]..[129,3365+24])
 
   $ lwt-to-direct-style --migrate
   Warning: bin/main.ml: 2 occurrences have not been rewritten.
     Lwt_main.run (line 22 column 10)
     Lwt_unix.sleep (line 33 column 9)
-  Warning: lib/test.ml: 2 occurrences have not been rewritten.
+  Warning: lib/test.ml: 3 occurrences have not been rewritten.
     Lwt.<?> (line 113 column 11)
     Lwt.choose (line 115 column 9)
+    Lwt_list.iteri_p (line 129 column 9)
   Formatted 2 files, 0 errors
 
   $ cat bin/main.ml
@@ -412,3 +415,11 @@ Make a writable directory tree:
     Promise.resolve u ()
   
   let _ = List.iter (fun _ -> x) []
+  let _ = Fiber.List.iter (fun _ -> x) []
+  
+  let _ =
+    Lwt_list.iteri_p
+      (* TODO: lwt-to-direct-style: [iteri] can't be translated automatically. See https://ocaml.org/p/eio/latest/doc/Eio/Fiber/List/index.html *)
+      (* TODO: lwt-to-direct-style: [iteri] can't be translated automatically. See https://ocaml.org/p/eio/latest/doc/Eio/Fiber/List/index.html *)
+      (fun _ _ -> x)
+      []
