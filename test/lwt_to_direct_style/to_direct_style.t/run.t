@@ -155,12 +155,12 @@ Make a writable directory tree:
     Lwt_fmt.printf (lib/test.ml[74,1929+2]..[74,1929+16])
 
   $ lwt-to-direct-style --migrate
-  Warning: 2 occurrences have not been rewritten.
-    Lwt_main.run (bin/main.ml[22,505+9]..[22,505+21])
-    Lwt_unix.sleep (bin/main.ml[33,741+8]..[33,741+22])
-  Warning: 2 occurrences have not been rewritten.
-    Lwt.<?> (lib/test.ml[113,2948+10]..[113,2948+13])
-    Lwt.choose (lib/test.ml[115,2985+8]..[115,2985+18])
+  Warning: bin/main.ml: 2 occurrences have not been rewritten.
+    Lwt_main.run (line 22 column 10)
+    Lwt_unix.sleep (line 33 column 9)
+  Warning: lib/test.ml: 2 occurrences have not been rewritten.
+    Lwt.<?> (line 113 column 11)
+    Lwt.choose (line 115 column 9)
   Formatted 2 files, 0 errors
 
   $ cat bin/main.ml

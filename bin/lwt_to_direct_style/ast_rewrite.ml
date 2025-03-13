@@ -8,50 +8,65 @@ open Concurrency_backend
 module Occ = struct
   (** Manage occurrences of Lwt calls that should be migrated. *)
 
-  let _tbl : (Location.t, string * string) Hashtbl.t ref =
-    ref (Hashtbl.create 0)
+  type loc = { line : int; col : int; len : int }
+  (** Remove information from the [Location.t] to avoid problems with different
+      filenames due to custom Dune rules and offset positions due to PPXes. *)
+
+  let _tbl : (loc, string * string) Hashtbl.t ref = ref (Hashtbl.create 0)
+
+  let location_to_loc { Location.loc_start; loc_end; _ } =
+    {
+      line = loc_start.pos_lnum;
+      col = loc_start.pos_cnum - loc_start.pos_bol;
+      len = loc_end.pos_cnum - loc_start.pos_cnum;
+    }
 
   let init lids =
     let new_tbl = Hashtbl.create (List.length lids) in
-    List.iter (fun (ident, lid) -> Hashtbl.replace new_tbl lid.loc ident) lids;
+    List.iter
+      (fun (ident, lid) ->
+        Hashtbl.replace new_tbl (location_to_loc lid.loc) ident)
+      lids;
     _tbl := new_tbl
+
+  let remove lid = Hashtbl.remove !_tbl (location_to_loc lid.loc)
 
   (** Whether the given longident is an occurrence of an Lwt function. This will
       change the internal table and any subsequent calls for the same longident
       will return [false]. *)
   let pop lid =
-    if Hashtbl.mem !_tbl lid.loc then (
-      Hashtbl.remove !_tbl lid.loc;
+    if Hashtbl.mem !_tbl (location_to_loc lid.loc) then (
+      remove lid;
       true)
     else false
-
-  let check lid = Hashtbl.mem !_tbl lid.loc
-  let remove lid = Hashtbl.remove !_tbl lid.loc
 
   (** Calls [f] if [lid] should be rewritten. [f ident] is [Some ast] if a
       rewrite happened, [None] otherwise. [ident] is the basename of the
       longident at [lid]. *)
   let may_rewrite lid f =
-    match Hashtbl.find_opt !_tbl lid.loc with
+    match Hashtbl.find_opt !_tbl (location_to_loc lid.loc) with
     | Some ident ->
         let r = f ident in
-        if Option.is_some r then Hashtbl.remove !_tbl lid.loc;
+        if Option.is_some r then remove lid;
         r
     | None -> None
 
+  let pp_loc ppf loc =
+    Format.fprintf ppf "line %d column %d" loc.line (loc.col + 1)
+
   (** Warn about locations that have not been rewritten so far. *)
-  let warn_missing_locs () =
+  let warn_missing_locs fname =
     let missing = Hashtbl.length !_tbl in
     if missing > 0 then (
-      Format.eprintf "Warning: %d occurrences have not been rewritten.@\n"
-        missing;
+      Format.eprintf "Warning: %s: %d occurrences have not been rewritten.@\n"
+        fname missing;
       Hashtbl.fold
         (fun loc (unit_name, ident) acc ->
           (loc, unit_name ^ "." ^ ident) :: acc)
         !_tbl []
       |> List.sort compare (* Sort for a reproducible output. *)
       |> List.iter (fun (loc, ident) ->
-             Format.eprintf "  %s %a@\n" ident Printast.fmt_location loc);
+             Format.eprintf "  %s (%a)@\n" ident pp_loc loc);
       Format.eprintf "%!")
 end
 
@@ -397,7 +412,7 @@ let rewrite_expression ~backend exp =
   | Pexp_apply ({ pexp_desc = Pexp_ident lid; _ }, args) ->
       Occ.may_rewrite lid (fun ident -> rewrite_apply ~backend ident args)
   (* Rewrite the use of a [Lwt] infix operator. *)
-  | Pexp_infix (op, lhs, rhs) when Occ.check op ->
+  | Pexp_infix (op, lhs, rhs) ->
       let args = [ (Nolabel, lhs); (Nolabel, rhs) ] in
       Occ.may_rewrite op (fun op -> rewrite_apply ~backend op args)
   (* Rewrite expressions such as [Lwt.return_unit], but also any partially
@@ -430,7 +445,7 @@ let add_extra_opens ~backend str =
   in
   extra_opens @ str
 
-let rewrite_lwt_uses ~occurrences ~backend str =
+let rewrite_lwt_uses ~fname ~occurrences ~backend str =
   Occ.init occurrences;
   let backend = Backend.v backend in
   let default = Ast_mapper.default_mapper in
@@ -447,5 +462,5 @@ let rewrite_lwt_uses ~occurrences ~backend str =
   let str =
     if Backend.is_used backend then add_extra_opens ~backend str else str
   in
-  Occ.warn_missing_locs ();
+  Occ.warn_missing_locs fname;
   (str, Comments.get ())

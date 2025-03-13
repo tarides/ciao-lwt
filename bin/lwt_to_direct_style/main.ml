@@ -1,5 +1,25 @@
 open Ocamlformat_utils.Parsing
 
+let errorf fmt = Format.kasprintf (fun msg -> Error (`Msg msg)) fmt
+
+(** Map from file names to their path. This is used when locations point to the
+    wrong path (eg. it only contains the basename), which is often the case with
+    [.eliom] files. *)
+let lookup_filename_map () =
+  let tbl = Hashtbl.create 64 in
+  Fs_utils.find_ml_files
+    (fun path -> Hashtbl.add tbl (Filename.basename path) path)
+    ".";
+  tbl
+
+let resolve_file_name ~filename_map path =
+  if Sys.file_exists path then Ok path
+  else
+    match Hashtbl.find_all filename_map (Filename.basename path) with
+    | [] -> errorf "Couldn't find file %S" path
+    | _ :: _ :: _ -> errorf "Ambiguous location in index for file %S" path
+    | [ f ] -> Ok f
+
 (** Call [f] for every files that contain occurrences of [Lwt]. *)
 let group_occurrences_by_file lids f =
   let module Tbl = Hashtbl.Make (String) in
@@ -14,8 +34,12 @@ let group_occurrences_by_file lids f =
     lids;
   Tbl.iter f tbl
 
-let migrate_file ~formatted ~errors ~modify_ast file =
-  match Ocamlformat_utils.format_structure_in_place ~file ~modify_ast with
+let migrate_file ~filename_map ~formatted ~errors ~modify_ast file =
+  let ( >>= ) = Result.bind in
+  match
+    resolve_file_name ~filename_map file >>= fun file ->
+    Ocamlformat_utils.format_structure_in_place ~file ~modify_ast
+  with
   | Ok () -> incr formatted
   | Error (`Msg msg) ->
       Format.eprintf "%s: %s\n%!" file msg;
@@ -25,9 +49,12 @@ let do_migration occurs =
   let errors = ref 0 in
   let formatted = ref 0 in
   let backend = Concurrency_backend.eio in
-  group_occurrences_by_file occurs (fun file occurrences ->
-      let modify_ast = Ast_rewrite.rewrite_lwt_uses ~occurrences ~backend in
-      migrate_file ~formatted ~errors ~modify_ast file);
+  let filename_map = lookup_filename_map () in
+  group_occurrences_by_file occurs (fun fname occurrences ->
+      let modify_ast =
+        Ast_rewrite.rewrite_lwt_uses ~fname ~occurrences ~backend
+      in
+      migrate_file ~filename_map ~formatted ~errors ~modify_ast fname);
   Format.printf "Formatted %d files, %d errors\n%!" !formatted !errors;
   if !errors > 0 then exit 1
 
