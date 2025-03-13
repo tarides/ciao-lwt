@@ -123,3 +123,5 @@ let _ =
   Lwt.async (fun () -> t);
   Lwt.wakeup u ();
   Lwt.wakeup_later u ()
+
+let _ = Lwt_list.iter_s (fun _ -> x) []

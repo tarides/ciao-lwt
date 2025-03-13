@@ -34,7 +34,7 @@ Make a writable directory tree:
     Lwt_fmt.eprintf (bin/main.ml[32,714+8]..[32,714+23])
     Lwt_main.run (bin/main.ml[22,505+9]..[22,505+21])
     Lwt_unix.sleep (bin/main.ml[33,741+8]..[33,741+22])
-  lib/test.ml: (118 occurrences)
+  lib/test.ml: (119 occurrences)
     Lwt.wakeup (lib/test.ml[124,3241+2]..[124,3241+12])
     Lwt.wakeup_later (lib/test.ml[125,3260+2]..[125,3260+18])
     Lwt.return (lib/test.ml[9,185+57]..[9,185+67])
@@ -153,6 +153,7 @@ Make a writable directory tree:
     Lwt_fmt.printf (lib/test.ml[69,1753+65]..[69,1753+71])
     Lwt_fmt.printf (lib/test.ml[70,1832+22]..[70,1832+28])
     Lwt_fmt.printf (lib/test.ml[74,1929+2]..[74,1929+16])
+    Lwt_list.iter_s (lib/test.ml[127,3285+8]..[127,3285+23])
 
   $ lwt-to-direct-style --migrate
   Warning: bin/main.ml: 2 occurrences have not been rewritten.
@@ -409,3 +410,5 @@ Make a writable directory tree:
       (* TODO: lwt-to-direct-style: [sw] must be propagated here. *) (fun () -> t);
     Promise.resolve u ();
     Promise.resolve u ()
+  
+  let _ = List.iter (fun _ -> x) []

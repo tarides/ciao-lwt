@@ -200,21 +200,31 @@ module Unpack_apply : sig
   val take : (expression -> t) -> t
   (** Accept one argument. *)
 
+  val take_all : ((arg_label * expression) list -> expression option) -> t
+  (** Accept all remaining arguments. *)
+
   val return : expression option -> t
   (** Stop accepting arguments. [return (Some exp)] rewrites the apply
       expression to [exp] while [return None] leaves the original expression.
       The "too many arguments" warning is not triggered with [return None]. *)
 end = struct
-  type t = Arg of (expression -> t) | End of expression option
+  type t =
+    | Arg of (expression -> t)
+    | Take_all of ((arg_label * expression) list -> expression option)
+    | End of expression option
 
   let rec apply_remaining_args params i k =
     let ident = "x" ^ string_of_int i in
     let params = mk_function_param (Pat.var (mk_loc ident)) :: params in
+    let end_ = function
+      | None -> None
+      | Some body ->
+          Some (Exp.function_ (List.rev params) None (Pfunction_body body))
+    in
     match k (mk_exp_ident [ ident ]) with
     | Arg k -> apply_remaining_args params (i + 1) k
-    | End None -> None
-    | End (Some body) ->
-        Some (Exp.function_ (List.rev params) None (Pfunction_body body))
+    | End r -> end_ r
+    | Take_all k -> end_ (k [])
 
   let rec unapply args t =
     match (args, t) with
@@ -222,6 +232,7 @@ end = struct
     | [], End (Some _ as r) -> r
     | _, End None -> None
     | [], Arg k -> apply_remaining_args [] 1 k
+    | args, Take_all k -> k args
     | ((Labelled lbl | Optional lbl), _) :: _, Arg _ ->
         Format.eprintf "Error: Unexpected label %S at %a\n%!" lbl.txt
           Printast.fmt_location lbl.loc;
@@ -232,6 +243,7 @@ end = struct
         None
 
   let take k = Arg k
+  let take_all k = Take_all k
   let return r = End r
 end
 
@@ -337,6 +349,18 @@ let rewrite_apply_lwt ~backend ident args =
       return None
   | _ -> return None
 
+(* Rewrite occurrences of [Lwt_list] functions. *)
+let rewrite_apply_lwt_list ~backend:_ ident args =
+  let open Unpack_apply in
+  let transparent ident =
+    take_all @@ fun args -> Some (mk_apply_ident [ "List"; ident ] args)
+  in
+  unapply args
+  @@
+  if String.ends_with ~suffix:"_s" ident then
+    transparent (String.sub ident 0 (String.length ident - 2))
+  else return None
+
 let rewrite_apply ~backend (unit_name, ident) args =
   match unit_name with
   | "Lwt" -> rewrite_apply_lwt ~backend ident args
@@ -346,6 +370,7 @@ let rewrite_apply ~backend (unit_name, ident) args =
       | "ifprintf" | "ikfprintf" ->
           Some (Exp.apply (mk_exp_ident [ "Format"; ident ]) args)
       | _ -> None)
+  | "Lwt_list" -> rewrite_apply_lwt_list ~backend ident args
   | _ -> None
 
 (** Transform a [binding_op] into a [pattern] and an [expression] while
