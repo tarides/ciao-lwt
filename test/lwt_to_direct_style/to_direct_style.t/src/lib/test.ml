@@ -127,3 +127,8 @@ let _ =
 let _ = Lwt_list.iter_s (fun _ -> x) []
 let _ = Lwt_list.iter_p (fun _ -> x) []
 let _ = Lwt_list.iteri_p (fun _ _ -> x) []
+
+let _ = Lwt_condition.create ()
+let f1 cond = Lwt_condition.wait cond
+let f2 mutex cond = Lwt_condition.wait ~mutex cond
+let f3 mutex cond = Lwt_condition.wait ?mutex cond

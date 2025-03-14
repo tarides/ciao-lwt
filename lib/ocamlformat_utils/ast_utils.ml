@@ -37,6 +37,7 @@ let mk_unit_pat = Pat.construct mk_unit_ident None
 let mk_unit_arg = mk_function_param mk_unit_pat
 let mk_unit_val = Exp.construct mk_unit_ident None
 let mk_thunk body = Exp.function_ [ mk_unit_arg ] None (Pfunction_body body)
+let mk_exp_some x = Exp.construct (mk_longident [ "Some" ]) (Some x)
 
 let is_unit_val = function
   | { pexp_desc = Pexp_construct (ident, None); _ } ->

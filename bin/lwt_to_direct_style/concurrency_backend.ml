@@ -21,6 +21,9 @@ type t = {
   sleep : expression -> expression;
   with_timeout : expression -> expression -> expression;
   timeout_exn : pattern;
+  condition_create : unit -> expression;
+  condition_wait : expression -> expression -> expression;
+      (** mutex -> condition -> . *)
 }
 
 module Eio = struct
@@ -66,19 +69,25 @@ module Eio = struct
 end
 
 let eio =
-  Eio.
-    {
-      both;
-      pick;
-      join;
-      async;
-      pause;
-      wait;
-      wakeup;
-      extra_opens;
-      choose_comment_hint;
-      list_parallel;
-      sleep;
-      with_timeout;
-      timeout_exn;
-    }
+  let open Eio in
+  {
+    both;
+    pick;
+    join;
+    async;
+    pause;
+    wait;
+    wakeup;
+    extra_opens;
+    choose_comment_hint;
+    list_parallel;
+    sleep;
+    with_timeout;
+    timeout_exn;
+    condition_create =
+      (fun () ->
+        mk_apply_simple [ "Eio"; "Condition"; "create" ] [ mk_unit_val ]);
+    condition_wait =
+      (fun mutex cond ->
+        mk_apply_simple [ "Eio"; "Condition"; "await" ] [ cond; mutex ]);
+  }

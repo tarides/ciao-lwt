@@ -41,7 +41,7 @@ Make a writable directory tree:
     Lwt_unix.sleep (bin/main.ml[33,741+8]..[33,741+22])
     Lwt_unix.Timeout (bin/main.ml[39,875+14]..[39,875+30])
     Lwt_unix.with_timeout (bin/main.ml[37,792+15]..[37,792+36])
-  lib/test.ml: (121 occurrences)
+  lib/test.ml: (125 occurrences)
     Lwt.wakeup (lib/test.ml[124,3241+2]..[124,3241+12])
     Lwt.wakeup_later (lib/test.ml[125,3260+2]..[125,3260+18])
     Lwt.return (lib/test.ml[9,185+57]..[9,185+67])
@@ -134,6 +134,10 @@ Make a writable directory tree:
     Lwt.and* (lib/test.ml[27,679+2]..[27,679+6])
     Lwt.let+ (lib/test.ml[19,477+4]..[19,477+8])
     Lwt.let+ (lib/test.ml[24,604+4]..[24,604+8])
+    Lwt_condition.create (lib/test.ml[131,3409+8]..[131,3409+28])
+    Lwt_condition.wait (lib/test.ml[132,3441+14]..[132,3441+32])
+    Lwt_condition.wait (lib/test.ml[133,3479+20]..[133,3479+38])
+    Lwt_condition.wait (lib/test.ml[134,3530+20]..[134,3530+38])
     Lwt_fmt.printf (lib/test.ml[7,81+16]..[7,81+30])
     Lwt_fmt.printf (lib/test.ml[8,128+35]..[8,128+49])
     Lwt_fmt.printf (lib/test.ml[9,185+26]..[9,185+40])
@@ -439,3 +443,18 @@ Make a writable directory tree:
       (* TODO: lwt-to-direct-style: [iteri] can't be translated automatically. See https://ocaml.org/p/eio/latest/doc/Eio/Fiber/List/index.html *)
       (fun _ _ -> x)
       []
+  
+  let _ = Eio.Condition.create ()
+  
+  let f1 cond =
+    Eio.Condition.await
+      (* TODO: lwt-to-direct-style: A mutex must be passed *)
+      cond __mutex__
+  
+  let f2 mutex cond = Eio.Condition.await cond mutex
+  
+  let f3 mutex cond =
+    Eio.Condition.await cond
+      (Option.get
+         (* TODO: lwt-to-direct-style: [mutex] shouldn't be an option. *)
+         mutex)

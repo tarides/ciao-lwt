@@ -200,6 +200,15 @@ module Unpack_apply : sig
   val take : (expression -> t) -> t
   (** Accept one argument. *)
 
+  val take_lbl : string -> (expression -> t) -> t
+  (** Accept a labelled argument. It's safer to accept all the labelled
+      arguments first before accepting any unlabelled argument. *)
+
+  val take_lblopt : string -> ((expression * [ `Opt | `Lbl ]) option -> t) -> t
+  (** Accept an optional labelled argument. [`Opt] indicates that the passed
+      value is an option passed using [?lbl:...] and [`Lbl] indicates that the
+      value is passed as [~lbl:...]. See [take_lbl]. *)
+
   val take_all : ((arg_label * expression) list -> expression option) -> t
   (** Accept all remaining arguments. *)
 
@@ -210,29 +219,58 @@ module Unpack_apply : sig
 end = struct
   type t =
     | Arg of (expression -> t)
+    | Label of string * (expression -> t)
+    | Label_opt of string * ((expression * [ `Opt | `Lbl ]) option -> t)
     | Take_all of ((arg_label * expression) list -> expression option)
     | End of expression option
 
-  let rec apply_remaining_args params i k =
+  let rec apply_remaining_args params i = function
+    | Arg k -> apply_remaining_next params i Nolabel k
+    | Label (lbl, k) -> apply_remaining_next params i (Labelled (mk_loc lbl)) k
+    | Label_opt (lbl, k) ->
+        apply_remaining_next params i
+          (Optional (mk_loc lbl))
+          (fun arg -> k (Some (arg, `Opt)))
+    | End r -> apply_remaining_end params r
+    | Take_all k -> apply_remaining_end params (k [])
+
+  and apply_remaining_next params i lbl k =
     let ident = "x" ^ string_of_int i in
-    let params = mk_function_param (Pat.var (mk_loc ident)) :: params in
-    let end_ = function
-      | None -> None
-      | Some body ->
-          Some (Exp.function_ (List.rev params) None (Pfunction_body body))
-    in
-    match k (mk_exp_ident [ ident ]) with
-    | Arg k -> apply_remaining_args params (i + 1) k
-    | End r -> end_ r
-    | Take_all k -> end_ (k [])
+    let new_param = mk_function_param ~lbl (Pat.var (mk_loc ident)) in
+    let expr = mk_exp_ident [ ident ] in
+    apply_remaining_args (new_param :: params) (i + 1) (k expr)
+
+  and apply_remaining_end params r =
+    match (r, params) with
+    | _, [] | None, _ -> r
+    | Some body, _ :: _ ->
+        Some (Exp.function_ (List.rev params) None (Pfunction_body body))
+
+  let find_label args lbl =
+    List.partition
+      (function
+        | (Labelled lbl' | Optional lbl'), _ -> lbl'.txt <> lbl | _ -> true)
+      args
 
   let rec unapply args t =
     match (args, t) with
     | (Nolabel, arg) :: args_tl, Arg k -> unapply args_tl (k arg)
-    | [], End (Some _ as r) -> r
     | _, End None -> None
-    | [], Arg k -> apply_remaining_args [] 1 k
+    | [], t -> apply_remaining_args [] 1 t
     | args, Take_all k -> k args
+    | args, Label (lbl, k) -> (
+        match find_label args lbl with
+        | _, [] ->
+            Format.eprintf "Error: Label %S expected but not found" lbl;
+            None
+        | args_tl, (_, arg) :: _ -> unapply args_tl (k arg))
+    | args, Label_opt (lbl, k) -> (
+        match find_label args lbl with
+        | args_tl, (Labelled _, arg) :: _ ->
+            unapply args_tl (k (Some (arg, `Lbl)))
+        | args_tl, (Optional _, arg) :: _ ->
+            unapply args_tl (k (Some (arg, `Opt)))
+        | _ -> unapply args (k None))
     | ((Labelled lbl | Optional lbl), _) :: _, Arg _ ->
         Format.eprintf "Error: Unexpected label %S at %a\n%!" lbl.txt
           Printast.fmt_location lbl.loc;
@@ -243,6 +281,8 @@ end = struct
         None
 
   let take k = Arg k
+  let take_lbl lbl k = Label (lbl, k)
+  let take_lblopt lbl k = Label_opt (lbl, k)
   let take_all k = Take_all k
   let return r = End r
 end
@@ -376,6 +416,30 @@ let rewrite_apply_lwt_unix ~backend ident args =
       take @@ fun f -> return (Some ((Backend.get backend).with_timeout d f))
   | _ -> return None
 
+let rewrite_apply_lwt_condition ~backend ident args =
+  let open Unpack_apply in
+  unapply args
+  @@
+  match ident with
+  | "create" ->
+      take @@ fun _unit ->
+      return (Some ((Backend.get backend).condition_create ()))
+  | "wait" ->
+      take_lblopt "mutex" @@ fun mutex ->
+      take @@ fun cond ->
+      let mutex =
+        match mutex with
+        | Some (m, `Lbl) -> m
+        | Some (m, `Opt) ->
+            Comments.add_default_loc "[mutex] shouldn't be an option.";
+            mk_apply_simple [ "Option"; "get" ] [ m ]
+        | None ->
+            Comments.add_default_loc "A mutex must be passed";
+            mk_exp_ident [ "__mutex__" ]
+      in
+      return (Some ((Backend.get backend).condition_wait mutex cond))
+  | _ -> return None
+
 let rewrite_apply ~backend (unit_name, ident) args =
   match unit_name with
   | "Lwt" -> rewrite_apply_lwt ~backend ident args
@@ -387,6 +451,7 @@ let rewrite_apply ~backend (unit_name, ident) args =
       | _ -> None)
   | "Lwt_list" -> rewrite_apply_lwt_list ~backend ident args
   | "Lwt_unix" -> rewrite_apply_lwt_unix ~backend ident args
+  | "Lwt_condition" -> rewrite_apply_lwt_condition ~backend ident args
   | _ -> None
 
 (** Transform a [binding_op] into a [pattern] and an [expression] while
