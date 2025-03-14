@@ -26,6 +26,10 @@ type t = {
       (** mutex -> condition -> . *)
   cancel_message : string;
   state : expression -> expression;
+  mutex_create : unit -> expression;
+  mutex_lock : expression -> expression;
+  mutex_unlock : expression -> expression;
+  mutex_with_lock : expression -> expression -> expression;
 }
 
 module Eio = struct
@@ -95,4 +99,15 @@ let eio =
     cancel_message =
       "Use [Switch] or [Cancel] for defining a cancellable context.";
     state = (fun p -> mk_apply_simple [ "Promise"; "peek" ] [ p ]);
+    mutex_create =
+      (fun () -> mk_apply_simple [ "Eio"; "Mutex"; "create" ] [ mk_unit_val ]);
+    mutex_lock = (fun m -> mk_apply_simple [ "Eio"; "Mutex"; "lock" ] [ m ]);
+    mutex_unlock = (fun m -> mk_apply_simple [ "Eio"; "Mutex"; "unlock" ] [ m ]);
+    mutex_with_lock =
+      (fun t f ->
+        mk_apply_ident
+          [ "Eio"; "Mutex"; "use_rw" ]
+          [
+            (mk_lbl "protect", mk_constr_exp "false"); (Nolabel, t); (Nolabel, f);
+          ]);
   }

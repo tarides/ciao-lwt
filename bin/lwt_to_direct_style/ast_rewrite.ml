@@ -185,6 +185,19 @@ let suspend_list lst =
 let rewrite_lwt_both ~backend left right =
   Some ((Backend.get backend).both ~left:(suspend left) ~right:(suspend right))
 
+let rewrite_lwt_condition_wait ~backend mutex_opt cond =
+  let mutex =
+    match mutex_opt with
+    | Some (m, `Lbl) -> m
+    | Some (m, `Opt) ->
+        Comments.add_default_loc "[mutex] shouldn't be an option.";
+        mk_apply_simple [ "Option"; "get" ] [ m ]
+    | None ->
+        Comments.add_default_loc "A mutex must be passed";
+        mk_exp_ident [ "__mutex__" ]
+  in
+  (Backend.get backend).condition_wait mutex cond
+
 let mk_cstr c = Some (mk_constr_exp c)
 
 module Unpack_apply : sig
@@ -403,65 +416,54 @@ let string_drop_suffix ~suffix s =
     Some (String.sub s 0 (String.length s - String.length suffix))
   else None
 
-(* Rewrite occurrences of [Lwt_list] functions. *)
-let rewrite_apply_lwt_list ~backend ident args =
-  let ( >>= ) = Option.bind in
-  let transparent ident = Some (mk_apply_ident ident args) in
-  match string_drop_suffix ~suffix:"_s" ident with
-  | Some ident -> transparent [ "List"; ident ]
-  | None ->
-      string_drop_suffix ~suffix:"_p" ident >>= fun ident ->
-      (* Backend.get performs side effects. *)
-      (Backend.get backend).list_parallel ident >>= transparent
-
-let rewrite_apply_lwt_unix ~backend ident args =
+let rewrite_apply ~backend full_ident args =
   let open Unpack_apply in
+  let ( >>= ) = Option.bind in
+  let transparent ident =
+    take_all (fun args -> Some (mk_apply_ident ident args))
+  in
   unapply args
   @@
-  match ident with
-  | "sleep" -> take @@ fun d -> return (Some ((Backend.get backend).sleep d))
-  | "with_timeout" ->
+  match full_ident with
+  | "Lwt", ident ->
+      take_all @@ fun args -> rewrite_apply_lwt ~backend ident args
+  | ( "Lwt_fmt",
+      (( "printf" | "eprintf" | "stdout" | "stderr" | "fprintf" | "kfprintf"
+       | "ifprintf" | "ikfprintf" ) as ident) ) ->
+      transparent [ "Format"; ident ]
+  | "Lwt_list", ident -> (
+      match string_drop_suffix ~suffix:"_s" ident with
+      | Some ident -> transparent [ "List"; ident ]
+      | None -> (
+          match
+            string_drop_suffix ~suffix:"_p" ident >>= fun ident ->
+            (* Backend.get performs side effects. *)
+            (Backend.get backend).list_parallel ident
+          with
+          | Some ident -> transparent ident
+          | None -> return None))
+  | "Lwt_unix", "sleep" ->
+      take @@ fun d -> return (Some ((Backend.get backend).sleep d))
+  | "Lwt_unix", "with_timeout" ->
       take @@ fun d ->
       take @@ fun f -> return (Some ((Backend.get backend).with_timeout d f))
-  | _ -> return None
-
-let rewrite_apply_lwt_condition ~backend ident args =
-  let open Unpack_apply in
-  unapply args
-  @@
-  match ident with
-  | "create" ->
+  | "Lwt_condition", "create" ->
       take @@ fun _unit ->
       return (Some ((Backend.get backend).condition_create ()))
-  | "wait" ->
+  | "Lwt_condition", "wait" ->
       take_lblopt "mutex" @@ fun mutex ->
       take @@ fun cond ->
-      let mutex =
-        match mutex with
-        | Some (m, `Lbl) -> m
-        | Some (m, `Opt) ->
-            Comments.add_default_loc "[mutex] shouldn't be an option.";
-            mk_apply_simple [ "Option"; "get" ] [ m ]
-        | None ->
-            Comments.add_default_loc "A mutex must be passed";
-            mk_exp_ident [ "__mutex__" ]
-      in
-      return (Some ((Backend.get backend).condition_wait mutex cond))
+      return (Some (rewrite_lwt_condition_wait ~backend mutex cond))
+  | "Lwt_mutex", "create" ->
+      take @@ fun _unit -> return (Some ((Backend.get backend).mutex_create ()))
+  | "Lwt_mutex", "lock" ->
+      take @@ fun t -> return (Some ((Backend.get backend).mutex_lock t))
+  | "Lwt_mutex", "unlock" ->
+      take @@ fun t -> return (Some ((Backend.get backend).mutex_unlock t))
+  | "Lwt_mutex", "with_lock" ->
+      take @@ fun t ->
+      take @@ fun f -> return (Some ((Backend.get backend).mutex_with_lock t f))
   | _ -> return None
-
-let rewrite_apply ~backend (unit_name, ident) args =
-  match unit_name with
-  | "Lwt" -> rewrite_apply_lwt ~backend ident args
-  | "Lwt_fmt" -> (
-      match ident with
-      | "printf" | "eprintf" | "stdout" | "stderr" | "fprintf" | "kfprintf"
-      | "ifprintf" | "ikfprintf" ->
-          Some (Exp.apply (mk_exp_ident [ "Format"; ident ]) args)
-      | _ -> None)
-  | "Lwt_list" -> rewrite_apply_lwt_list ~backend ident args
-  | "Lwt_unix" -> rewrite_apply_lwt_unix ~backend ident args
-  | "Lwt_condition" -> rewrite_apply_lwt_condition ~backend ident args
-  | _ -> None
 
 (** Transform a [binding_op] into a [pattern] and an [expression] while
     preserving the type annotation. *)
