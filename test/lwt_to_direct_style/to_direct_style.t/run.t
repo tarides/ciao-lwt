@@ -41,7 +41,7 @@ Make a writable directory tree:
     Lwt_unix.sleep (bin/main.ml[33,741+8]..[33,741+22])
     Lwt_unix.Timeout (bin/main.ml[39,875+14]..[39,875+30])
     Lwt_unix.with_timeout (bin/main.ml[37,792+15]..[37,792+36])
-  lib/test.ml: (129 occurrences)
+  lib/test.ml: (133 occurrences)
     Lwt.wakeup (lib/test.ml[124,3241+2]..[124,3241+12])
     Lwt.wakeup_later (lib/test.ml[125,3260+2]..[125,3260+18])
     Lwt.return (lib/test.ml[9,185+57]..[9,185+67])
@@ -103,6 +103,10 @@ Make a writable directory tree:
     Lwt.pick (lib/test.ml[94,2359+11]..[94,2359+19])
     Lwt.pick (lib/test.ml[95,2415+11]..[95,2415+19])
     Lwt.pick (lib/test.ml[96,2462+11]..[96,2462+19])
+    Lwt.Return (lib/test.ml[142,3706+4]..[142,3706+10])
+    Lwt.Fail (lib/test.ml[143,3724+4]..[143,3724+8])
+    Lwt.Sleep (lib/test.ml[144,3754+4]..[144,3754+9])
+    Lwt.state (lib/test.ml[141,3681+8]..[141,3681+17])
     Lwt.pause (lib/test.ml[114,2964+8]..[114,2964+17])
     Lwt.>>= (lib/test.ml[32,766+2]..[32,766+5])
     Lwt.>>= (lib/test.ml[33,820+26]..[33,820+29])
@@ -175,10 +179,11 @@ Make a writable directory tree:
   $ lwt-to-direct-style --migrate
   Warning: bin/main.ml: 1 occurrences have not been rewritten.
     Lwt_main.run (line 22 column 10)
-  Warning: lib/test.ml: 3 occurrences have not been rewritten.
+  Warning: lib/test.ml: 4 occurrences have not been rewritten.
     Lwt.<?> (line 113 column 11)
     Lwt.choose (line 115 column 9)
     Lwt_list.iteri_p (line 129 column 9)
+    Lwt.Fail (line 143 column 5)
   Formatted 2 files, 0 errors
 
   $ cat bin/main.ml
@@ -477,3 +482,10 @@ Make a writable directory tree:
       (* TODO: lwt-to-direct-style: Translation is incomplete, [Promise.await] must be called on the promise when it's part of control-flow. *)
       =
     Promise.create ()
+  
+  let _ =
+    match Promise.peek x with
+    | Some x -> x
+    | Fail (* TODO: lwt-to-direct-style: [Lwt.Fail] shouldn't be used *) _ ->
+        failwith "fail"
+    | None -> ()

@@ -356,6 +356,7 @@ let rewrite_apply_lwt ~backend ident args =
   | "cancel" | "no_cancel" | "protected" | "on_cancel" | "wrap_in_cancelable" ->
       Comments.add_default_loc (Backend.get backend).cancel_message;
       return None
+  | "state" -> take @@ fun p -> return (Some ((Backend.get backend).state p))
   (* Return *)
   | "return" -> take @@ fun value_arg -> return (Some value_arg)
   | "return_some" ->
@@ -545,6 +546,11 @@ let rewrite_pattern ~backend pat =
           match (ident, arg) with
           | ("Lwt_unix", "Timeout"), None ->
               Some (Backend.get backend).timeout_exn
+          | ("Lwt", "Return"), arg -> Some (Pat.construct mk_some_ident arg)
+          | ("Lwt", "Sleep"), arg -> Some (Pat.construct mk_none_ident arg)
+          | ("Lwt", "Fail"), Some _ ->
+              Comments.add lid.loc "[Lwt.Fail] shouldn't be used";
+              None
           | _ -> None)
   | _ -> None
 

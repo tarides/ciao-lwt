@@ -136,3 +136,9 @@ let f3 mutex cond = Lwt_condition.wait ?mutex cond
 let _ = Lwt.ignore_result (Lwt.return ())
 let _ = Lwt.ignore_result x
 let _ = Lwt.task ()
+
+let _ =
+  match Lwt.state x with
+  | Return x -> x
+  | Fail _ -> failwith "fail"
+  | Sleep -> ()

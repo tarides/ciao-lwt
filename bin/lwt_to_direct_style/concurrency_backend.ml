@@ -25,6 +25,7 @@ type t = {
   condition_wait : expression -> expression -> expression;
       (** mutex -> condition -> . *)
   cancel_message : string;
+  state : expression -> expression;
 }
 
 module Eio = struct
@@ -93,4 +94,5 @@ let eio =
         mk_apply_simple [ "Eio"; "Condition"; "await" ] [ cond; mutex ]);
     cancel_message =
       "Use [Switch] or [Cancel] for defining a cancellable context.";
+    state = (fun p -> mk_apply_simple [ "Promise"; "peek" ] [ p ]);
   }
