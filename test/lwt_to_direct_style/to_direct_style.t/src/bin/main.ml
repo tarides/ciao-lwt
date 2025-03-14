@@ -31,3 +31,9 @@ let _ = Lwt.return_error ()
 let _ = Lwt_fmt.printf ""
 let _ = Lwt_fmt.eprintf ""
 let _ = Lwt_unix.sleep 1.0
+
+let _ =
+  Lwt.try_bind
+    (fun () -> Lwt_unix.with_timeout 1.0 (fun () -> Lwt.return 42))
+    Lwt.return
+    (function Lwt_unix.Timeout -> Lwt.return 0 | x -> Lwt.reraise x)

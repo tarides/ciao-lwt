@@ -18,6 +18,9 @@ type t = {
   list_parallel : string -> string list option;
       (** Given a function name from [Lwt_list] with the [_p] suffix removed,
           return an identifier. *)
+  sleep : expression -> expression;
+  with_timeout : expression -> expression -> expression;
+  timeout_exn : pattern;
 }
 
 module Eio = struct
@@ -51,6 +54,15 @@ module Eio = struct
          ^ "] can't be translated automatically. See \
             https://ocaml.org/p/eio/latest/doc/Eio/Fiber/List/index.html");
         None
+
+  let sleep d = mk_apply_simple [ "Eio_unix"; "sleep" ] [ d ]
+
+  let with_timeout d f =
+    Comments.add_default_loc "[env] must be propagated from the main loop";
+    let clock = Exp.send (mk_exp_ident [ "env" ]) (mk_loc "mono_clock") in
+    mk_apply_simple [ "Time"; "with_timeout_exn" ] [ clock; d; f ]
+
+  let timeout_exn = Pat.construct (mk_longident [ "Time"; "Timeout" ]) None
 end
 
 let eio =
@@ -66,4 +78,7 @@ let eio =
       extra_opens;
       choose_comment_hint;
       list_parallel;
+      sleep;
+      with_timeout;
+      timeout_exn;
     }

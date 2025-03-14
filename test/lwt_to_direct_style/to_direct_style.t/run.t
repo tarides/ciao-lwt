@@ -8,11 +8,14 @@ Make a writable directory tree:
   _build/default/bin/.main.eobjs/cctx.ocaml-index
 
   $ lwt-to-direct-style
-  bin/main.ml: (25 occurrences)
+  bin/main.ml: (32 occurrences)
     Lwt.return (bin/main.ml[9,150+15]..[9,150+25])
     Lwt.return (bin/main.ml[16,317+45]..[16,317+55])
     Lwt.return (bin/main.ml[19,410+24]..[19,410+34])
     Lwt.return (bin/main.ml[20,475+14]..[20,475+24])
+    Lwt.return (bin/main.ml[37,792+52]..[37,792+62])
+    Lwt.return (bin/main.ml[38,860+4]..[38,860+14])
+    Lwt.return (bin/main.ml[39,875+34]..[39,875+44])
     Lwt.return_unit (bin/main.ml[19,410+48]..[19,410+63])
     Lwt.return_none (bin/main.ml[16,317+28]..[16,317+43])
     Lwt.return_none (bin/main.ml[24,538+8]..[24,538+23])
@@ -23,9 +26,11 @@ Make a writable directory tree:
     Lwt.return_error (bin/main.ml[29,659+8]..[29,659+24])
     Lwt.reraise (bin/main.ml[12,254+15]..[12,254+26])
     Lwt.reraise (bin/main.ml[16,317+56]..[16,317+67])
+    Lwt.reraise (bin/main.ml[39,875+54]..[39,875+65])
     Lwt.try_bind (bin/main.ml[4,32+2]..[4,32+14])
     Lwt.try_bind (bin/main.ml[16,317+4]..[16,317+16])
     Lwt.try_bind (bin/main.ml[18,390+2]..[18,390+14])
+    Lwt.try_bind (bin/main.ml[36,777+2]..[36,777+14])
     Lwt.let* (bin/main.ml[6,62+6]..[6,62+10])
     Lwt.let+ (bin/main.ml[7,108+6]..[7,108+10])
     Lwt_fmt.printf (bin/main.ml[6,62+16]..[6,62+30])
@@ -34,6 +39,8 @@ Make a writable directory tree:
     Lwt_fmt.eprintf (bin/main.ml[32,714+8]..[32,714+23])
     Lwt_main.run (bin/main.ml[22,505+9]..[22,505+21])
     Lwt_unix.sleep (bin/main.ml[33,741+8]..[33,741+22])
+    Lwt_unix.Timeout (bin/main.ml[39,875+14]..[39,875+30])
+    Lwt_unix.with_timeout (bin/main.ml[37,792+15]..[37,792+36])
   lib/test.ml: (121 occurrences)
     Lwt.wakeup (lib/test.ml[124,3241+2]..[124,3241+12])
     Lwt.wakeup_later (lib/test.ml[125,3260+2]..[125,3260+18])
@@ -158,9 +165,8 @@ Make a writable directory tree:
     Lwt_list.iteri_p (lib/test.ml[129,3365+8]..[129,3365+24])
 
   $ lwt-to-direct-style --migrate
-  Warning: bin/main.ml: 2 occurrences have not been rewritten.
+  Warning: bin/main.ml: 1 occurrences have not been rewritten.
     Lwt_main.run (line 22 column 10)
-    Lwt_unix.sleep (line 33 column 9)
   Warning: lib/test.ml: 3 occurrences have not been rewritten.
     Lwt.<?> (line 113 column 11)
     Lwt.choose (line 115 column 9)
@@ -168,6 +174,7 @@ Make a writable directory tree:
   Formatted 2 files, 0 errors
 
   $ cat bin/main.ml
+  open Eio
   open Lwt.Syntax
   
   let _main () =
@@ -192,7 +199,16 @@ Make a writable directory tree:
   let _ = Error ()
   let _ = Format.printf ""
   let _ = Format.eprintf ""
-  let _ = Lwt_unix.sleep 1.0
+  let _ = Eio_unix.sleep 1.0
+  
+  let _ =
+    match
+      Time.with_timeout_exn env#mono_clock
+        (* TODO: lwt-to-direct-style: [env] must be propagated from the main loop *)
+        1.0 (fun () -> 42)
+    with
+    | v -> v
+    | exception Time.Timeout -> 0
 
   $ cat lib/test.ml
   open Eio

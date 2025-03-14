@@ -365,6 +365,17 @@ let rewrite_apply_lwt_list ~backend ident args =
       (* Backend.get performs side effects. *)
       (Backend.get backend).list_parallel ident >>= transparent
 
+let rewrite_apply_lwt_unix ~backend ident args =
+  let open Unpack_apply in
+  unapply args
+  @@
+  match ident with
+  | "sleep" -> take @@ fun d -> return (Some ((Backend.get backend).sleep d))
+  | "with_timeout" ->
+      take @@ fun d ->
+      take @@ fun f -> return (Some ((Backend.get backend).with_timeout d f))
+  | _ -> return None
+
 let rewrite_apply ~backend (unit_name, ident) args =
   match unit_name with
   | "Lwt" -> rewrite_apply_lwt ~backend ident args
@@ -375,6 +386,7 @@ let rewrite_apply ~backend (unit_name, ident) args =
           Some (Exp.apply (mk_exp_ident [ "Format"; ident ]) args)
       | _ -> None)
   | "Lwt_list" -> rewrite_apply_lwt_list ~backend ident args
+  | "Lwt_unix" -> rewrite_apply_lwt_unix ~backend ident args
   | _ -> None
 
 (** Transform a [binding_op] into a [pattern] and an [expression] while
@@ -453,6 +465,16 @@ let rewrite_expression ~backend exp =
       Occ.may_rewrite let_.pbop_op (rewrite_letop ~backend let_ ands body)
   | _ -> None
 
+let rewrite_pattern ~backend pat =
+  match pat.ppat_desc with
+  | Ppat_construct (lid, arg) ->
+      Occ.may_rewrite lid (fun ident ->
+          match (ident, arg) with
+          | ("Lwt_unix", "Timeout"), None ->
+              Some (Backend.get backend).timeout_exn
+          | _ -> None)
+  | _ -> None
+
 let remove_lwt_opens stri =
   match stri.pstr_desc with
   | Pstr_open { popen_expr = { pmod_desc = Pmod_ident lid; _ }; _ }
@@ -483,10 +505,15 @@ let rewrite_lwt_uses ~fname ~occurrences ~backend str =
     | Some exp -> expr m exp
     | None -> default.expr m exp
   in
+  let rec pat m p =
+    match rewrite_pattern ~backend p with
+    | Some p -> pat m p
+    | None -> default.pat m p
+  in
   let structure m str =
     default.structure m (List.filter remove_lwt_opens str)
   in
-  let m = { default with expr; structure } in
+  let m = { default with expr; pat; structure } in
   let str = m.structure m str in
   let str =
     if Backend.is_used backend then add_extra_opens ~backend str else str
