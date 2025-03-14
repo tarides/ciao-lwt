@@ -24,6 +24,7 @@ type t = {
   condition_create : unit -> expression;
   condition_wait : expression -> expression -> expression;
       (** mutex -> condition -> . *)
+  cancel_message : string;
 }
 
 module Eio = struct
@@ -90,4 +91,6 @@ let eio =
     condition_wait =
       (fun mutex cond ->
         mk_apply_simple [ "Eio"; "Condition"; "await" ] [ cond; mutex ]);
+    cancel_message =
+      "Use [Switch] or [Cancel] for defining a cancellable context.";
   }

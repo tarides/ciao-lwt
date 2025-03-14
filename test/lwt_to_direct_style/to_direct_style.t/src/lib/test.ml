@@ -132,3 +132,7 @@ let _ = Lwt_condition.create ()
 let f1 cond = Lwt_condition.wait cond
 let f2 mutex cond = Lwt_condition.wait ~mutex cond
 let f3 mutex cond = Lwt_condition.wait ?mutex cond
+
+let _ = Lwt.ignore_result (Lwt.return ())
+let _ = Lwt.ignore_result x
+let _ = Lwt.task ()

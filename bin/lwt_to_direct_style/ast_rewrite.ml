@@ -348,6 +348,14 @@ let rewrite_apply_lwt ~backend ident args =
   | "wakeup" | "wakeup_later" ->
       take @@ fun u ->
       take @@ fun arg -> return (Some ((Backend.get backend).wakeup u arg))
+  | "ignore_result" ->
+      take @@ fun p -> return (Some ((Backend.get backend).async (suspend p)))
+  | "task" ->
+      Comments.add_default_loc (Backend.get backend).cancel_message;
+      take @@ fun _unit -> return (Some ((Backend.get backend).wait ()))
+  | "cancel" | "no_cancel" | "protected" | "on_cancel" | "wrap_in_cancelable" ->
+      Comments.add_default_loc (Backend.get backend).cancel_message;
+      return None
   (* Return *)
   | "return" -> take @@ fun value_arg -> return (Some value_arg)
   | "return_some" ->
