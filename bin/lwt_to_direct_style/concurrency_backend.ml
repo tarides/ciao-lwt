@@ -55,7 +55,7 @@ module Eio = struct
   let wakeup u arg = mk_apply_simple [ "Promise"; "resolve" ] [ u; arg ]
   let join lst = mk_apply_simple [ "Fiber"; "all" ] [ lst ]
   let pause () = mk_apply_simple [ "Fiber"; "yield" ] [ mk_unit_val ]
-  let extra_opens = [ mk_longident' [ "Eio" ] ]
+  let extra_opens = [ mk_longident' [ "Eio"; "Std" ] ]
   let choose_comment_hint = "Use Eio.Promise instead. "
 
   let list_parallel = function
@@ -73,9 +73,10 @@ module Eio = struct
   let with_timeout d f =
     Comments.add_default_loc "[env] must be propagated from the main loop";
     let clock = Exp.send (mk_exp_ident [ "env" ]) (mk_loc "mono_clock") in
-    mk_apply_simple [ "Time"; "with_timeout_exn" ] [ clock; d; f ]
+    mk_apply_simple [ "Eio"; "Time"; "with_timeout_exn" ] [ clock; d; f ]
 
-  let timeout_exn = Pat.construct (mk_longident [ "Time"; "Timeout" ]) None
+  let timeout_exn =
+    Pat.construct (mk_longident [ "Eio"; "Time"; "Timeout" ]) None
 end
 
 let eio =

@@ -195,7 +195,7 @@ Make a writable directory tree:
   Formatted 2 files, 0 errors
 
   $ cat bin/main.ml
-  open Eio
+  open Eio.Std
   open Lwt.Syntax
   
   let _main () =
@@ -224,15 +224,15 @@ Make a writable directory tree:
   
   let _ =
     match
-      Time.with_timeout_exn env#mono_clock
+      Eio.Time.with_timeout_exn env#mono_clock
         (* TODO: lwt-to-direct-style: [env] must be propagated from the main loop *)
         1.0 (fun () -> 42)
     with
     | v -> v
-    | exception Time.Timeout -> 0
+    | exception Eio.Time.Timeout -> 0
 
   $ cat lib/test.ml
-  open Eio
+  open Eio.Std
   open Lwt.Infix
   open Lwt.Syntax
   
