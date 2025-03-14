@@ -146,3 +146,8 @@ let _ =
   | Return x -> x
   | Fail _ -> failwith "fail"
   | Sleep -> ()
+
+let key = Lwt.new_key ()
+let _ = Lwt.get key
+let _ = Lwt.with_value key (Some 12) (fun () -> x)
+let _ = Lwt.with_value key None (fun () -> x)

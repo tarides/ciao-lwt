@@ -41,7 +41,11 @@ Make a writable directory tree:
     Lwt_unix.sleep (bin/main.ml[33,741+8]..[33,741+22])
     Lwt_unix.Timeout (bin/main.ml[39,875+14]..[39,875+30])
     Lwt_unix.with_timeout (bin/main.ml[37,792+15]..[37,792+36])
-  lib/test.ml: (137 occurrences)
+  lib/test.ml: (141 occurrences)
+    Lwt.new_key (lib/test.ml[150,3895+10]..[150,3895+21])
+    Lwt.get (lib/test.ml[151,3920+8]..[151,3920+15])
+    Lwt.with_value (lib/test.ml[152,3940+8]..[152,3940+22])
+    Lwt.with_value (lib/test.ml[153,3991+8]..[153,3991+22])
     Lwt.wakeup (lib/test.ml[124,3241+2]..[124,3241+12])
     Lwt.wakeup_later (lib/test.ml[125,3260+2]..[125,3260+18])
     Lwt.return (lib/test.ml[9,185+57]..[9,185+67])
@@ -498,3 +502,16 @@ Make a writable directory tree:
     | Fail (* TODO: lwt-to-direct-style: [Lwt.Fail] shouldn't be used *) _ ->
         failwith "fail"
     | None -> ()
+  
+  let key = Fiber.create_key ()
+  let _ = Fiber.get key
+  
+  let _ =
+    (Option.fold ~none:Fiber.without_binding
+       ~some:(Fun.flip Fiber.with_binding)
+       (Some 12)) key (fun () -> x)
+  
+  let _ =
+    (Option.fold ~none:Fiber.without_binding
+       ~some:(Fun.flip Fiber.with_binding)
+       None) key (fun () -> x)

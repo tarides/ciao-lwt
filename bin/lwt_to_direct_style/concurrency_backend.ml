@@ -30,6 +30,10 @@ type t = {
   mutex_lock : expression -> expression;
   mutex_unlock : expression -> expression;
   mutex_with_lock : expression -> expression -> expression;
+  key_new : unit -> expression;
+  key_get : expression -> expression;
+  key_with_value : expression -> expression -> expression -> expression;
+      (** key -> val_opt -> f -> r *)
 }
 
 module Eio = struct
@@ -110,4 +114,19 @@ let eio =
           [
             (mk_lbl "protect", mk_constr_exp "false"); (Nolabel, t); (Nolabel, f);
           ]);
+    key_new =
+      (fun () -> mk_apply_simple [ "Fiber"; "create_key" ] [ mk_unit_val ]);
+    key_get = (fun key -> mk_apply_simple [ "Fiber"; "get" ] [ key ]);
+    key_with_value =
+      (fun key val_opt f ->
+        Exp.apply
+          (mk_apply_ident [ "Option"; "fold" ]
+             [
+               (mk_lbl "none", mk_exp_ident [ "Fiber.without_binding" ]);
+               ( mk_lbl "some",
+                 mk_apply_simple [ "Fun"; "flip" ]
+                   [ mk_exp_ident [ "Fiber.with_binding" ] ] );
+               (Nolabel, val_opt);
+             ])
+          [ (Nolabel, key); (Nolabel, f) ]);
   }

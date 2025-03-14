@@ -392,6 +392,16 @@ let rewrite_apply_lwt ~backend ident args =
   | "fail_invalid_arg" ->
       take @@ fun msg ->
       return (Some (mk_apply_simple [ "invalid_arg" ] [ msg ]))
+  (* Keys *)
+  | "new_key" ->
+      take @@ fun _unit -> return (Some ((Backend.get backend).key_new ()))
+  | "get" ->
+      take @@ fun key -> return (Some ((Backend.get backend).key_get key))
+  | "with_value" ->
+      take @@ fun key ->
+      take @@ fun val_opt ->
+      take @@ fun f ->
+      return (Some ((Backend.get backend).key_with_value key val_opt f))
   (* Operators *)
   | ">>=" | ">|=" ->
       take @@ fun lhs ->
