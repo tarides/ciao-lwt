@@ -1,133 +1,108 @@
 open Ocamlformat_utils.Parsing
 open Asttypes
-open Parsetree
+
+(* open Parsetree *)
 open Ast_helper
 open Ocamlformat_utils.Ast_utils
 
-type t = {
-  both : left:expression -> right:expression -> expression;
-      (** Transform [Lwt.both]. *)
-  pick : expression -> expression;
-  join : expression -> expression;
-  async : expression -> expression;
-  wait : unit -> expression;
-  wakeup : expression -> expression -> expression;
-  pause : unit -> expression;
-  extra_opens : Longident.t list;  (** Opens to add at the top of the module. *)
-  choose_comment_hint : string;
-  list_parallel : string -> string list option;
-      (** Given a function name from [Lwt_list] with the [_p] suffix removed,
-          return an identifier. *)
-  sleep : expression -> expression;
-  with_timeout : expression -> expression -> expression;
-  timeout_exn : pattern;
-  condition_create : unit -> expression;
-  condition_wait : expression -> expression -> expression;
-      (** mutex -> condition -> . *)
-  cancel_message : string;
-  state : expression -> expression;
-  mutex_create : unit -> expression;
-  mutex_lock : expression -> expression;
-  mutex_unlock : expression -> expression;
-  mutex_with_lock : expression -> expression -> expression;
-  key_new : unit -> expression;
-  key_get : expression -> expression;
-  key_with_value : expression -> expression -> expression -> expression;
-      (** key -> val_opt -> f -> r *)
-}
+let eio () =
+  let used_eio_std = ref false in
+  let fiber_ident i =
+    used_eio_std := true;
+    [ "Fiber"; i ]
+  in
+  let promise_ident i =
+    used_eio_std := true;
+    [ "Promise"; i ]
+  in
+  object
+    method both ~left ~right =
+      mk_apply_simple (fiber_ident "pair") [ left; right ]
 
-module Eio = struct
-  let both ~left ~right = mk_apply_simple [ "Fiber"; "pair" ] [ left; right ]
-  let pick lst = mk_apply_simple [ "Fiber"; "any" ] [ lst ]
+    method pick lst = mk_apply_simple (fiber_ident "any") [ lst ]
 
-  let async process_f =
-    Comments.add_default_loc "[sw] must be propagated here.";
-    Exp.apply
-      (mk_exp_ident [ "Fiber"; "fork" ])
-      [ (Labelled (mk_loc "sw"), mk_exp_ident [ "sw" ]); (Nolabel, process_f) ]
+    method async process_f =
+      Comments.add_default_loc "[sw] must be propagated here.";
+      Exp.apply
+        (mk_exp_ident (fiber_ident "fork"))
+        [
+          (Labelled (mk_loc "sw"), mk_exp_ident [ "sw" ]); (Nolabel, process_f);
+        ]
 
-  let wait () =
-    Comments.add_default_loc
-      "Translation is incomplete, [Promise.await] must be called on the \
-       promise when it's part of control-flow.";
-    mk_apply_simple [ "Promise"; "create" ] [ mk_unit_val ]
+    method wait () =
+      Comments.add_default_loc
+        "Translation is incomplete, [Promise.await] must be called on the \
+         promise when it's part of control-flow.";
+      mk_apply_simple (promise_ident "create") [ mk_unit_val ]
 
-  let wakeup u arg = mk_apply_simple [ "Promise"; "resolve" ] [ u; arg ]
-  let join lst = mk_apply_simple [ "Fiber"; "all" ] [ lst ]
-  let pause () = mk_apply_simple [ "Fiber"; "yield" ] [ mk_unit_val ]
-  let extra_opens = [ mk_longident' [ "Eio"; "Std" ] ]
-  let choose_comment_hint = "Use Eio.Promise instead. "
+    method wakeup u arg = mk_apply_simple (promise_ident "resolve") [ u; arg ]
+    method join lst = mk_apply_simple (fiber_ident "all") [ lst ]
+    method pause () = mk_apply_simple (fiber_ident "yield") [ mk_unit_val ]
 
-  let list_parallel = function
-    | ("filter" | "filter_map" | "map" | "iter") as ident ->
-        Some [ "Fiber"; "List"; ident ]
-    | ident ->
-        Comments.add_default_loc
-          ("[" ^ ident
-         ^ "] can't be translated automatically. See \
-            https://ocaml.org/p/eio/latest/doc/Eio/Fiber/List/index.html");
-        None
+    method extra_opens =
+      if !used_eio_std then [ mk_longident' [ "Eio"; "Std" ] ] else []
 
-  let sleep d = mk_apply_simple [ "Eio_unix"; "sleep" ] [ d ]
+    method choose_comment_hint = "Use Eio.Promise instead. "
 
-  let with_timeout d f =
-    Comments.add_default_loc "[env] must be propagated from the main loop";
-    let clock = Exp.send (mk_exp_ident [ "env" ]) (mk_loc "mono_clock") in
-    mk_apply_simple [ "Eio"; "Time"; "with_timeout_exn" ] [ clock; d; f ]
+    method list_parallel =
+      function
+      | ("filter" | "filter_map" | "map" | "iter") as ident ->
+          Some (fiber_ident "List" @ [ ident ])
+      | ident ->
+          Comments.add_default_loc
+            ("[" ^ ident
+           ^ "] can't be translated automatically. See \
+              https://ocaml.org/p/eio/latest/doc/Eio/Fiber/List/index.html");
+          None
 
-  let timeout_exn =
-    Pat.construct (mk_longident [ "Eio"; "Time"; "Timeout" ]) None
-end
+    method sleep d = mk_apply_simple [ "Eio_unix"; "sleep" ] [ d ]
 
-let eio =
-  let open Eio in
-  {
-    both;
-    pick;
-    join;
-    async;
-    pause;
-    wait;
-    wakeup;
-    extra_opens;
-    choose_comment_hint;
-    list_parallel;
-    sleep;
-    with_timeout;
-    timeout_exn;
-    condition_create =
-      (fun () ->
-        mk_apply_simple [ "Eio"; "Condition"; "create" ] [ mk_unit_val ]);
-    condition_wait =
-      (fun mutex cond ->
-        mk_apply_simple [ "Eio"; "Condition"; "await" ] [ cond; mutex ]);
-    cancel_message =
-      "Use [Switch] or [Cancel] for defining a cancellable context.";
-    state = (fun p -> mk_apply_simple [ "Promise"; "peek" ] [ p ]);
-    mutex_create =
-      (fun () -> mk_apply_simple [ "Eio"; "Mutex"; "create" ] [ mk_unit_val ]);
-    mutex_lock = (fun m -> mk_apply_simple [ "Eio"; "Mutex"; "lock" ] [ m ]);
-    mutex_unlock = (fun m -> mk_apply_simple [ "Eio"; "Mutex"; "unlock" ] [ m ]);
-    mutex_with_lock =
-      (fun t f ->
-        mk_apply_ident
-          [ "Eio"; "Mutex"; "use_rw" ]
-          [
-            (mk_lbl "protect", mk_constr_exp "false"); (Nolabel, t); (Nolabel, f);
-          ]);
-    key_new =
-      (fun () -> mk_apply_simple [ "Fiber"; "create_key" ] [ mk_unit_val ]);
-    key_get = (fun key -> mk_apply_simple [ "Fiber"; "get" ] [ key ]);
-    key_with_value =
-      (fun key val_opt f ->
-        Exp.apply
-          (mk_apply_ident [ "Option"; "fold" ]
-             [
-               (mk_lbl "none", mk_exp_ident [ "Fiber.without_binding" ]);
-               ( mk_lbl "some",
-                 mk_apply_simple [ "Fun"; "flip" ]
-                   [ mk_exp_ident [ "Fiber.with_binding" ] ] );
-               (Nolabel, val_opt);
-             ])
-          [ (Nolabel, key); (Nolabel, f) ]);
-  }
+    method with_timeout d f =
+      Comments.add_default_loc "[env] must be propagated from the main loop";
+      let clock = Exp.send (mk_exp_ident [ "env" ]) (mk_loc "mono_clock") in
+      mk_apply_simple [ "Eio"; "Time"; "with_timeout_exn" ] [ clock; d; f ]
+
+    method timeout_exn =
+      Pat.construct (mk_longident [ "Eio"; "Time"; "Timeout" ]) None
+
+    method condition_create () =
+      mk_apply_simple [ "Eio"; "Condition"; "create" ] [ mk_unit_val ]
+
+    method condition_wait mutex cond =
+      mk_apply_simple [ "Eio"; "Condition"; "await" ] [ cond; mutex ]
+
+    method cancel_message =
+      "Use [Switch] or [Cancel] for defining a cancellable context."
+
+    method state p = mk_apply_simple (promise_ident "peek") [ p ]
+
+    method mutex_create () =
+      mk_apply_simple [ "Eio"; "Mutex"; "create" ] [ mk_unit_val ]
+
+    method mutex_lock m = mk_apply_simple [ "Eio"; "Mutex"; "lock" ] [ m ]
+    method mutex_unlock m = mk_apply_simple [ "Eio"; "Mutex"; "unlock" ] [ m ]
+
+    method mutex_with_lock t f =
+      mk_apply_ident
+        [ "Eio"; "Mutex"; "use_rw" ]
+        [
+          (mk_lbl "protect", mk_constr_exp "false"); (Nolabel, t); (Nolabel, f);
+        ]
+
+    method key_new () =
+      mk_apply_simple (fiber_ident "create_key") [ mk_unit_val ]
+
+    method key_get key = mk_apply_simple (fiber_ident "get") [ key ]
+
+    method key_with_value key val_opt f =
+      Exp.apply
+        (mk_apply_ident [ "Option"; "fold" ]
+           [
+             (mk_lbl "none", mk_exp_ident (fiber_ident "without_binding"));
+             ( mk_lbl "some",
+               mk_apply_simple [ "Fun"; "flip" ]
+                 [ mk_exp_ident (fiber_ident "with_binding") ] );
+             (Nolabel, val_opt);
+           ])
+        [ (Nolabel, key); (Nolabel, f) ]
+  end

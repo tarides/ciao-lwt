@@ -3,7 +3,6 @@ open Asttypes
 open Parsetree
 open Ast_helper
 open Ocamlformat_utils.Ast_utils
-open Concurrency_backend
 
 module Occ = struct
   (** Manage occurrences of Lwt calls that should be migrated. *)
@@ -68,21 +67,6 @@ module Occ = struct
       |> List.iter (fun (loc, ident) ->
              Format.eprintf "  %s (%a)@\n" ident pp_loc loc);
       Format.eprintf "%!")
-end
-
-(** Keep track of whether backend functions have been used and [open] items must
-    be added. *)
-module Backend = struct
-  type t = { backend : Concurrency_backend.t; mutable used : bool }
-
-  let v backend = { backend; used = false }
-
-  let get t =
-    t.used <- true;
-    t.backend
-
-  let get_without_using t = t.backend
-  let is_used t = t.used
 end
 
 (* Rewrite to a let binding or an apply. *)
@@ -183,7 +167,7 @@ let suspend_list lst =
       lst
 
 let rewrite_lwt_both ~backend left right =
-  Some ((Backend.get backend).both ~left:(suspend left) ~right:(suspend right))
+  Some (backend#both ~left:(suspend left) ~right:(suspend right))
 
 let rewrite_lwt_condition_wait ~backend mutex_opt cond =
   let mutex =
@@ -196,7 +180,7 @@ let rewrite_lwt_condition_wait ~backend mutex_opt cond =
         Comments.add_default_loc "A mutex must be passed";
         mk_exp_ident [ "__mutex__" ]
   in
-  (Backend.get backend).condition_wait mutex cond
+  backend#condition_wait mutex cond
 
 let mk_cstr c = Some (mk_constr_exp c)
 
@@ -339,37 +323,30 @@ let rewrite_apply_lwt ~backend ident args =
   | "both" ->
       take @@ fun left ->
       take @@ fun right -> return (rewrite_lwt_both ~backend left right)
-  | "pick" ->
-      take @@ fun lst ->
-      return (Some ((Backend.get backend).pick (suspend_list lst)))
+  | "pick" -> take @@ fun lst -> return (Some (backend#pick (suspend_list lst)))
   | "choose" ->
       take @@ fun _lst ->
       Comments.add_default_loc
         ("[Lwt.choose] can't be automatically translated."
-       ^ (Backend.get_without_using backend).choose_comment_hint);
+       ^ backend#choose_comment_hint);
       return None
-  | "join" ->
-      take @@ fun lst ->
-      return (Some ((Backend.get backend).join (suspend_list lst)))
+  | "join" -> take @@ fun lst -> return (Some (backend#join (suspend_list lst)))
   (* Async primitives *)
-  | "async" ->
-      take @@ fun process_f ->
-      return (Some ((Backend.get backend).async process_f))
-  | "pause" ->
-      take @@ fun _unit -> return (Some ((Backend.get backend).pause ()))
-  | "wait" -> take @@ fun _unit -> return (Some ((Backend.get backend).wait ()))
+  | "async" -> take @@ fun process_f -> return (Some (backend#async process_f))
+  | "pause" -> take @@ fun _unit -> return (Some (backend#pause ()))
+  | "wait" -> take @@ fun _unit -> return (Some (backend#wait ()))
   | "wakeup" | "wakeup_later" ->
       take @@ fun u ->
-      take @@ fun arg -> return (Some ((Backend.get backend).wakeup u arg))
+      take @@ fun arg -> return (Some (backend#wakeup u arg))
   | "ignore_result" ->
-      take @@ fun p -> return (Some ((Backend.get backend).async (suspend p)))
+      take @@ fun p -> return (Some (backend#async (suspend p)))
   | "task" ->
-      Comments.add_default_loc (Backend.get backend).cancel_message;
-      take @@ fun _unit -> return (Some ((Backend.get backend).wait ()))
+      Comments.add_default_loc backend#cancel_message;
+      take @@ fun _unit -> return (Some (backend#wait ()))
   | "cancel" | "no_cancel" | "protected" | "on_cancel" | "wrap_in_cancelable" ->
-      Comments.add_default_loc (Backend.get backend).cancel_message;
+      Comments.add_default_loc backend#cancel_message;
       return None
-  | "state" -> take @@ fun p -> return (Some ((Backend.get backend).state p))
+  | "state" -> take @@ fun p -> return (Some (backend#state p))
   (* Return *)
   | "return" -> take @@ fun value_arg -> return (Some value_arg)
   | "return_some" ->
@@ -393,15 +370,12 @@ let rewrite_apply_lwt ~backend ident args =
       take @@ fun msg ->
       return (Some (mk_apply_simple [ "invalid_arg" ] [ msg ]))
   (* Keys *)
-  | "new_key" ->
-      take @@ fun _unit -> return (Some ((Backend.get backend).key_new ()))
-  | "get" ->
-      take @@ fun key -> return (Some ((Backend.get backend).key_get key))
+  | "new_key" -> take @@ fun _unit -> return (Some (backend#key_new ()))
+  | "get" -> take @@ fun key -> return (Some (backend#key_get key))
   | "with_value" ->
       take @@ fun key ->
       take @@ fun val_opt ->
-      take @@ fun f ->
-      return (Some ((Backend.get backend).key_with_value key val_opt f))
+      take @@ fun f -> return (Some (backend#key_with_value key val_opt f))
   (* Operators *)
   | ">>=" | ">|=" ->
       take @@ fun lhs ->
@@ -417,7 +391,7 @@ let rewrite_apply_lwt ~backend ident args =
       take @@ fun _rhs ->
       Comments.add_default_loc
         ("[<?>] can't be automatically translated."
-       ^ (Backend.get_without_using backend).choose_comment_hint);
+       ^ backend#choose_comment_hint);
       return None
   | _ -> return None
 
@@ -447,32 +421,28 @@ let rewrite_apply ~backend full_ident args =
       | None -> (
           match
             string_drop_suffix ~suffix:"_p" ident >>= fun ident ->
-            (* Backend.get performs side effects. *)
-            (Backend.get backend).list_parallel ident
+            backend#list_parallel ident
           with
           | Some ident -> transparent ident
           | None -> return None))
-  | "Lwt_unix", "sleep" ->
-      take @@ fun d -> return (Some ((Backend.get backend).sleep d))
+  | "Lwt_unix", "sleep" -> take @@ fun d -> return (Some (backend#sleep d))
   | "Lwt_unix", "with_timeout" ->
       take @@ fun d ->
-      take @@ fun f -> return (Some ((Backend.get backend).with_timeout d f))
+      take @@ fun f -> return (Some (backend#with_timeout d f))
   | "Lwt_condition", "create" ->
-      take @@ fun _unit ->
-      return (Some ((Backend.get backend).condition_create ()))
+      take @@ fun _unit -> return (Some (backend#condition_create ()))
   | "Lwt_condition", "wait" ->
       take_lblopt "mutex" @@ fun mutex ->
       take @@ fun cond ->
       return (Some (rewrite_lwt_condition_wait ~backend mutex cond))
   | "Lwt_mutex", "create" ->
-      take @@ fun _unit -> return (Some ((Backend.get backend).mutex_create ()))
-  | "Lwt_mutex", "lock" ->
-      take @@ fun t -> return (Some ((Backend.get backend).mutex_lock t))
+      take @@ fun _unit -> return (Some (backend#mutex_create ()))
+  | "Lwt_mutex", "lock" -> take @@ fun t -> return (Some (backend#mutex_lock t))
   | "Lwt_mutex", "unlock" ->
-      take @@ fun t -> return (Some ((Backend.get backend).mutex_unlock t))
+      take @@ fun t -> return (Some (backend#mutex_unlock t))
   | "Lwt_mutex", "with_lock" ->
       take @@ fun t ->
-      take @@ fun f -> return (Some ((Backend.get backend).mutex_with_lock t f))
+      take @@ fun f -> return (Some (backend#mutex_with_lock t f))
   | _ -> return None
 
 (** Transform a [binding_op] into a [pattern] and an [expression] while
@@ -511,7 +481,7 @@ let rewrite_letop ~backend let_ ands body = function
             List.fold_right (fun a b -> Pat.tuple [ a; b ]) ands_pats let_pat
           and exp =
             List.fold_right
-              (fun a b -> (Backend.get backend).both ~left:a ~right:b)
+              (fun a b -> backend#both ~left:a ~right:b)
               ands_exps let_exp
           in
           Some (mk_let pat exp body))
@@ -556,8 +526,7 @@ let rewrite_pattern ~backend pat =
   | Ppat_construct (lid, arg) ->
       Occ.may_rewrite lid (fun ident ->
           match (ident, arg) with
-          | ("Lwt_unix", "Timeout"), None ->
-              Some (Backend.get backend).timeout_exn
+          | ("Lwt_unix", "Timeout"), None -> Some backend#timeout_exn
           | ("Lwt", "Return"), arg -> Some (Pat.construct mk_some_ident arg)
           | ("Lwt", "Sleep"), arg -> Some (Pat.construct mk_none_ident arg)
           | ("Lwt", "Fail"), Some _ ->
@@ -582,14 +551,14 @@ let add_extra_opens ~backend str =
           ->
             List.filter (( <> ) opn_ident.txt) extra_opens
         | _ -> extra_opens)
-      (Backend.get_without_using backend).extra_opens str
+      backend#extra_opens str
     |> List.map (fun ident -> Str.open_ (Opn.mk (Mod.ident (mk_loc ident))))
   in
   extra_opens @ str
 
 let rewrite_lwt_uses ~fname ~occurrences ~backend str =
   Occ.init occurrences;
-  let backend = Backend.v backend in
+  let backend = backend () in
   let default = Ast_mapper.default_mapper in
   let rec expr m exp =
     match rewrite_expression ~backend exp with
@@ -606,8 +575,6 @@ let rewrite_lwt_uses ~fname ~occurrences ~backend str =
   in
   let m = { default with expr; pat; structure } in
   let str = m.structure m str in
-  let str =
-    if Backend.is_used backend then add_extra_opens ~backend str else str
-  in
+  let str = add_extra_opens ~backend str in
   Occ.warn_missing_locs fname;
   (str, Comments.get ())

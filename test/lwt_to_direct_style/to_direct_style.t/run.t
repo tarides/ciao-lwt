@@ -195,7 +195,6 @@ Make a writable directory tree:
   Formatted 2 files, 0 errors
 
   $ cat bin/main.ml
-  open Eio.Std
   open Lwt.Syntax
   
   let _main () =
