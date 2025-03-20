@@ -556,9 +556,7 @@ let add_extra_opens ~backend str =
   in
   extra_opens @ str
 
-let rewrite_lwt_uses ~fname ~occurrences ~backend str =
-  Occ.init occurrences;
-  let backend = backend () in
+let mapper ~backend =
   let default = Ast_mapper.default_mapper in
   let rec expr m exp =
     match rewrite_expression ~backend exp with
@@ -573,8 +571,21 @@ let rewrite_lwt_uses ~fname ~occurrences ~backend str =
   let structure m str =
     default.structure m (List.filter remove_lwt_opens str)
   in
-  let m = { default with expr; pat; structure } in
-  let str = m.structure m str in
-  let str = add_extra_opens ~backend str in
-  Occ.warn_missing_locs fname;
-  (str, Comments.get ())
+  { default with expr; pat; structure }
+
+let rewrite_lwt_uses ~fname ~occurrences ~backend =
+  let rewrite f =
+    Occ.init occurrences;
+    let backend = backend () in
+    let r = f ~backend (mapper ~backend) in
+    Occ.warn_missing_locs fname;
+    (r, Comments.get ())
+  in
+  {
+    Ocamlformat_utils.structure =
+      (fun str ->
+        rewrite (fun ~backend m ->
+            let str = m.structure m str in
+            add_extra_opens ~backend str));
+    signature = (fun sg -> rewrite (fun ~backend:_ m -> m.signature m sg));
+  }

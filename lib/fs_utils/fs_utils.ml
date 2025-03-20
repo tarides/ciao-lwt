@@ -32,7 +32,7 @@ let scan_dir ?(descend_into = fun _ -> true) f acc path =
 let find_ml_files f path =
   let is_ml_file fname =
     match Filename.extension fname with
-    | ".ml" | ".eliom" -> true
+    | ".ml" | ".eliom" | ".mli" | ".eliomi" -> true
     | ext ->
         (* Accept extensions of the form [foo.client.ml] *)
         String.ends_with ~suffix:".ml" ext

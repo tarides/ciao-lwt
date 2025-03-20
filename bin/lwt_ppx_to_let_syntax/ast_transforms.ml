@@ -314,7 +314,7 @@ let structure_has_open_lwt_syntax =
         opn_ident.txt = mk_lwt_syntax_ident.txt
     | _ -> false)
 
-let remove_lwt_ppx ~use_lwt_bind:use_lwt_bind_ str =
+let remove_lwt_ppx_str ~use_lwt_bind:use_lwt_bind_ str =
   use_lwt_bind := use_lwt_bind_;
   letop_was_used := false;
   let default = Ast_mapper.default_mapper in
@@ -323,6 +323,15 @@ let remove_lwt_ppx ~use_lwt_bind:use_lwt_bind_ str =
   in
   let m = { default with expr } in
   let str = m.structure m str in
-  if !letop_was_used && not (structure_has_open_lwt_syntax str) then
-    mk_open_lwt_syntax :: str
-  else str
+  let str =
+    if !letop_was_used && not (structure_has_open_lwt_syntax str) then
+      mk_open_lwt_syntax :: str
+    else str
+  in
+  (str, [])
+
+let remove_lwt_ppx ~use_lwt_bind =
+  {
+    Ocamlformat_utils.structure = remove_lwt_ppx_str ~use_lwt_bind;
+    signature = (fun x -> (x, []));
+  }

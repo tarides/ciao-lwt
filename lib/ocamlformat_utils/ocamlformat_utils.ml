@@ -184,12 +184,19 @@ let build_config ~file:_ =
 
 let error s = Error (`Msg s)
 
-let format_in_place ast ~file ~modify_ast =
+open Parsing.Parsetree
+
+type modify_ast = {
+  structure : structure -> structure * Cmt.t list;
+  signature : signature -> signature * Cmt.t list;
+}
+
+let _format_in_place ast_kind ~file modify_ast =
   try
     let conf = build_config ~file in
     let source = In_channel.with_open_text file In_channel.input_all in
     let fmted =
-      parse_and_format ast ~input_name:file ~source ~modify_ast conf
+      parse_and_format ast_kind ~input_name:file ~source ~modify_ast conf
     in
     if String.length fmted = 0 then error "Formatted to 0 length"
     else (
@@ -205,4 +212,9 @@ let format_in_place ast ~file ~modify_ast =
   | exn ->
       Format.kasprintf error "Unhandled exception: %s" (Printexc.to_string exn)
 
-let format_structure_in_place = format_in_place Extended_ast.Structure
+let format_in_place ~file ~modify_ast =
+  let open Extended_ast in
+  match Filename.extension file with
+  | ".ml" | ".eliom" -> _format_in_place Structure ~file modify_ast.structure
+  | ".mli" | ".eliomi" -> _format_in_place Signature ~file modify_ast.signature
+  | _ -> error ("Don't know what to do with file " ^ file)

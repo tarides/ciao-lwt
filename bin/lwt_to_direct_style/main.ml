@@ -38,7 +38,7 @@ let migrate_file ~filename_map ~formatted ~errors ~modify_ast file =
   let ( >>= ) = Result.bind in
   match
     resolve_file_name ~filename_map file >>= fun file ->
-    Ocamlformat_utils.format_structure_in_place ~file ~modify_ast
+    Ocamlformat_utils.format_in_place ~file ~modify_ast
   with
   | Ok () -> incr formatted
   | Error (`Msg msg) ->
