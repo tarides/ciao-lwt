@@ -105,4 +105,9 @@ let eio () =
              (Nolabel, val_opt);
            ])
         [ (Nolabel, key); (Nolabel, f) ]
+
+    method promise_type param =
+      Typ.constr (mk_longident (promise_ident "t")) [ param ]
+
+    method direct_style_type param = param
   end

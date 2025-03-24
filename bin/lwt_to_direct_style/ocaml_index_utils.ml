@@ -64,6 +64,7 @@ let uid_map_of_unit ~packages ~units =
   in
   let ident_of_decl ~unit_name = function
     | Typedtree.Value { val_id = ident; _ }
+    | Type { typ_id = ident; _ }
     | Value_binding { vb_pat = { pat_desc = Tpat_var (ident, _, _); _ }; _ }
     | Constructor { cd_id = ident; _ }
     | Extension_constructor { ext_id = ident; _ } ->

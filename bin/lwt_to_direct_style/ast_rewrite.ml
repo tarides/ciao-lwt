@@ -535,6 +535,30 @@ let rewrite_pattern ~backend pat =
           | _ -> None)
   | _ -> None
 
+(** The return type of a function is transformed into the direct-style type
+    instead of the promise type. *)
+let rewrite_type_rhs ~backend typ =
+  match typ.ptyp_desc with
+  | Ptyp_constr (lid, params) ->
+      Occ.may_rewrite lid (fun ident ->
+          match (ident, params) with
+          | ("Lwt", "t"), [ param ] -> Some (backend#direct_style_type param)
+          | _ -> None)
+  | _ -> None
+
+let rewrite_type ~backend typ =
+  match typ.ptyp_desc with
+  | Ptyp_arrow (params, ret) -> (
+      match rewrite_type_rhs ~backend ret with
+      | Some ret -> Some (Typ.arrow params ret)
+      | None -> None)
+  | Ptyp_constr (lid, params) ->
+      Occ.may_rewrite lid (fun ident ->
+          match (ident, params) with
+          | ("Lwt", "t"), [ param ] -> Some (backend#promise_type param)
+          | _ -> None)
+  | _ -> None
+
 let remove_lwt_opens stri =
   match stri.pstr_desc with
   | Pstr_open { popen_expr = { pmod_desc = Pmod_ident lid; _ }; _ }
@@ -558,20 +582,19 @@ let add_extra_opens ~backend str =
 
 let mapper ~backend =
   let default = Ast_mapper.default_mapper in
-  let rec expr m exp =
-    match rewrite_expression ~backend exp with
-    | Some exp -> expr m exp
-    | None -> default.expr m exp
+  let rec call_rewrite ~default f m x =
+    (* Apply the rewrite again if it succeed *)
+    match f x with
+    | Some x -> call_rewrite ~default f m x
+    | None -> default m x
   in
-  let rec pat m p =
-    match rewrite_pattern ~backend p with
-    | Some p -> pat m p
-    | None -> default.pat m p
-  in
+  let expr = call_rewrite ~default:default.expr (rewrite_expression ~backend)
+  and pat = call_rewrite ~default:default.pat (rewrite_pattern ~backend)
+  and typ = call_rewrite ~default:default.typ (rewrite_type ~backend) in
   let structure m str =
     default.structure m (List.filter remove_lwt_opens str)
   in
-  { default with expr; pat; structure }
+  { default with expr; pat; typ; structure }
 
 let rewrite_lwt_uses ~fname ~occurrences ~backend =
   let rewrite f =

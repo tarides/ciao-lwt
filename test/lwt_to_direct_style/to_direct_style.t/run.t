@@ -41,7 +41,14 @@ Make a writable directory tree:
     Lwt_unix.sleep (bin/main.ml[33,741+8]..[33,741+22])
     Lwt_unix.Timeout (bin/main.ml[39,875+14]..[39,875+30])
     Lwt_unix.with_timeout (bin/main.ml[37,792+15]..[37,792+36])
-  lib/test.ml: (143 occurrences)
+  lib/test.ml: (150 occurrences)
+    Lwt.t (lib/test.ml[103,2618+35]..[103,2618+40])
+    Lwt.t (lib/test.ml[155,4038+13]..[155,4038+18])
+    Lwt.t (lib/test.ml[156,4061+21]..[156,4061+26])
+    Lwt.t (lib/test.ml[157,4102+13]..[157,4102+18])
+    Lwt.t (lib/test.ml[158,4164+22]..[158,4164+27])
+    Lwt.t (lib/test.ml[158,4164+37]..[158,4164+42])
+    Lwt.t (lib/test.ml[159,4239+14]..[159,4239+19])
     Lwt.new_key (lib/test.ml[150,3895+10]..[150,3895+21])
     Lwt.get (lib/test.ml[151,3920+8]..[151,3920+15])
     Lwt.with_value (lib/test.ml[152,3940+8]..[152,3940+22])
@@ -185,6 +192,22 @@ Make a writable directory tree:
     Lwt_mutex.lock (lib/test.ml[136,3609+8]..[136,3609+22])
     Lwt_mutex.unlock (lib/test.ml[137,3634+8]..[137,3634+24])
     Lwt_mutex.with_lock (lib/test.ml[138,3661+8]..[138,3661+27])
+  lib/test.mli: (15 occurrences)
+    Lwt.t (lib/test.mli[1,0+34]..[1,0+39])
+    Lwt.t (lib/test.mli[2,40+49]..[2,40+54])
+    Lwt.t (lib/test.mli[3,95+56]..[3,95+61])
+    Lwt.t (lib/test.mli[4,157+13]..[4,157+18])
+    Lwt.t (lib/test.mli[5,176+21]..[5,176+26])
+    Lwt.t (lib/test.mli[6,203+13]..[6,203+18])
+    Lwt.t (lib/test.mli[7,230+22]..[7,230+27])
+    Lwt.t (lib/test.mli[7,230+37]..[7,230+42])
+    Lwt.t (lib/test.mli[8,273+14]..[8,273+19])
+    Lwt.t (lib/test.mli[9,310+24]..[9,310+29])
+    Lwt_condition.t (lib/test.mli[1,0+12]..[1,0+27])
+    Lwt_condition.t (lib/test.mli[2,40+27]..[2,40+42])
+    Lwt_condition.t (lib/test.mli[3,95+34]..[3,95+49])
+    Lwt_mutex.t (lib/test.mli[2,40+9]..[2,40+20])
+    Lwt_mutex.t (lib/test.mli[3,95+9]..[3,95+20])
 
   $ lwt-to-direct-style --migrate
   Warning: bin/main.ml: 1 occurrences have not been rewritten.
@@ -194,7 +217,13 @@ Make a writable directory tree:
     Lwt.choose (line 115 column 9)
     Lwt_list.iteri_p (line 129 column 9)
     Lwt.Fail (line 147 column 5)
-  Formatted 2 files, 0 errors
+  Warning: lib/test.mli: 5 occurrences have not been rewritten.
+    Lwt_condition.t (line 1 column 13)
+    Lwt_mutex.t (line 2 column 10)
+    Lwt_condition.t (line 2 column 28)
+    Lwt_mutex.t (line 3 column 10)
+    Lwt_condition.t (line 3 column 35)
+  Formatted 3 files, 0 errors
 
   $ cat bin/main.ml
   open Lwt.Syntax
@@ -398,7 +427,7 @@ Make a writable directory tree:
     let handle _ = x in
     let _ = try x with _ -> x in
     let _ = try x with v -> handle v in
-    let _ = try (fun _ : unit Lwt.t -> x) () with v -> handle v in
+    let _ = try (fun _ : unit Promise.t -> x) () with v -> handle v in
     let _ = try (function () -> x) () with v -> handle v in
     let _ = try x with Not_found -> x | _ -> x in
     let _ = try handle () with v -> handle v in
@@ -517,29 +546,29 @@ Make a writable directory tree:
        ~some:(Fun.flip Fiber.with_binding)
        None) key (fun () -> x)
   
-  let x : unit Lwt.t = x
-  let f : unit -> unit Lwt.t = fun () -> x
+  let x : unit Promise.t = x
+  let f : unit -> unit = fun () -> x
   
-  let g : unit Lwt.t -> unit =
+  let g : unit Promise.t -> unit =
    fun y ->
     Fiber.fork ~sw
       (* TODO: lwt-to-direct-style: [sw] must be propagated here. *)
       (fun () -> y)
   
-  let h : (unit -> unit Lwt.t) -> unit Lwt.t =
+  let h : (unit -> unit) -> unit =
    fun f ->
     let () = f () in
     x
   
-  let i : (unit Lwt.t -> unit) -> unit = fun f -> f x
+  let i : (unit Promise.t -> unit) -> unit = fun f -> f x
 
   $ cat lib/test.mli
-  val f1 : 'a Lwt_condition.t -> 'a Lwt.t
-  val f2 : Lwt_mutex.t -> 'a Lwt_condition.t -> 'a Lwt.t
-  val f3 : Lwt_mutex.t option -> 'a Lwt_condition.t -> 'a Lwt.t
-  val x : unit Lwt.t
-  val f : unit -> unit Lwt.t
-  val g : unit Lwt.t -> unit
-  val h : (unit -> unit Lwt.t) -> unit Lwt.t
-  val i : (unit Lwt.t -> unit) -> unit
-  val test : unit -> unit Lwt.t
+  val f1 : 'a Lwt_condition.t -> 'a
+  val f2 : Lwt_mutex.t -> 'a Lwt_condition.t -> 'a
+  val f3 : Lwt_mutex.t option -> 'a Lwt_condition.t -> 'a
+  val x : unit Promise.t
+  val f : unit -> unit
+  val g : unit Promise.t -> unit
+  val h : (unit -> unit) -> unit
+  val i : (unit Promise.t -> unit) -> unit
+  val test : unit -> unit
