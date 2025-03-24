@@ -41,6 +41,7 @@ let mk_some_ident = mk_longident [ "Some" ]
 let mk_none_ident = mk_longident [ "None" ]
 let mk_exp_some x = Exp.construct mk_some_ident (Some x)
 let mk_exp_none = Exp.construct mk_none_ident None
+let mk_typ_constr ?(params = []) lid = Typ.constr (mk_longident lid) params
 
 let is_unit_val = function
   | { pexp_desc = Pexp_construct (ident, None); _ } ->

@@ -503,7 +503,6 @@ let rec flatten_apply exp =
   | _ -> exp
 
 let rewrite_expression ~backend exp =
-  Comments.default_loc := exp.pexp_loc;
   match (flatten_apply exp).pexp_desc with
   (* Rewrite a call to a [Lwt] function. *)
   | Pexp_apply ({ pexp_desc = Pexp_ident lid; _ }, args) ->
@@ -556,6 +555,8 @@ let rewrite_type ~backend typ =
       Occ.may_rewrite lid (fun ident ->
           match (ident, params) with
           | ("Lwt", "t"), [ param ] -> Some (backend#promise_type param)
+          | ("Lwt_condition", "t"), [ param ] ->
+              Some (backend#condition_type param)
           | _ -> None)
   | _ -> None
 
@@ -582,15 +583,24 @@ let add_extra_opens ~backend str =
 
 let mapper ~backend =
   let default = Ast_mapper.default_mapper in
-  let rec call_rewrite ~default f m x =
+  let rec call_rewrite ~default ~loc f m x =
+    Comments.default_loc := loc;
     (* Apply the rewrite again if it succeed *)
     match f x with
-    | Some x -> call_rewrite ~default f m x
+    | Some x -> call_rewrite ~default ~loc f m x
     | None -> default m x
   in
-  let expr = call_rewrite ~default:default.expr (rewrite_expression ~backend)
-  and pat = call_rewrite ~default:default.pat (rewrite_pattern ~backend)
-  and typ = call_rewrite ~default:default.typ (rewrite_type ~backend) in
+  let expr m x =
+    call_rewrite ~default:default.expr ~loc:x.pexp_loc
+      (rewrite_expression ~backend)
+      m x
+  and pat m x =
+    call_rewrite ~default:default.pat ~loc:x.ppat_loc (rewrite_pattern ~backend)
+      m x
+  and typ m x =
+    call_rewrite ~default:default.typ ~loc:x.ptyp_loc (rewrite_type ~backend) m
+      x
+  in
   let structure m str =
     default.structure m (List.filter remove_lwt_opens str)
   in

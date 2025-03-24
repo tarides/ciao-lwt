@@ -194,20 +194,20 @@ Make a writable directory tree:
     Lwt_mutex.with_lock (lib/test.ml[138,3661+8]..[138,3661+27])
   lib/test.mli: (15 occurrences)
     Lwt.t (lib/test.mli[1,0+34]..[1,0+39])
-    Lwt.t (lib/test.mli[2,40+49]..[2,40+54])
-    Lwt.t (lib/test.mli[3,95+56]..[3,95+61])
-    Lwt.t (lib/test.mli[4,157+13]..[4,157+18])
-    Lwt.t (lib/test.mli[5,176+21]..[5,176+26])
-    Lwt.t (lib/test.mli[6,203+13]..[6,203+18])
-    Lwt.t (lib/test.mli[7,230+22]..[7,230+27])
-    Lwt.t (lib/test.mli[7,230+37]..[7,230+42])
-    Lwt.t (lib/test.mli[8,273+14]..[8,273+19])
-    Lwt.t (lib/test.mli[9,310+24]..[9,310+29])
+    Lwt.t (lib/test.mli[2,40+53]..[2,40+58])
+    Lwt.t (lib/test.mli[3,99+60]..[3,99+65])
+    Lwt.t (lib/test.mli[4,165+13]..[4,165+18])
+    Lwt.t (lib/test.mli[5,184+21]..[5,184+26])
+    Lwt.t (lib/test.mli[6,211+13]..[6,211+18])
+    Lwt.t (lib/test.mli[7,238+22]..[7,238+27])
+    Lwt.t (lib/test.mli[7,238+37]..[7,238+42])
+    Lwt.t (lib/test.mli[8,281+14]..[8,281+19])
+    Lwt.t (lib/test.mli[9,318+24]..[9,318+29])
     Lwt_condition.t (lib/test.mli[1,0+12]..[1,0+27])
-    Lwt_condition.t (lib/test.mli[2,40+27]..[2,40+42])
-    Lwt_condition.t (lib/test.mli[3,95+34]..[3,95+49])
+    Lwt_condition.t (lib/test.mli[2,40+29]..[2,40+44])
+    Lwt_condition.t (lib/test.mli[3,99+36]..[3,99+51])
     Lwt_mutex.t (lib/test.mli[2,40+9]..[2,40+20])
-    Lwt_mutex.t (lib/test.mli[3,95+9]..[3,95+20])
+    Lwt_mutex.t (lib/test.mli[3,99+9]..[3,99+20])
 
   $ lwt-to-direct-style --migrate
   Warning: bin/main.ml: 1 occurrences have not been rewritten.
@@ -217,12 +217,9 @@ Make a writable directory tree:
     Lwt.choose (line 115 column 9)
     Lwt_list.iteri_p (line 129 column 9)
     Lwt.Fail (line 147 column 5)
-  Warning: lib/test.mli: 5 occurrences have not been rewritten.
-    Lwt_condition.t (line 1 column 13)
+  Warning: lib/test.mli: 2 occurrences have not been rewritten.
     Lwt_mutex.t (line 2 column 10)
-    Lwt_condition.t (line 2 column 28)
     Lwt_mutex.t (line 3 column 10)
-    Lwt_condition.t (line 3 column 35)
   Formatted 3 files, 0 errors
 
   $ cat bin/main.ml
@@ -563,9 +560,13 @@ Make a writable directory tree:
   let i : (unit Promise.t -> unit) -> unit = fun f -> f x
 
   $ cat lib/test.mli
-  val f1 : 'a Lwt_condition.t -> 'a
-  val f2 : Lwt_mutex.t -> 'a Lwt_condition.t -> 'a
-  val f3 : Lwt_mutex.t option -> 'a Lwt_condition.t -> 'a
+  val f1 :
+    Eio.Condition.t ->
+    (* TODO: lwt-to-direct-style: Eio conditions don't carry a value. Use a mutable variable and a dedicated mutex. *)
+    'a
+  
+  val f2 : Lwt_mutex.t -> Eio.Condition.t -> unit
+  val f3 : Lwt_mutex.t option -> Eio.Condition.t -> unit
   val x : unit Promise.t
   val f : unit -> unit
   val g : unit Promise.t -> unit

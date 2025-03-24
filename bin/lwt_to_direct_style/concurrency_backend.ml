@@ -1,7 +1,6 @@
 open Ocamlformat_utils.Parsing
 open Asttypes
-
-(* open Parsetree *)
+open Parsetree
 open Ast_helper
 open Ocamlformat_utils.Ast_utils
 
@@ -71,6 +70,15 @@ let eio () =
     method condition_wait mutex cond =
       mk_apply_simple [ "Eio"; "Condition"; "await" ] [ cond; mutex ]
 
+    method condition_type param =
+      (match param.ptyp_desc with
+      | Ptyp_constr ({ txt = Lident "unit"; _ }, []) -> ()
+      | _ ->
+          Comments.add_default_loc
+            "Eio conditions don't carry a value. Use a mutable variable and a \
+             dedicated mutex.");
+      mk_typ_constr [ "Eio"; "Condition"; "t" ]
+
     method cancel_message =
       "Use [Switch] or [Cancel] for defining a cancellable context."
 
@@ -107,7 +115,7 @@ let eio () =
         [ (Nolabel, key); (Nolabel, f) ]
 
     method promise_type param =
-      Typ.constr (mk_longident (promise_ident "t")) [ param ]
+      mk_typ_constr ~params:[ param ] (promise_ident "t")
 
     method direct_style_type param = param
   end
