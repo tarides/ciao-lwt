@@ -20,20 +20,22 @@ let main () =
     (fun _ -> Lwt.return ())
 
 let () = Lwt_main.run (main ())
-
 let _ = Lwt.return_none
 let _ = Lwt.return_nil
 let _ = Lwt.return_true
 let _ = Lwt.return_false
 let _ = Lwt.return_ok ()
 let _ = Lwt.return_error ()
-
 let _ = Lwt_fmt.printf ""
 let _ = Lwt_fmt.eprintf ""
 let _ = Lwt_unix.sleep 1.0
 
-let _ =
+let x =
   Lwt.try_bind
     (fun () -> Lwt_unix.with_timeout 1.0 (fun () -> Lwt.return 42))
     Lwt.return
     (function Lwt_unix.Timeout -> Lwt.return 0 | x -> Lwt.reraise x)
+
+open Lwt
+
+let _ = x >>= function 0 -> Lwt.return_true | _ -> Lwt.return_false

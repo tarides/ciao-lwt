@@ -69,11 +69,24 @@ module Occ = struct
       Format.eprintf "%!")
 end
 
-(* Rewrite to a let binding or an apply. *)
+(* Rewrite a continuation to a let binding, a match or an apply. *)
 let rewrite_continuation cont ~arg:cont_arg =
-  match is_fun_with_one_argument cont with
-  | Some (fun_arg_pat, body) -> Some (mk_let fun_arg_pat cont_arg body)
-  | None -> Some (Exp.apply cont [ (Nolabel, cont_arg) ])
+  let get =
+    match cont.pexp_desc with
+    | _ when cont.pexp_attributes <> [] -> `Apply
+    | Pexp_function
+        ( [ { pparam_desc = Pparam_val (Nolabel, None, arg_pat); _ } ],
+          None,
+          Pfunction_body body ) ->
+        `Let (arg_pat, body)
+    | Pexp_function ([], None, Pfunction_cases (cases, _loc, [])) ->
+        `Match cases
+    | _ -> `Apply
+  in
+  match get with
+  | `Let (arg_pat, body) -> mk_let arg_pat cont_arg body
+  | `Match cases -> Exp.match_ cont_arg cases
+  | `Apply -> Exp.apply cont [ (Nolabel, cont_arg) ]
 
 let rewrite_exp_into_cases = function
   | {
@@ -295,11 +308,11 @@ let rewrite_apply_lwt ~backend ident args =
   | "bind" ->
       take @@ fun promise_arg ->
       take @@ fun fun_arg ->
-      return (rewrite_continuation fun_arg ~arg:promise_arg)
+      return (Some (rewrite_continuation fun_arg ~arg:promise_arg))
   | "map" ->
       take @@ fun fun_arg ->
       take @@ fun promise_arg ->
-      return (rewrite_continuation fun_arg ~arg:promise_arg)
+      return (Some (rewrite_continuation fun_arg ~arg:promise_arg))
   | "try_bind" ->
       take @@ fun thunk ->
       take @@ fun value_f ->
@@ -379,10 +392,10 @@ let rewrite_apply_lwt ~backend ident args =
   (* Operators *)
   | ">>=" | ">|=" ->
       take @@ fun lhs ->
-      take @@ fun rhs -> return (rewrite_continuation rhs ~arg:lhs)
+      take @@ fun rhs -> return (Some (rewrite_continuation rhs ~arg:lhs))
   | "=<<" | "=|<" ->
       take @@ fun lhs ->
-      take @@ fun rhs -> return (rewrite_continuation lhs ~arg:rhs)
+      take @@ fun rhs -> return (Some (rewrite_continuation lhs ~arg:rhs))
   | "<&>" ->
       take @@ fun lhs ->
       take @@ fun rhs -> return (rewrite_lwt_both ~backend lhs rhs)

@@ -8,39 +8,42 @@ Make a writable directory tree:
   _build/default/bin/.main.eobjs/cctx.ocaml-index
 
   $ lwt-to-direct-style
-  bin/main.ml: (32 occurrences)
+  bin/main.ml: (35 occurrences)
     Lwt.return (bin/main.ml[9,150+15]..[9,150+25])
     Lwt.return (bin/main.ml[16,317+45]..[16,317+55])
     Lwt.return (bin/main.ml[19,410+24]..[19,410+34])
     Lwt.return (bin/main.ml[20,475+14]..[20,475+24])
-    Lwt.return (bin/main.ml[37,792+52]..[37,792+62])
-    Lwt.return (bin/main.ml[38,860+4]..[38,860+14])
-    Lwt.return (bin/main.ml[39,875+34]..[39,875+44])
+    Lwt.return (bin/main.ml[35,790+52]..[35,790+62])
+    Lwt.return (bin/main.ml[36,858+4]..[36,858+14])
+    Lwt.return (bin/main.ml[37,873+34]..[37,873+44])
     Lwt.return_unit (bin/main.ml[19,410+48]..[19,410+63])
     Lwt.return_none (bin/main.ml[16,317+28]..[16,317+43])
-    Lwt.return_none (bin/main.ml[24,538+8]..[24,538+23])
-    Lwt.return_nil (bin/main.ml[25,562+8]..[25,562+22])
-    Lwt.return_true (bin/main.ml[26,585+8]..[26,585+23])
-    Lwt.return_false (bin/main.ml[27,609+8]..[27,609+24])
-    Lwt.return_ok (bin/main.ml[28,634+8]..[28,634+21])
-    Lwt.return_error (bin/main.ml[29,659+8]..[29,659+24])
+    Lwt.return_none (bin/main.ml[23,537+8]..[23,537+23])
+    Lwt.return_nil (bin/main.ml[24,561+8]..[24,561+22])
+    Lwt.return_true (bin/main.ml[25,584+8]..[25,584+23])
+    Lwt.return_true (bin/main.ml[41,953+28]..[41,953+43])
+    Lwt.return_false (bin/main.ml[26,608+8]..[26,608+24])
+    Lwt.return_false (bin/main.ml[41,953+51]..[41,953+67])
+    Lwt.return_ok (bin/main.ml[27,633+8]..[27,633+21])
+    Lwt.return_error (bin/main.ml[28,658+8]..[28,658+24])
     Lwt.reraise (bin/main.ml[12,254+15]..[12,254+26])
     Lwt.reraise (bin/main.ml[16,317+56]..[16,317+67])
-    Lwt.reraise (bin/main.ml[39,875+54]..[39,875+65])
+    Lwt.reraise (bin/main.ml[37,873+54]..[37,873+65])
     Lwt.try_bind (bin/main.ml[4,32+2]..[4,32+14])
     Lwt.try_bind (bin/main.ml[16,317+4]..[16,317+16])
     Lwt.try_bind (bin/main.ml[18,390+2]..[18,390+14])
-    Lwt.try_bind (bin/main.ml[36,777+2]..[36,777+14])
+    Lwt.try_bind (bin/main.ml[34,775+2]..[34,775+14])
+    Lwt.>>= (bin/main.ml[41,953+10]..[41,953+13])
     Lwt.let* (bin/main.ml[6,62+6]..[6,62+10])
     Lwt.let+ (bin/main.ml[7,108+6]..[7,108+10])
     Lwt_fmt.printf (bin/main.ml[6,62+16]..[6,62+30])
     Lwt_fmt.printf (bin/main.ml[11,194+23]..[11,194+37])
-    Lwt_fmt.printf (bin/main.ml[31,688+8]..[31,688+22])
-    Lwt_fmt.eprintf (bin/main.ml[32,714+8]..[32,714+23])
+    Lwt_fmt.printf (bin/main.ml[29,686+8]..[29,686+22])
+    Lwt_fmt.eprintf (bin/main.ml[30,712+8]..[30,712+23])
     Lwt_main.run (bin/main.ml[22,505+9]..[22,505+21])
-    Lwt_unix.sleep (bin/main.ml[33,741+8]..[33,741+22])
-    Lwt_unix.Timeout (bin/main.ml[39,875+14]..[39,875+30])
-    Lwt_unix.with_timeout (bin/main.ml[37,792+15]..[37,792+36])
+    Lwt_unix.sleep (bin/main.ml[31,739+8]..[31,739+22])
+    Lwt_unix.Timeout (bin/main.ml[37,873+14]..[37,873+30])
+    Lwt_unix.with_timeout (bin/main.ml[35,790+15]..[35,790+36])
   lib/test.ml: (150 occurrences)
     Lwt.t (lib/test.ml[103,2618+35]..[103,2618+40])
     Lwt.t (lib/test.ml[155,4038+13]..[155,4038+18])
@@ -249,7 +252,7 @@ Make a writable directory tree:
   let _ = Format.eprintf ""
   let _ = Eio_unix.sleep 1.0
   
-  let _ =
+  let x =
     match
       Eio.Time.with_timeout_exn env#mono_clock
         (* TODO: lwt-to-direct-style: [env] must be propagated from the main loop *)
@@ -257,6 +260,10 @@ Make a writable directory tree:
     with
     | v -> v
     | exception Eio.Time.Timeout -> 0
+  
+  open Lwt
+  
+  let _ = match x with 0 -> true | _ -> false
 
   $ cat lib/test.ml
   open Eio.Std

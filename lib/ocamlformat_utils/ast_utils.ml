@@ -63,18 +63,3 @@ let mk_apply_ident ident args = Exp.apply (mk_exp_ident ident) args
 
 let mk_apply_simple f_ident args =
   mk_apply_ident f_ident (List.map (fun x -> (Nolabel, x)) args)
-
-(** Whether an expression is a [fun] with one argument that can safely be
-    translated into a [let] binding. Returns [None] if that's not the case. *)
-let is_fun_with_one_argument = function
-  | {
-      pexp_desc =
-        Pexp_function
-          ( [ { pparam_desc = Pparam_val (Nolabel, None, arg_pat); _ } ],
-            None,
-            Pfunction_body body );
-      pexp_attributes = [];
-      _;
-    } ->
-      Some (arg_pat, body)
-  | _ -> None
