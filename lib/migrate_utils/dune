@@ -1,0 +1,8 @@
+(library
+ (name migrate_utils)
+ (libraries
+  compiler-libs
+  merlin-lib.index_format
+  merlin-lib.ocaml_typing
+  fs_utils
+  ocamlformat_utils))
