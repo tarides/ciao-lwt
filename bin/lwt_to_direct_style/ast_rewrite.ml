@@ -69,6 +69,10 @@ module Occ = struct
       Format.eprintf "%!")
 end
 
+let is_unit_pat = function
+  | { ppat_desc = Ppat_construct ({ txt = Lident "()"; _ }, None); _ } -> true
+  | _ -> false
+
 (* Rewrite a continuation to a let binding, a match or an apply. *)
 let rewrite_continuation cont ~arg:cont_arg =
   let get =
@@ -78,7 +82,7 @@ let rewrite_continuation cont ~arg:cont_arg =
         ( [ { pparam_desc = Pparam_val (Nolabel, None, arg_pat); _ } ],
           None,
           Pfunction_body body ) ->
-        `Let (arg_pat, body)
+        if is_unit_pat arg_pat then `Seq body else `Let (arg_pat, body)
     | Pexp_function ([], None, Pfunction_cases (cases, _loc, [])) ->
         `Match cases
     | _ -> `Apply
@@ -86,6 +90,7 @@ let rewrite_continuation cont ~arg:cont_arg =
   match get with
   | `Let (arg_pat, body) -> mk_let arg_pat cont_arg body
   | `Match cases -> Exp.match_ cont_arg cases
+  | `Seq rhs -> Exp.sequence cont_arg rhs
   | `Apply -> Exp.apply cont [ (Nolabel, cont_arg) ]
 
 let rewrite_exp_into_cases = function

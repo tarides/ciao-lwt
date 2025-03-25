@@ -272,18 +272,18 @@ Make a writable directory tree:
   
   let lwt_calls () =
     match
-      let () = Format.printf "1" in
-      let () = Format.printf "2" in
+      Format.printf "1";
+      Format.printf "2";
       `Ok
     with
     | `Ok ->
-        let () = Format.printf "3" in
+        Format.printf "3";
         ()
     | exception _ -> ()
   
   let lwt_calls_point_free () =
-    let () = Format.printf "1" in
-    let () = Format.printf "2" in
+    Format.printf "1";
+    Format.printf "2";
     ()
   
   let letops () =
@@ -305,31 +305,27 @@ Make a writable directory tree:
   let infix () =
     Fiber.pair
       (fun () ->
-        let () =
-          Format.printf
-            (* TODO: lwt-to-direct-style: This computation might not be suspended correctly. *)
-            "1"
-        in
-        let () = Format.printf "2" in
+        Format.printf
+          (* TODO: lwt-to-direct-style: This computation might not be suspended correctly. *)
+          "1";
+        Format.printf "2";
         ())
       (fun () ->
-        let () =
-          Format.printf
-            (* TODO: lwt-to-direct-style: This computation might not be suspended correctly. *)
-            "3"
-        in
+        Format.printf
+          (* TODO: lwt-to-direct-style: This computation might not be suspended correctly. *)
+          "3";
         ())
   
   let lwt_calls_open () =
     let open Lwt in
     let open Lwt_fmt in
     match
-      let () = Format.printf "1" in
-      let () = Format.printf "2" in
+      Format.printf "1";
+      Format.printf "2";
       `Ok
     with
     | `Ok ->
-        let () = Format.printf "3" in
+        Format.printf "3";
         ()
     | exception _ -> ()
   
@@ -350,19 +346,15 @@ Make a writable directory tree:
     let open L.Infix in
     Fiber.pair
       (fun () ->
-        let () =
-          Format.printf
-            (* TODO: lwt-to-direct-style: This computation might not be suspended correctly. *)
-            "1"
-        in
-        let () = Format.printf "2" in
+        Format.printf
+          (* TODO: lwt-to-direct-style: This computation might not be suspended correctly. *)
+          "1";
+        Format.printf "2";
         ())
       (fun () ->
-        let () =
-          Format.printf
-            (* TODO: lwt-to-direct-style: This computation might not be suspended correctly. *)
-            "3"
-        in
+        Format.printf
+          (* TODO: lwt-to-direct-style: This computation might not be suspended correctly. *)
+          "3";
         ())
   
   let lwt_calls_include () =
@@ -372,17 +364,17 @@ Make a writable directory tree:
     end in
     let open L in
     match
-      let () = Format.printf "1" in
-      let () = Format.printf "2" in
+      Format.printf "1";
+      Format.printf "2";
       `Ok
     with
     | `Ok ->
-        let () = Format.printf "3" in
+        Format.printf "3";
         ()
     | exception _ -> ()
   
   let test () =
-    let () = Format.printf "Test.test" in
+    Format.printf "Test.test";
     let _ = Fiber.pair lwt_calls lwt_calls_point_free in
     let _ =
       let a = lwt_calls () and b = lwt_calls_point_free () in
@@ -561,7 +553,7 @@ Make a writable directory tree:
   
   let h : (unit -> unit) -> unit =
    fun f ->
-    let () = f () in
+    f ();
     x
   
   let i : (unit Promise.t -> unit) -> unit = fun f -> f x
