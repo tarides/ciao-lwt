@@ -2,10 +2,4 @@
  (public_name lwt-to-direct-style)
  (package lwt_to_direct_style)
  (name main)
- (libraries
-  cmdliner
-  compiler-libs
-  merlin-lib.index_format
-  merlin-lib.ocaml_typing
-  fs_utils
-  ocamlformat_utils))
+ (libraries cmdliner fs_utils ocamlformat_utils migrate_utils))
