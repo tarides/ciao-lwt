@@ -1,6 +1,106 @@
 open Ocamlformat_utils.Parsing
+open Parsetree
 
-type occurrences = ((string * string) * Longident.t Location.loc) list
+module Loc = struct
+  type t = {
+    line : int;
+    col : int;
+    len : int; [@warning "-69"]
+        (* Silent unused-field warning. This field is used implicitly by
+         polymorphic compare in [Hashtbl]. *)
+  }
+  (** Remove information from the [Location.t] to avoid problems with different
+      filenames due to custom Dune rules and offset positions due to PPXes. *)
+
+  let of_location { Location.loc_start; loc_end; _ } =
+    {
+      line = loc_start.pos_lnum;
+      col = loc_start.pos_cnum - loc_start.pos_bol;
+      len = loc_end.pos_cnum - loc_start.pos_cnum;
+    }
+
+  let pp ppf loc = Format.fprintf ppf "line %d column %d" loc.line (loc.col + 1)
+end
+
+type state = {
+  occ : (Loc.t, string * string) Hashtbl.t;
+  mutable comments : Ocamlformat_utils.Cmt.t list;
+  mutable comment_default_loc : Location.t;
+}
+
+let add_comment state ?(loc = state.comment_default_loc) text =
+  let cmt = " " ^ text ^ " " in
+  state.comments <-
+    Ocamlformat_utils.Cmt.create_comment cmt loc :: state.comments
+
+let set_default_comment_loc state loc = state.comment_default_loc <- loc
+
+module Occ = struct
+  open Location
+
+  let init lids =
+    let new_tbl = Hashtbl.create (List.length lids) in
+    List.iter
+      (fun (ident, lid) ->
+        Hashtbl.replace new_tbl (Loc.of_location lid.loc) ident)
+      lids;
+    new_tbl
+
+  let remove state lid = Hashtbl.remove state.occ (Loc.of_location lid.loc)
+
+  let pop state lid =
+    if Hashtbl.mem state.occ (Loc.of_location lid.loc) then (
+      remove state lid;
+      true)
+    else false
+
+  let may_rewrite state lid f =
+    match Hashtbl.find_opt state.occ (Loc.of_location lid.loc) with
+    | Some ident ->
+        let r = f ident in
+        if Option.is_some r then remove state lid;
+        r
+    | None -> None
+
+  (** Warn about locations that have not been rewritten so far. *)
+  let warn_missing_locs state fname =
+    let missing = Hashtbl.length state.occ in
+    if missing > 0 then (
+      Format.eprintf "Warning: %s: %d occurrences have not been rewritten.@\n"
+        fname missing;
+      Hashtbl.fold
+        (fun loc (unit_name, ident) acc ->
+          (loc, unit_name ^ "." ^ ident) :: acc)
+        state.occ []
+      |> List.sort compare (* Sort for a reproducible output. *)
+      |> List.iter (fun (loc, ident) ->
+             Format.eprintf "  %s (%a)@\n" ident Loc.pp loc);
+      Format.eprintf "%!")
+end
+
+type modify_ast = {
+  structure : state -> structure -> structure;
+  signature : state -> signature -> signature;
+}
+
+let make_modify_ast ~modify_ast ~fname occurrences =
+  let modify_ast = modify_ast ~fname in
+  let rewrite f x =
+    let state =
+      {
+        occ = Occ.init occurrences;
+        comments = [];
+        comment_default_loc = Location.none;
+      }
+    in
+    let r = f state x in
+    Occ.warn_missing_locs state fname;
+    (r, state.comments)
+  in
+  {
+    Ocamlformat_utils.structure = rewrite modify_ast.structure;
+    signature = rewrite modify_ast.signature;
+  }
 
 let errorf fmt = Format.kasprintf (fun msg -> Error (`Msg msg)) fmt
 
@@ -55,7 +155,7 @@ let migrate ~packages ~units ~modify_ast =
   let formatted = ref 0 in
   let filename_map = lookup_filename_map () in
   group_occurrences_by_file occurs (fun fname occurrences ->
-      let modify_ast = modify_ast ~fname occurrences in
+      let modify_ast = make_modify_ast ~modify_ast ~fname occurrences in
       migrate_file ~filename_map ~formatted ~errors ~modify_ast fname);
   Format.printf "Formatted %d files, %d errors\n%!" !formatted !errors;
   if !errors > 0 then exit 1
