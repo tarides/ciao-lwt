@@ -1,6 +1,5 @@
-let modify_ast ~fname occurrences =
-  Ast_rewrite.rewrite_lwt_uses ~fname ~occurrences
-    ~backend:Concurrency_backend.eio
+let modify_ast ~fname =
+  Ast_rewrite.rewrite_lwt_uses ~fname ~backend:Concurrency_backend.eio
 
 let main migrate =
   let units = function

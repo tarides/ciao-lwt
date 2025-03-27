@@ -4,7 +4,7 @@ open Parsetree
 open Ast_helper
 open Ocamlformat_utils.Ast_utils
 
-let eio () =
+let eio add_comment =
   let used_eio_std = ref false in
   let fiber_ident i =
     used_eio_std := true;
@@ -21,7 +21,7 @@ let eio () =
     method pick lst = mk_apply_simple (fiber_ident "any") [ lst ]
 
     method async process_f =
-      Comments.add_default_loc "[sw] must be propagated here.";
+      add_comment "[sw] must be propagated here.";
       Exp.apply
         (mk_exp_ident (fiber_ident "fork"))
         [
@@ -29,7 +29,7 @@ let eio () =
         ]
 
     method wait () =
-      Comments.add_default_loc
+      add_comment
         "Translation is incomplete, [Promise.await] must be called on the \
          promise when it's part of control-flow.";
       mk_apply_simple (promise_ident "create") [ mk_unit_val ]
@@ -48,7 +48,7 @@ let eio () =
       | ("filter" | "filter_map" | "map" | "iter") as ident ->
           Some (fiber_ident "List" @ [ ident ])
       | ident ->
-          Comments.add_default_loc
+          add_comment
             ("[" ^ ident
            ^ "] can't be translated automatically. See \
               https://ocaml.org/p/eio/latest/doc/Eio/Fiber/List/index.html");
@@ -57,7 +57,7 @@ let eio () =
     method sleep d = mk_apply_simple [ "Eio_unix"; "sleep" ] [ d ]
 
     method with_timeout d f =
-      Comments.add_default_loc "[env] must be propagated from the main loop";
+      add_comment "[env] must be propagated from the main loop";
       let clock = Exp.send (mk_exp_ident [ "env" ]) (mk_loc "mono_clock") in
       mk_apply_simple [ "Eio"; "Time"; "with_timeout_exn" ] [ clock; d; f ]
 
@@ -74,7 +74,7 @@ let eio () =
       (match param.ptyp_desc with
       | Ptyp_constr ({ txt = Lident "unit"; _ }, []) -> ()
       | _ ->
-          Comments.add_default_loc
+          add_comment
             "Eio conditions don't carry a value. Use a mutable variable and a \
              dedicated mutex.");
       mk_typ_constr [ "Eio"; "Condition"; "t" ]
