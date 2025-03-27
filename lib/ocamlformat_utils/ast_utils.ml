@@ -63,3 +63,103 @@ let mk_apply_ident ident args = Exp.apply (mk_exp_ident ident) args
 
 let mk_apply_simple f_ident args =
   mk_apply_ident f_ident (List.map (fun x -> (Nolabel, x)) args)
+
+module Unpack_apply : sig
+  type t
+
+  val unapply : (arg_label * expression) list -> t -> expression option
+  (** Decode a list of arguments matching a sequence of [take] instructions
+      ending in a [return]. If the argument list is smaller than expected, a
+      function node is generated to respect the arity and allow the expression
+      to be rewritten. Return [None] if the argument list couldn't be unapplied.
+  *)
+
+  val take : (expression -> t) -> t
+  (** Accept one argument. *)
+
+  val take_lbl : string -> (expression -> t) -> t
+  (** Accept a labelled argument. It's safer to accept all the labelled
+      arguments first before accepting any unlabelled argument. *)
+
+  val take_lblopt : string -> ((expression * [ `Opt | `Lbl ]) option -> t) -> t
+  (** Accept an optional labelled argument. [`Opt] indicates that the passed
+      value is an option passed using [?lbl:...] and [`Lbl] indicates that the
+      value is passed as [~lbl:...]. See [take_lbl]. *)
+
+  val take_all : ((arg_label * expression) list -> expression option) -> t
+  (** Accept all remaining arguments. *)
+
+  val return : expression option -> t
+  (** Stop accepting arguments. [return (Some exp)] rewrites the apply
+      expression to [exp] while [return None] leaves the original expression.
+      The "too many arguments" warning is not triggered with [return None]. *)
+end = struct
+  type t =
+    | Arg of (expression -> t)
+    | Label of string * (expression -> t)
+    | Label_opt of string * ((expression * [ `Opt | `Lbl ]) option -> t)
+    | Take_all of ((arg_label * expression) list -> expression option)
+    | End of expression option
+
+  let rec apply_remaining_args params i = function
+    | Arg k -> apply_remaining_next params i Nolabel k
+    | Label (lbl, k) -> apply_remaining_next params i (Labelled (mk_loc lbl)) k
+    | Label_opt (lbl, k) ->
+        apply_remaining_next params i
+          (Optional (mk_loc lbl))
+          (fun arg -> k (Some (arg, `Opt)))
+    | End r -> apply_remaining_end params r
+    | Take_all k -> apply_remaining_end params (k [])
+
+  and apply_remaining_next params i lbl k =
+    let ident = "x" ^ string_of_int i in
+    let new_param = mk_function_param ~lbl (Pat.var (mk_loc ident)) in
+    let expr = mk_exp_ident [ ident ] in
+    apply_remaining_args (new_param :: params) (i + 1) (k expr)
+
+  and apply_remaining_end params r =
+    match (r, params) with
+    | _, [] | None, _ -> r
+    | Some body, _ :: _ ->
+        Some (Exp.function_ (List.rev params) None (Pfunction_body body))
+
+  let find_label args lbl =
+    List.partition
+      (function
+        | (Labelled lbl' | Optional lbl'), _ -> lbl'.txt <> lbl | _ -> true)
+      args
+
+  let rec unapply args t =
+    match (args, t) with
+    | (Nolabel, arg) :: args_tl, Arg k -> unapply args_tl (k arg)
+    | _, End None -> None
+    | [], t -> apply_remaining_args [] 1 t
+    | args, Take_all k -> k args
+    | args, Label (lbl, k) -> (
+        match find_label args lbl with
+        | _, [] ->
+            Format.eprintf "Error: Label %S expected but not found" lbl;
+            None
+        | args_tl, (_, arg) :: _ -> unapply args_tl (k arg))
+    | args, Label_opt (lbl, k) -> (
+        match find_label args lbl with
+        | args_tl, (Labelled _, arg) :: _ ->
+            unapply args_tl (k (Some (arg, `Lbl)))
+        | args_tl, (Optional _, arg) :: _ ->
+            unapply args_tl (k (Some (arg, `Opt)))
+        | _ -> unapply args (k None))
+    | ((Labelled lbl | Optional lbl), _) :: _, Arg _ ->
+        Format.eprintf "Error: Unexpected label %S at %a\n%!" lbl.txt
+          Printast.fmt_location lbl.loc;
+        None
+    | (_, arg) :: _, End (Some _) ->
+        Format.eprintf "Error: Too many arguments at %a\n%!"
+          Printast.fmt_location arg.pexp_loc;
+        None
+
+  let take k = Arg k
+  let take_lbl lbl k = Label (lbl, k)
+  let take_lblopt lbl k = Label_opt (lbl, k)
+  let take_all k = Take_all k
+  let return r = End r
+end
