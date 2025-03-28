@@ -71,6 +71,8 @@ let uid_map_of_unit ~packages ~units =
         `Found (unit_name, Ident.name ident)
     | _ -> `Ignore
   in
+  if cmts = [] then
+    failwith ("Found no [.cmt] in packages: " ^ String.concat ", " packages);
   let module Tbl = Shape.Uid.Tbl in
   let tbl = Tbl.create 256 in
   List.iter
@@ -93,6 +95,7 @@ let pp_ocaml_lid ppf { Ocaml_parsing.Location.txt; loc } =
 (* Read the index files and extract all occurrences of [units]. *)
 let extract_occurrences_of_unit ~units ~lookup_ident paths =
   let open Merlin_index_format.Index_format in
+  if paths = [] then failwith "Found no index files in '_build'.";
   List.fold_left
     (fun acc file ->
       match read ~file with
