@@ -5,14 +5,19 @@ module Parsing : sig
   include module type of Ocamlformat_parser_extended
 end
 
+module Cmt = Ocamlformat_lib.Cmt
+
 module Ast_utils : module type of Ast_utils
 (** Utility functions for contructing AST nodes. *)
 
-open Parsing
+open Parsing.Parsetree
 
-val format_structure_in_place :
-  file:string ->
-  modify_ast:(Parsetree.structure -> Parsetree.structure) ->
-  (unit, [ `Msg of string ]) result
+type modify_ast = {
+  structure : structure -> structure * Cmt.t list;
+  signature : signature -> signature * Cmt.t list;
+}
+
+val format_in_place :
+  file:string -> modify_ast:modify_ast -> (unit, [ `Msg of string ]) result
 (** Format the content of and overwrite [file]. [modify_ast] can be used to
     apply any change to the program. Raises [Failure] and [Sys_error]. *)

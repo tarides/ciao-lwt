@@ -353,7 +353,7 @@ let with_scoped_ext ext f =
   | "shared" -> scoped Shared
   | _ -> f ()
 
-let remove_lwt_ppx ~use_lwt_bind:use_lwt_bind_ str =
+let remove_lwt_ppx_str ~use_lwt_bind:use_lwt_bind_ str =
   use_lwt_bind := use_lwt_bind_;
   letop_was_used := None;
   let default = Ast_mapper.default_mapper in
@@ -372,7 +372,16 @@ let remove_lwt_ppx ~use_lwt_bind:use_lwt_bind_ str =
   in
   let m = { default with expr; extension; value_binding } in
   let str = m.structure m str in
-  match !letop_was_used with
-  | Some scope when not (structure_has_open_lwt_syntax str) ->
-      mk_open_lwt_syntax scope :: str
-  | _ -> str
+  let str =
+    match !letop_was_used with
+    | Some scope when not (structure_has_open_lwt_syntax str) ->
+        mk_open_lwt_syntax scope :: str
+    | _ -> str
+  in
+  (str, [])
+
+let remove_lwt_ppx ~use_lwt_bind =
+  {
+    Ocamlformat_utils.structure = remove_lwt_ppx_str ~use_lwt_bind;
+    signature = (fun x -> (x, []));
+  }
