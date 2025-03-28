@@ -1,5 +1,5 @@
 let migrate_file ~formatted ~errors ~modify_ast file =
-  match Ocamlformat_utils.format_structure_in_place ~file ~modify_ast with
+  match Ocamlformat_utils.format_in_place ~file ~modify_ast with
   | Ok () -> incr formatted
   | Error (`Msg msg) ->
       Format.eprintf "%s: %s\n%!" file msg;

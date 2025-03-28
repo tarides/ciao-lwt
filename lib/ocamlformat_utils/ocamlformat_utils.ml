@@ -15,6 +15,7 @@ let ( let* ) = Result.bind
 (** Trimmed down version of [Translation_unit] that allows to modify the AST. *)
 module Trimmed_translation_unit = struct
   open Ocamlformat_lib.Parse_with_comments
+  module Cmt = Cmt
 
   let with_optional_box_debug ~box_debug k =
     if box_debug then Fmt.with_box_debug k else k
@@ -118,7 +119,10 @@ module Trimmed_translation_unit = struct
     let ext_parsed =
       parse (parse_ast conf) ~disable_w50:true ext_fg conf ~source ~input_name
     in
-    let ext_parsed = { ext_parsed with ast = modify_ast ext_parsed.ast } in
+    let ast, extra_comments = modify_ast ext_parsed.ast in
+    let ext_parsed =
+      { ext_parsed with ast; comments = extra_comments @ ext_parsed.comments }
+    in
     let strlocs, formatted =
       format ext_fg ~input_name ~prev_source:source ~ext_parsed conf
     in
@@ -180,12 +184,19 @@ let build_config ~file:_ =
 
 let error s = Error (`Msg s)
 
-let format_in_place ast ~file ~modify_ast =
+open Parsing.Parsetree
+
+type modify_ast = {
+  structure : structure -> structure * Cmt.t list;
+  signature : signature -> signature * Cmt.t list;
+}
+
+let _format_in_place ast_kind ~file modify_ast =
   try
     let conf = build_config ~file in
     let source = In_channel.with_open_text file In_channel.input_all in
     let fmted =
-      parse_and_format ast ~input_name:file ~source ~modify_ast conf
+      parse_and_format ast_kind ~input_name:file ~source ~modify_ast conf
     in
     if String.length fmted = 0 then error "Formatted to 0 length"
     else (
@@ -201,4 +212,9 @@ let format_in_place ast ~file ~modify_ast =
   | exn ->
       Format.kasprintf error "Unhandled exception: %s" (Printexc.to_string exn)
 
-let format_structure_in_place = format_in_place Extended_ast.Structure
+let format_in_place ~file ~modify_ast =
+  let open Extended_ast in
+  match Filename.extension file with
+  | ".ml" | ".eliom" -> _format_in_place Structure ~file modify_ast.structure
+  | ".mli" | ".eliomi" -> _format_in_place Signature ~file modify_ast.signature
+  | _ -> error ("Don't know what to do with file " ^ file)
