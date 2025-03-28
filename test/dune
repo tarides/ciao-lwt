@@ -1,2 +1,5 @@
-(cram
- (deps %{bin:lwt-ppx-to-let-syntax}))
+(subdir
+ lwt_ppx_to_let_syntax
+ (cram
+  (package lwt_ppx_to_let_syntax)
+  (deps %{bin:lwt-ppx-to-let-syntax})))
