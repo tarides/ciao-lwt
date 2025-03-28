@@ -59,6 +59,7 @@ let mk_binding_op ?(loc = !default_loc) ?(is_pun = false) op pat ?(args = [])
   Exp.binding_op op pat args typ exp is_pun loc
 
 let mk_lbl s = Labelled (mk_loc s)
+let mk_lblopt s = Optional (mk_loc s)
 let mk_apply_ident ident args = Exp.apply (mk_exp_ident ident) args
 
 let mk_apply_simple f_ident args =

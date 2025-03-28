@@ -3,3 +3,12 @@
  (cram
   (package lwt_ppx_to_let_syntax)
   (deps %{bin:lwt-ppx-to-let-syntax})))
+
+(subdir
+ lwt_log_to_logs
+ (cram
+  (package lwt_log_to_logs)
+  (deps
+   %{bin:lwt-log-to-logs}
+   %{bin:ocaml-index}
+   (package lwt_log))))

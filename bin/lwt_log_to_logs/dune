@@ -1,0 +1,5 @@
+(executable
+ (public_name lwt-log-to-logs)
+ (package lwt_log_to_logs)
+ (name main)
+ (libraries cmdliner migrate_utils ocamlformat_utils))
