@@ -347,22 +347,8 @@ let rewrite_letop ~backend ~state let_ ands body = function
           Some (mk_let pat exp body))
   | _ -> None
 
-(** Flatten pipelines before applying rewrites. *)
-let rec flatten_apply exp =
-  let flatten callee arg =
-    let callee, prefix_args =
-      match (flatten_apply callee).pexp_desc with
-      | Pexp_apply (callee, prefix_args) -> (callee, prefix_args)
-      | _ -> (callee, [])
-    in
-    Exp.apply callee (prefix_args @ [ (Nolabel, arg) ])
-  in
-  match exp.pexp_desc with
-  | Pexp_infix ({ txt = "@@"; _ }, lhs, rhs) -> flatten lhs rhs
-  | Pexp_infix ({ txt = "|>"; _ }, lhs, rhs) -> flatten rhs lhs
-  | _ -> exp
-
 let rewrite_expression ~backend ~state exp =
+  (* Flatten pipelines before applying rewrites. *)
   match (flatten_apply exp).pexp_desc with
   (* Rewrite a call to a [Lwt] function. *)
   | Pexp_apply ({ pexp_desc = Pexp_ident lid; _ }, args) ->

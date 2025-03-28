@@ -64,6 +64,21 @@ let mk_apply_ident ident args = Exp.apply (mk_exp_ident ident) args
 let mk_apply_simple f_ident args =
   mk_apply_ident f_ident (List.map (fun x -> (Nolabel, x)) args)
 
+(** Flatten a pipelines composed of [|>] and [@@] into a [Pexp_apply] node. *)
+let rec flatten_apply exp =
+  let flatten callee arg =
+    let callee, prefix_args =
+      match (flatten_apply callee).pexp_desc with
+      | Pexp_apply (callee, prefix_args) -> (callee, prefix_args)
+      | _ -> (callee, [])
+    in
+    Exp.apply callee (prefix_args @ [ (Nolabel, arg) ])
+  in
+  match exp.pexp_desc with
+  | Pexp_infix ({ txt = "@@"; _ }, lhs, rhs) -> flatten lhs rhs
+  | Pexp_infix ({ txt = "|>"; _ }, lhs, rhs) -> flatten rhs lhs
+  | _ -> exp
+
 module Unpack_apply : sig
   type t
 
