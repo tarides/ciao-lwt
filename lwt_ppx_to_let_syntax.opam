@@ -29,7 +29,3 @@ build: [
     "@doc" {with-doc}
   ]
 ]
-pin-depends: [
-  [ "ocamlformat.dev" "git+https://github.com/ocaml-ppx/ocamlformat#main" ]
-  [ "ocamlformat-lib.dev" "git+https://github.com/ocaml-ppx/ocamlformat#main" ]
-]
