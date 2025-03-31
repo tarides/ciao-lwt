@@ -72,6 +72,10 @@ let rewrite_apply_lwt_log_core ~state ident args =
   | "fatal" | "fatal_f" ->
       add_comment state "This message was previously on the [fatal] level.";
       log_lwt "err"
+  | "make" ->
+      (* [Lwt_log.Section.make] is detected as [("Lwt_log_core", "make")]. *)
+      take @@ fun name ->
+      return (Some (mk_apply_simple [ "Logs"; "Src"; "create" ] [ name ]))
   | _ -> return None
 
 let rewrite_expression ~state exp =

@@ -1,8 +1,7 @@
   $ chmod a+w *.ml
   $ dune build @ocaml-index
   $ lwt-log-to-logs --migrate
-  Warning: foo.ml: 7 occurrences have not been rewritten.
-    Lwt_log_core.make (line 1 column 15)
+  Warning: foo.ml: 6 occurrences have not been rewritten.
     Lwt_log_core.null (line 38 column 35)
     Lwt_log_core.null (line 43 column 41)
     Lwt_log_core.ign_info (line 48 column 9)
@@ -12,7 +11,7 @@
   Formatted 1 files, 0 errors
 
   $ cat foo.ml
-  let section = Lwt_log.Section.make "test:section"
+  let section = Logs.Src.create "test:section"
   
   (* String log lwt *)
   let _lwt =
