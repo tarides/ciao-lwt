@@ -8,6 +8,8 @@ module Occ = Migrate_utils.Occ
 let add_comment state ?loc text =
   Migrate_utils.add_comment state ?loc ("TODO: lwt-log-to-logs: " ^ text)
 
+let mk_lwt_return_unit = Exp.ident (mk_longident [ "Lwt"; "return_unit" ])
+
 let mk_log section cmd args =
   (* Logs.$cmd ~src:$section (fun fmt -> fmt $arg) *)
   let msgf =
@@ -35,7 +37,7 @@ let rewrite_apply_lwt_log_core ~state ident args =
     | None -> ());
     k
   in
-  let logf logs_name =
+  let logf ~mk_log logs_name =
     take_lblopt "section" @@ fun section ->
     ignore_lblarg "exn" @@ ignore_lblarg "location" @@ ignore_lblarg "logger"
     @@ take
@@ -43,18 +45,33 @@ let rewrite_apply_lwt_log_core ~state ident args =
     take_all @@ fun args ->
     Some (mk_log section logs_name ((Nolabel, fmt_arg) :: args))
   in
+  let log_unit n = logf ~mk_log n in
+  let log_lwt n =
+    let mk_log section n args =
+      Exp.sequence (mk_log section n args) mk_lwt_return_unit
+    in
+    logf ~mk_log n
+  in
 
   unapply args
   @@
   match ident with
-  | "ign_debug" | "ign_debug_f" -> logf "debug"
-  | "ign_info" | "ign_info_f" -> logf "info"
-  | "ign_notice" | "ign_notice_f" -> logf "app"
-  | "ign_warning" | "ign_warning_f" -> logf "warn"
-  | "ign_error" | "ign_error_f" -> logf "err"
+  | "ign_debug" | "ign_debug_f" -> log_unit "debug"
+  | "ign_info" | "ign_info_f" -> log_unit "info"
+  | "ign_notice" | "ign_notice_f" -> log_unit "app"
+  | "ign_warning" | "ign_warning_f" -> log_unit "warn"
+  | "ign_error" | "ign_error_f" -> log_unit "err"
   | "ign_fatal" | "ign_fatal_f" ->
       add_comment state "This message was previously on the [fatal] level.";
-      logf "err"
+      log_unit "err"
+  | "debug" | "debug_f" -> log_lwt "debug"
+  | "info" | "info_f" -> log_lwt "info"
+  | "notice" | "notice_f" -> log_lwt "app"
+  | "warning" | "warning_f" -> log_lwt "warn"
+  | "error" | "error_f" -> log_lwt "err"
+  | "fatal" | "fatal_f" ->
+      add_comment state "This message was previously on the [fatal] level.";
+      log_lwt "err"
   | _ -> return None
 
 let rewrite_expression ~state exp =

@@ -1,20 +1,8 @@
   $ chmod a+w *.ml
   $ dune build @ocaml-index
   $ lwt-log-to-logs --migrate
-  Warning: foo.ml: 19 occurrences have not been rewritten.
+  Warning: foo.ml: 7 occurrences have not been rewritten.
     Lwt_log_core.make (line 1 column 15)
-    Lwt_log_core.debug (line 4 column 12)
-    Lwt_log_core.info (line 5 column 12)
-    Lwt_log_core.notice (line 6 column 12)
-    Lwt_log_core.warning (line 7 column 12)
-    Lwt_log_core.error (line 8 column 12)
-    Lwt_log_core.fatal (line 9 column 12)
-    Lwt_log_core.debug_f (line 12 column 12)
-    Lwt_log_core.info_f (line 13 column 12)
-    Lwt_log_core.notice_f (line 14 column 12)
-    Lwt_log_core.warning_f (line 15 column 12)
-    Lwt_log_core.error_f (line 16 column 12)
-    Lwt_log_core.fatal_f (line 17 column 12)
     Lwt_log_core.null (line 38 column 35)
     Lwt_log_core.null (line 43 column 41)
     Lwt_log_core.ign_info (line 48 column 9)
@@ -27,20 +15,60 @@
   let section = Lwt_log.Section.make "test:section"
   
   (* String log lwt *)
-  let _lwt = Lwt_log.debug ~section "log"
-  let _lwt = Lwt_log.info ~section "log"
-  let _lwt = Lwt_log.notice ~section "log"
-  let _lwt = Lwt_log.warning ~section "log"
-  let _lwt = Lwt_log.error ~section "log"
-  let _lwt = Lwt_log.fatal ~section "log"
+  let _lwt =
+    Logs.debug ~src:section (fun fmt -> fmt "log");
+    Lwt.return_unit
+  
+  let _lwt =
+    Logs.info ~src:section (fun fmt -> fmt "log");
+    Lwt.return_unit
+  
+  let _lwt =
+    Logs.app ~src:section (fun fmt -> fmt "log");
+    Lwt.return_unit
+  
+  let _lwt =
+    Logs.warn ~src:section (fun fmt -> fmt "log");
+    Lwt.return_unit
+  
+  let _lwt =
+    Logs.err ~src:section (fun fmt -> fmt "log");
+    Lwt.return_unit
+  
+  let _lwt =
+    Logs.err
+      ~src:
+        (* TODO: lwt-log-to-logs: This message was previously on the [fatal] level. *)
+        section (fun fmt -> fmt "log");
+    Lwt.return_unit
   
   (* Format log lwt *)
-  let _lwt = Lwt_log.debug_f ~section "%s" "log"
-  let _lwt = Lwt_log.info_f ~section "%s" "log"
-  let _lwt = Lwt_log.notice_f ~section "%s" "log"
-  let _lwt = Lwt_log.warning_f ~section "%s" "log"
-  let _lwt = Lwt_log.error_f ~section "%s" "log"
-  let _lwt = Lwt_log.fatal_f ~section "%s" "log"
+  let _lwt =
+    Logs.debug ~src:section (fun fmt -> fmt "%s" "log");
+    Lwt.return_unit
+  
+  let _lwt =
+    Logs.info ~src:section (fun fmt -> fmt "%s" "log");
+    Lwt.return_unit
+  
+  let _lwt =
+    Logs.app ~src:section (fun fmt -> fmt "%s" "log");
+    Lwt.return_unit
+  
+  let _lwt =
+    Logs.warn ~src:section (fun fmt -> fmt "%s" "log");
+    Lwt.return_unit
+  
+  let _lwt =
+    Logs.err ~src:section (fun fmt -> fmt "%s" "log");
+    Lwt.return_unit
+  
+  let _lwt =
+    Logs.err
+      ~src:
+        (* TODO: lwt-log-to-logs: This message was previously on the [fatal] level. *)
+        section (fun fmt -> fmt "%s" "log");
+    Lwt.return_unit
   
   (* String log async *)
   let () = Logs.debug ~src:section (fun fmt -> fmt "log")
