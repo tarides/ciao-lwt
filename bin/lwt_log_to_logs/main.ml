@@ -5,8 +5,8 @@ open Ast_helper
 open Ocamlformat_utils.Ast_utils
 module Occ = Migrate_utils.Occ
 
-(* let add_comment state ?loc text = *)
-(*   Migrate_utils.add_comment state ?loc ("TODO: lwt-log-to-logs: " ^ text) *)
+let add_comment state ?loc text =
+  Migrate_utils.add_comment state ?loc ("TODO: lwt-log-to-logs: " ^ text)
 
 let mk_log section cmd args =
   (* Logs.$cmd ~src:$section (fun fmt -> fmt $arg) *)
@@ -23,14 +23,27 @@ let mk_log section cmd args =
   in
   mk_apply_ident [ "Logs"; cmd ] (src_arg @ [ (Nolabel, msgf) ])
 
-let rewrite_apply_lwt_log_core ~state:_ ident args =
+let rewrite_apply_lwt_log_core ~state ident args =
   let open Unpack_apply in
+  let ignore_lblarg arg k =
+    take_lblopt arg @@ fun value ->
+    (match value with
+    | Some (_, kind) ->
+        let prefix = match kind with `Lbl -> '~' | `Opt -> '?' in
+        Printf.ksprintf (add_comment state)
+          "Labelled argument %c%s was dropped." prefix arg
+    | None -> ());
+    k
+  in
+
   unapply args
   @@
   match ident with
   | "ign_info" | "ign_info_f" ->
       take_lblopt "section" @@ fun section ->
-      take @@ fun fmt_arg ->
+      ignore_lblarg "exn" @@ ignore_lblarg "location" @@ ignore_lblarg "logger"
+      @@ take
+      @@ fun fmt_arg ->
       take_all @@ fun args ->
       Some (mk_log section "info" ((Nolabel, fmt_arg) :: args))
   | _ -> return None

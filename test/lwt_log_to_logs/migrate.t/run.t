@@ -1,16 +1,7 @@
   $ chmod a+w *.ml
   $ dune build @ocaml-index
   $ lwt-log-to-logs --migrate
-  Error: Unexpected label "exn" at (foo.ml[36,1241+26]..[36,1241+40])
-  Error: Unexpected label "location" at (foo.ml[37,1288+26]..[37,1288+50])
-  Error: Unexpected label "logger" at (foo.ml[38,1345+26]..[38,1345+46])
-  Error: Unexpected label "exn" at (foo.ml[41,1435+26]..[41,1435+47])
-  Error: Unexpected label "location" at (foo.ml[42,1489+26]..[42,1489+57])
-  Error: Unexpected label "logger" at (foo.ml[43,1553+26]..[43,1553+53])
-  Error: Unexpected label "exn" at (foo.ml[50,1716+25]..[50,1716+39])
-  Error: Unexpected label "location" at (foo.ml[51,1756+25]..[51,1756+49])
-  Error: Unexpected label "logger" at (foo.ml[52,1806+25]..[52,1806+45])
-  Warning: foo.ml: 38 occurrences have not been rewritten.
+  Warning: foo.ml: 29 occurrences have not been rewritten.
     Lwt_log_core.make (line 1 column 15)
     Lwt_log_core.debug (line 4 column 12)
     Lwt_log_core.info (line 5 column 12)
@@ -34,18 +25,9 @@
     Lwt_log_core.ign_warning_f (line 31 column 10)
     Lwt_log_core.ign_error_f (line 32 column 10)
     Lwt_log_core.ign_fatal_f (line 33 column 10)
-    Lwt_log_core.ign_info (line 36 column 10)
-    Lwt_log_core.ign_info (line 37 column 10)
-    Lwt_log_core.ign_info (line 38 column 10)
     Lwt_log_core.null (line 38 column 35)
-    Lwt_log_core.ign_info (line 41 column 10)
-    Lwt_log_core.ign_info (line 42 column 10)
-    Lwt_log_core.ign_info (line 43 column 10)
     Lwt_log_core.null (line 43 column 41)
     Lwt_log_core.ign_info (line 48 column 9)
-    Lwt_log_core.ign_info (line 50 column 9)
-    Lwt_log_core.ign_info (line 51 column 9)
-    Lwt_log_core.ign_info (line 52 column 9)
     Lwt_log_core.null (line 52 column 34)
     Lwt_log_core.default (line 57 column 3)
     Lwt_log.channel (line 57 column 22)
@@ -87,23 +69,70 @@
   let () = Lwt_log.ign_fatal_f ~section "%s" "log"
   
   (* Other arguments *)
-  let () = Lwt_log.ign_info ~exn:Not_found "log"
-  let () = Lwt_log.ign_info ~location:("here", 1, 2) "log"
-  let () = Lwt_log.ign_info ~logger:Lwt_log.null "log"
+  let () =
+    Logs.info (fun fmt ->
+        fmt
+          (* TODO: lwt-log-to-logs: Labelled argument ~exn was dropped. *)
+          "exn")
+  
+  let () =
+    Logs.info (fun fmt ->
+        fmt
+          (* TODO: lwt-log-to-logs: Labelled argument ~location was dropped. *)
+          "location")
+  
+  let () =
+    Logs.info (fun fmt ->
+        fmt
+          (* TODO: lwt-log-to-logs: Labelled argument ~logger was dropped. *)
+          "logger")
   
   (* Other arguments as opt labels *)
-  let () = Lwt_log.ign_info ?exn:(Some Not_found) "log"
-  let () = Lwt_log.ign_info ?location:(Some ("here", 1, 2)) "log"
-  let () = Lwt_log.ign_info ?logger:(Some Lwt_log.null) "log"
+  let () =
+    Logs.info (fun fmt ->
+        fmt
+          (* TODO: lwt-log-to-logs: Labelled argument ?exn was dropped. *)
+          "exn")
+  
+  let () =
+    Logs.info (fun fmt ->
+        fmt
+          (* TODO: lwt-log-to-logs: Labelled argument ?location was dropped. *)
+          "location")
+  
+  let () =
+    Logs.info (fun fmt ->
+        fmt
+          (* TODO: lwt-log-to-logs: Labelled argument ?logger was dropped. *)
+          "logger")
   
   (* Partially applied *)
   [@@@warning "-5"]
   
   let _ = Lwt_log.ign_info
-  let _ = fun x1 -> Logs.info ~src:section (fun fmt -> fmt x1)
-  let _ = Lwt_log.ign_info ~exn:Not_found
-  let _ = Lwt_log.ign_info ~location:("here", 1, 2)
-  let _ = Lwt_log.ign_info ~logger:Lwt_log.null
+  
+  let _ =
+   fun ?exn:x1 ?location:x2 ?logger:x3 x4 ->
+    Logs.info
+      ~src:
+        (* TODO: lwt-log-to-logs: Labelled argument ?logger was dropped. *)
+        (* TODO: lwt-log-to-logs: Labelled argument ?location was dropped. *)
+        (* TODO: lwt-log-to-logs: Labelled argument ?exn was dropped. *)
+        section (fun fmt -> fmt x4)
+  
+  let _
+      (* TODO: lwt-log-to-logs: Labelled argument ~exn was dropped. *)
+      (* TODO: lwt-log-to-logs: Labelled argument ?logger was dropped. *)
+      (* TODO: lwt-log-to-logs: Labelled argument ?location was dropped. *) =
+   fun ?location:x1 ?logger:x2 x3 -> Logs.info (fun fmt -> fmt x3)
+  
+  let _
+      (* TODO: lwt-log-to-logs: Labelled argument ~location was dropped. *)
+      (* TODO: lwt-log-to-logs: Labelled argument ?logger was dropped. *) =
+   fun ?logger:x1 x2 -> Logs.info (fun fmt -> fmt x2)
+  
+  let _ (* TODO: lwt-log-to-logs: Labelled argument ~logger was dropped. *) =
+   fun x1 -> Logs.info (fun fmt -> fmt x1)
   
   [@@@warning "+5"]
   

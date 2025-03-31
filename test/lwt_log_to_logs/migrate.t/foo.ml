@@ -33,14 +33,14 @@ let () = Lwt_log.ign_error_f ~section "%s" "log"
 let () = Lwt_log.ign_fatal_f ~section "%s" "log"
 
 (* Other arguments *)
-let () = Lwt_log.ign_info ~exn:Not_found "log"
-let () = Lwt_log.ign_info ~location:("here", 1, 2) "log"
-let () = Lwt_log.ign_info ~logger:Lwt_log.null "log"
+let () = Lwt_log.ign_info ~exn:Not_found "exn"
+let () = Lwt_log.ign_info ~location:("here", 1, 2) "location"
+let () = Lwt_log.ign_info ~logger:Lwt_log.null "logger"
 
 (* Other arguments as opt labels *)
-let () = Lwt_log.ign_info ?exn:(Some Not_found) "log"
-let () = Lwt_log.ign_info ?location:(Some ("here", 1, 2)) "log"
-let () = Lwt_log.ign_info ?logger:(Some Lwt_log.null) "log"
+let () = Lwt_log.ign_info ?exn:(Some Not_found) "exn"
+let () = Lwt_log.ign_info ?location:(Some ("here", 1, 2)) "location"
+let () = Lwt_log.ign_info ?logger:(Some Lwt_log.null) "logger"
 
 (* Partially applied *)
 [@@@warning "-5"]
