@@ -1,7 +1,7 @@
   $ chmod a+w *.ml
   $ dune build @ocaml-index
   $ lwt-log-to-logs --migrate
-  Warning: foo.ml: 29 occurrences have not been rewritten.
+  Warning: foo.ml: 19 occurrences have not been rewritten.
     Lwt_log_core.make (line 1 column 15)
     Lwt_log_core.debug (line 4 column 12)
     Lwt_log_core.info (line 5 column 12)
@@ -15,16 +15,6 @@
     Lwt_log_core.warning_f (line 15 column 12)
     Lwt_log_core.error_f (line 16 column 12)
     Lwt_log_core.fatal_f (line 17 column 12)
-    Lwt_log_core.ign_debug (line 20 column 10)
-    Lwt_log_core.ign_notice (line 22 column 10)
-    Lwt_log_core.ign_warning (line 23 column 10)
-    Lwt_log_core.ign_error (line 24 column 10)
-    Lwt_log_core.ign_fatal (line 25 column 10)
-    Lwt_log_core.ign_debug_f (line 28 column 10)
-    Lwt_log_core.ign_notice_f (line 30 column 10)
-    Lwt_log_core.ign_warning_f (line 31 column 10)
-    Lwt_log_core.ign_error_f (line 32 column 10)
-    Lwt_log_core.ign_fatal_f (line 33 column 10)
     Lwt_log_core.null (line 38 column 35)
     Lwt_log_core.null (line 43 column 41)
     Lwt_log_core.ign_info (line 48 column 9)
@@ -53,20 +43,30 @@
   let _lwt = Lwt_log.fatal_f ~section "%s" "log"
   
   (* String log async *)
-  let () = Lwt_log.ign_debug ~section "log"
+  let () = Logs.debug ~src:section (fun fmt -> fmt "log")
   let () = Logs.info ~src:section (fun fmt -> fmt "log")
-  let () = Lwt_log.ign_notice ~section "log"
-  let () = Lwt_log.ign_warning ~section "log"
-  let () = Lwt_log.ign_error ~section "log"
-  let () = Lwt_log.ign_fatal ~section "log"
+  let () = Logs.app ~src:section (fun fmt -> fmt "log")
+  let () = Logs.warn ~src:section (fun fmt -> fmt "log")
+  let () = Logs.err ~src:section (fun fmt -> fmt "log")
+  
+  let () =
+    Logs.err
+      ~src:
+        (* TODO: lwt-log-to-logs: This message was previously on the [fatal] level. *)
+        section (fun fmt -> fmt "log")
   
   (* Format log async *)
-  let () = Lwt_log.ign_debug_f ~section "%s" "log"
+  let () = Logs.debug ~src:section (fun fmt -> fmt "%s" "log")
   let () = Logs.info ~src:section (fun fmt -> fmt "%s" "log")
-  let () = Lwt_log.ign_notice_f ~section "%s" "log"
-  let () = Lwt_log.ign_warning_f ~section "%s" "log"
-  let () = Lwt_log.ign_error_f ~section "%s" "log"
-  let () = Lwt_log.ign_fatal_f ~section "%s" "log"
+  let () = Logs.app ~src:section (fun fmt -> fmt "%s" "log")
+  let () = Logs.warn ~src:section (fun fmt -> fmt "%s" "log")
+  let () = Logs.err ~src:section (fun fmt -> fmt "%s" "log")
+  
+  let () =
+    Logs.err
+      ~src:
+        (* TODO: lwt-log-to-logs: This message was previously on the [fatal] level. *)
+        section (fun fmt -> fmt "%s" "log")
   
   (* Other arguments *)
   let () =

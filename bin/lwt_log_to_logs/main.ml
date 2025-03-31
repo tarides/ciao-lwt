@@ -35,17 +35,26 @@ let rewrite_apply_lwt_log_core ~state ident args =
     | None -> ());
     k
   in
+  let logf logs_name =
+    take_lblopt "section" @@ fun section ->
+    ignore_lblarg "exn" @@ ignore_lblarg "location" @@ ignore_lblarg "logger"
+    @@ take
+    @@ fun fmt_arg ->
+    take_all @@ fun args ->
+    Some (mk_log section logs_name ((Nolabel, fmt_arg) :: args))
+  in
 
   unapply args
   @@
   match ident with
-  | "ign_info" | "ign_info_f" ->
-      take_lblopt "section" @@ fun section ->
-      ignore_lblarg "exn" @@ ignore_lblarg "location" @@ ignore_lblarg "logger"
-      @@ take
-      @@ fun fmt_arg ->
-      take_all @@ fun args ->
-      Some (mk_log section "info" ((Nolabel, fmt_arg) :: args))
+  | "ign_debug" | "ign_debug_f" -> logf "debug"
+  | "ign_info" | "ign_info_f" -> logf "info"
+  | "ign_notice" | "ign_notice_f" -> logf "app"
+  | "ign_warning" | "ign_warning_f" -> logf "warn"
+  | "ign_error" | "ign_error_f" -> logf "err"
+  | "ign_fatal" | "ign_fatal_f" ->
+      add_comment state "This message was previously on the [fatal] level.";
+      logf "err"
   | _ -> return None
 
 let rewrite_expression ~state exp =
