@@ -1,4 +1,4 @@
-let section = Lwt_log.Section.make "test:section"
+let section : Lwt_log.section = Lwt_log.Section.make "test:section"
 
 (* String log lwt *)
 let _lwt = Lwt_log.debug ~section "log"

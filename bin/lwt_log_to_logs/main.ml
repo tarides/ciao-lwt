@@ -87,6 +87,16 @@ let rewrite_expression ~state exp =
         | _ -> None)
   | _ -> None
 
+let rewrite_type ~state typ =
+  match typ.ptyp_desc with
+  | Ptyp_constr (lid, params) ->
+      Occ.may_rewrite state lid (fun ident ->
+          match (ident, params) with
+          | ("Lwt_log_core", "section"), [] ->
+              Some (mk_typ_constr [ "Logs"; "src" ])
+          | _ -> None)
+  | _ -> None
+
 let mapper ~state =
   let default = Ast_mapper.default_mapper in
   let rec call_rewrite ~default ~loc f m x =
@@ -101,7 +111,10 @@ let mapper ~state =
       (rewrite_expression ~state)
       m x
   in
-  { default with expr }
+  let typ m x =
+    call_rewrite ~default:default.typ ~loc:x.ptyp_loc (rewrite_type ~state) m x
+  in
+  { default with expr; typ }
 
 let modify_ast ~fname:_ =
   let structure state str =

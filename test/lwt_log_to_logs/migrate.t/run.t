@@ -11,7 +11,7 @@
   Formatted 1 files, 0 errors
 
   $ cat foo.ml
-  let section = Logs.Src.create "test:section"
+  let section : Logs.src = Logs.Src.create "test:section"
   
   (* String log lwt *)
   let _lwt =
