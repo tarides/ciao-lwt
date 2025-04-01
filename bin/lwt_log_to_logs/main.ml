@@ -25,6 +25,9 @@ let mk_log section cmd args =
   in
   mk_apply_ident [ "Logs"; cmd ] (src_arg @ [ (Nolabel, msgf) ])
 
+let mk_set_level section lvl =
+  mk_apply_simple [ "Logs"; "Src"; "set_level" ] [ section; lvl ]
+
 let rewrite_apply_lwt_log_core ~state ident args =
   let open Unpack_apply in
   let ignore_lblarg arg k =
@@ -76,7 +79,23 @@ let rewrite_apply_lwt_log_core ~state ident args =
       (* [Lwt_log.Section.make] is detected as [("Lwt_log_core", "make")]. *)
       take @@ fun name ->
       return (Some (mk_apply_simple [ "Logs"; "Src"; "create" ] [ name ]))
+  | "set_level" ->
+      take @@ fun section ->
+      take @@ fun lvl -> return (Some (mk_set_level section (mk_exp_some lvl)))
+  | "reset_level" ->
+      take @@ fun section -> return (Some (mk_set_level section mk_exp_none))
   | _ -> return None
+
+let rewrite_constructor_lwt_log_core ~state:_ ident arg =
+  let mk_level cstr = Some (mk_constr_exp [ "Logs"; cstr ]) in
+  match (ident, arg) with
+  | "Debug", None -> mk_level "Debug"
+  | "Info", None -> mk_level "Info"
+  | "Notice", None -> mk_level "App"
+  | "Warning", None -> mk_level "Warning"
+  | "Error", None -> mk_level "Error"
+  | "Fatal", None -> mk_level "Error"
+  | _ -> None
 
 let rewrite_expression ~state exp =
   (* Flatten pipelines before applying rewrites. *)
@@ -84,6 +103,11 @@ let rewrite_expression ~state exp =
   | Pexp_apply ({ pexp_desc = Pexp_ident lid; _ }, args) ->
       Occ.may_rewrite state lid (function
         | "Lwt_log_core", ident -> rewrite_apply_lwt_log_core ~state ident args
+        | _ -> None)
+  | Pexp_construct (lid, arg) ->
+      Occ.may_rewrite state lid (function
+        | "Lwt_log_core", ident ->
+            rewrite_constructor_lwt_log_core ~state ident arg
         | _ -> None)
   | _ -> None
 

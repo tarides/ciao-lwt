@@ -6,8 +6,8 @@
     Lwt_log_core.null (line 43 column 41)
     Lwt_log_core.ign_info (line 48 column 9)
     Lwt_log_core.null (line 52 column 34)
-    Lwt_log_core.default (line 57 column 3)
-    Lwt_log.channel (line 57 column 22)
+    Lwt_log_core.default (line 64 column 3)
+    Lwt_log.channel (line 64 column 22)
   Formatted 1 files, 0 errors
 
   $ cat foo.ml
@@ -164,4 +164,11 @@
   [@@@warning "+5"]
   
   let () =
+    Logs.Src.set_level section (Some Logs.Debug);
+    Logs.Src.set_level section (Some Logs.Info);
+    Logs.Src.set_level section (Some Logs.App);
+    Logs.Src.set_level section (Some Logs.Warning);
+    Logs.Src.set_level section (Some Logs.Error);
+    Logs.Src.set_level section (Some Logs.Error);
+    Logs.Src.set_level section None;
     Lwt_log.default := Lwt_log.channel ~close_mode:`Keep ~channel:Lwt_io.stderr ()

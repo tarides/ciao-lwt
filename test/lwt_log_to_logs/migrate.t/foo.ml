@@ -54,4 +54,11 @@ let _ = Lwt_log.ign_info ~logger:Lwt_log.null
 [@@@warning "+5"]
 
 let () =
+  Lwt_log.Section.set_level section Lwt_log.Debug;
+  Lwt_log.Section.set_level section Lwt_log.Info;
+  Lwt_log.Section.set_level section Lwt_log.Notice;
+  Lwt_log.Section.set_level section Lwt_log.Warning;
+  Lwt_log.Section.set_level section Lwt_log.Error;
+  Lwt_log.Section.set_level section Lwt_log.Fatal;
+  Lwt_log.Section.reset_level section;
   Lwt_log.default := Lwt_log.channel ~close_mode:`Keep ~channel:Lwt_io.stderr ()
