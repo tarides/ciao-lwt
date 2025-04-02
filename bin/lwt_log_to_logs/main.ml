@@ -28,7 +28,32 @@ let mk_log section cmd args =
 let mk_set_level section lvl =
   mk_apply_simple [ "Logs"; "Src"; "set_level" ] [ section; lvl ]
 
-let rewrite_apply_lwt_log_core ~state ident args =
+let mk_format_reporter ~state ~template ~close_mode channel =
+  if Option.is_some template then
+    add_comment state
+      "Lwt_log.channel: The [~template] argument is unsupported. Use \
+       [~pp_header] instead.";
+  (match close_mode.pexp_desc with
+  | Pexp_variant (cstr, None) when cstr.txt.txt = "Keep" -> ()
+  | _ ->
+      add_comment state
+        "Lwt_log.channel: The [~close_mode] argument has been dropped. The \
+         behavior is always [`Keep].");
+  let fmt_ident = "logs_formatter" in
+  let fmt_val = mk_exp_var fmt_ident in
+  add_comment state
+    "Format.formatter_of_out_channel: Argument is a [Lwt_io.output_channel] \
+     but a [out_channel] is expected.";
+  mk_let
+    (Pat.var (mk_loc fmt_ident))
+    (mk_apply_simple [ "Format"; "formatter_of_out_channel" ] [ channel ])
+    (mk_apply_ident
+       [ "Logs"; "format_reporter" ]
+       [
+         (mk_lbl "app", fmt_val); (mk_lbl "dst", fmt_val); (Nolabel, mk_unit_val);
+       ])
+
+let rewrite_apply_lwt_log ~state (unit, ident) args =
   let open Unpack_apply in
   let ignore_lblarg arg k =
     take_lblopt arg @@ fun value ->
@@ -55,103 +80,67 @@ let rewrite_apply_lwt_log_core ~state ident args =
     in
     logf ~mk_log n
   in
+  let mk_level cstr = return (Some (mk_constr_exp [ "Logs"; cstr ])) in
 
   unapply args
   @@
-  match ident with
-  | "ign_debug" | "ign_debug_f" -> log_unit "debug"
-  | "ign_info" | "ign_info_f" -> log_unit "info"
-  | "ign_notice" | "ign_notice_f" -> log_unit "app"
-  | "ign_warning" | "ign_warning_f" -> log_unit "warn"
-  | "ign_error" | "ign_error_f" -> log_unit "err"
-  | "ign_fatal" | "ign_fatal_f" ->
-      add_comment state "This message was previously on the [fatal] level.";
-      log_unit "err"
-  | "debug" | "debug_f" -> log_lwt "debug"
-  | "info" | "info_f" -> log_lwt "info"
-  | "notice" | "notice_f" -> log_lwt "app"
-  | "warning" | "warning_f" -> log_lwt "warn"
-  | "error" | "error_f" -> log_lwt "err"
-  | "fatal" | "fatal_f" ->
-      add_comment state "This message was previously on the [fatal] level.";
-      log_lwt "err"
-  | "make" ->
-      (* [Lwt_log.Section.make] is detected as [("Lwt_log_core", "make")]. *)
-      take @@ fun name ->
-      return (Some (mk_apply_simple [ "Logs"; "Src"; "create" ] [ name ]))
-  | "set_level" ->
-      take @@ fun section ->
-      take @@ fun lvl -> return (Some (mk_set_level section (mk_exp_some lvl)))
-  | "reset_level" ->
-      take @@ fun section -> return (Some (mk_set_level section mk_exp_none))
+  match unit with
+  | "Lwt_log_core" -> (
+      match ident with
+      | "ign_debug" | "ign_debug_f" -> log_unit "debug"
+      | "ign_info" | "ign_info_f" -> log_unit "info"
+      | "ign_notice" | "ign_notice_f" -> log_unit "app"
+      | "ign_warning" | "ign_warning_f" -> log_unit "warn"
+      | "ign_error" | "ign_error_f" -> log_unit "err"
+      | "ign_fatal" | "ign_fatal_f" ->
+          add_comment state "This message was previously on the [fatal] level.";
+          log_unit "err"
+      | "debug" | "debug_f" -> log_lwt "debug"
+      | "info" | "info_f" -> log_lwt "info"
+      | "notice" | "notice_f" -> log_lwt "app"
+      | "warning" | "warning_f" -> log_lwt "warn"
+      | "error" | "error_f" -> log_lwt "err"
+      | "fatal" | "fatal_f" ->
+          add_comment state "This message was previously on the [fatal] level.";
+          log_lwt "err"
+      | "make" ->
+          (* [Lwt_log.Section.make] is detected as [("Lwt_log_core", "make")]. *)
+          take @@ fun name ->
+          return (Some (mk_apply_simple [ "Logs"; "Src"; "create" ] [ name ]))
+      | "set_level" ->
+          take @@ fun section ->
+          take @@ fun lvl ->
+          return (Some (mk_set_level section (mk_exp_some lvl)))
+      | "reset_level" ->
+          take @@ fun section ->
+          return (Some (mk_set_level section mk_exp_none))
+      | "null" -> return (Some (mk_exp_ident [ "Logs"; "nop_reporter" ]))
+      | "default" ->
+          add_comment state "Use [Logs.set_reporter : reporter -> unit].";
+          return None
+      | "Debug" -> mk_level "Debug"
+      | "Info" -> mk_level "Info"
+      | "Notice" -> mk_level "App"
+      | "Warning" -> mk_level "Warning"
+      | "Error" -> mk_level "Error"
+      | "Fatal" -> mk_level "Error"
+      | _ -> return None)
+  | "Lwt_log" -> (
+      match ident with
+      | "channel" ->
+          take_lblopt "template" @@ fun template ->
+          take_lbl "close_mode" @@ fun close_mode ->
+          take_lbl "channel" @@ fun channel ->
+          take @@ fun _unit ->
+          return
+            (Some (mk_format_reporter ~state ~template ~close_mode channel))
+      | _ -> return None)
   | _ -> return None
-
-let rewrite_apply_lwt_log ~state ident args =
-  let open Unpack_apply in
-  unapply args
-  @@
-  match ident with
-  | "channel" ->
-      take_lblopt "template" @@ fun template ->
-      take_lbl "close_mode" @@ fun close_mode ->
-      take_lbl "channel" @@ fun channel ->
-      take @@ fun _unit ->
-      if Option.is_some template then
-        add_comment state
-          "Lwt_log.channel: The [~template] argument is unsupported. Use \
-           [~pp_header] instead.";
-      (match close_mode.pexp_desc with
-      | Pexp_variant (cstr, None) when cstr.txt.txt = "Keep" -> ()
-      | _ ->
-          add_comment state
-            "Lwt_log.channel: The [~close_mode] argument has been dropped. The \
-             behavior is always [`Keep].");
-      let fmt_ident = "logs_formatter" in
-      let fmt_val = mk_exp_var fmt_ident in
-      add_comment state
-        "Format.formatter_of_out_channel: Argument is a \
-         [Lwt_io.output_channel] but a [out_channel] is expected.";
-      return
-        (Some
-           (mk_let
-              (Pat.var (mk_loc fmt_ident))
-              (mk_apply_simple
-                 [ "Format"; "formatter_of_out_channel" ]
-                 [ channel ])
-              (mk_apply_ident
-                 [ "Logs"; "format_reporter" ]
-                 [
-                   (mk_lbl "app", fmt_val);
-                   (mk_lbl "dst", fmt_val);
-                   (Nolabel, mk_unit_val);
-                 ])))
-  | _ -> return None
-
-let rewrite_constructor_lwt_log_core ~state:_ ident arg =
-  let mk_level cstr = Some (mk_constr_exp [ "Logs"; cstr ]) in
-  match (ident, arg) with
-  | "Debug", None -> mk_level "Debug"
-  | "Info", None -> mk_level "Info"
-  | "Notice", None -> mk_level "App"
-  | "Warning", None -> mk_level "Warning"
-  | "Error", None -> mk_level "Error"
-  | "Fatal", None -> mk_level "Error"
-  | _ -> None
 
 let rewrite_expression ~state exp =
-  (* Flatten pipelines before applying rewrites. *)
-  match (flatten_apply exp).pexp_desc with
-  | Pexp_apply ({ pexp_desc = Pexp_ident lid; _ }, args) ->
-      Occ.may_rewrite state lid (function
-        | "Lwt_log_core", ident -> rewrite_apply_lwt_log_core ~state ident args
-        | "Lwt_log", ident -> rewrite_apply_lwt_log ~state ident args
-        | _ -> None)
-  | Pexp_construct (lid, arg) ->
-      Occ.may_rewrite state lid (function
-        | "Lwt_log_core", ident ->
-            rewrite_constructor_lwt_log_core ~state ident arg
-        | _ -> None)
-  | _ -> None
+  rewrite_apply exp (fun lid args ->
+      Occ.may_rewrite state lid (fun ident ->
+          rewrite_apply_lwt_log ~state ident args))
 
 let rewrite_type ~state typ =
   match typ.ptyp_desc with

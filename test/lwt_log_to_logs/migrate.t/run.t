@@ -1,14 +1,12 @@
   $ chmod a+w *.ml
   $ dune build @ocaml-index
   $ lwt-log-to-logs --migrate
-  Warning: foo.ml: 7 occurrences have not been rewritten.
+  Warning: foo.ml: 5 occurrences have not been rewritten.
     Lwt_log_core.null (line 38 column 35)
     Lwt_log_core.null (line 43 column 41)
-    Lwt_log_core.ign_info (line 48 column 9)
     Lwt_log_core.null (line 52 column 34)
     Lwt_log_core.default (line 64 column 3)
     Lwt_log_core.default (line 67 column 12)
-    Lwt_log_core.null (line 68 column 11)
   Formatted 1 files, 0 errors
 
   $ cat foo.ml
@@ -137,7 +135,12 @@
   (* Partially applied *)
   [@@@warning "-5"]
   
-  let _ = Lwt_log.ign_info
+  let _
+      (* TODO: lwt-log-to-logs: Labelled argument ?logger was dropped. *)
+      (* TODO: lwt-log-to-logs: Labelled argument ?location was dropped. *)
+      (* TODO: lwt-log-to-logs: Labelled argument ?exn was dropped. *) =
+   fun ?section:x1 ?exn:x2 ?location:x3 ?logger:x4 x5 ->
+    Logs.info ?src:x1 (fun fmt -> fmt x5)
   
   let _ =
    fun ?exn:x1 ?location:x2 ?logger:x3 x4 ->
@@ -172,7 +175,9 @@
     Logs.Src.set_level section (Some Logs.Error);
     Logs.Src.set_level section (Some Logs.Error);
     Logs.Src.set_level section None;
-    Lwt_log.default :=
+    Lwt_log.default
+    (* TODO: lwt-log-to-logs: Use [Logs.set_reporter : reporter -> unit]. *)
+    :=
       let logs_formatter =
         Format.formatter_of_out_channel
           (* TODO: lwt-log-to-logs: Format.formatter_of_out_channel: Argument is a [Lwt_io.output_channel] but a [out_channel] is expected. *)
@@ -181,8 +186,11 @@
       Logs.format_reporter ~app:logs_formatter ~dst:logs_formatter ()
   
   let () =
-    let _ = !Lwt_log.default in
-    let _ = Lwt_log.null in
+    let _ =
+      !Lwt_log.default
+      (* TODO: lwt-log-to-logs: Use [Logs.set_reporter : reporter -> unit]. *)
+    in
+    let _ = Logs.nop_reporter in
     let _ =
       let logs_formatter =
         Format.formatter_of_out_channel

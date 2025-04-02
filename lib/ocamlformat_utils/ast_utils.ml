@@ -80,6 +80,29 @@ let rec flatten_apply exp =
   | Pexp_infix ({ txt = "|>"; _ }, lhs, rhs) -> flatten rhs lhs
   | _ -> exp
 
+(** Rewrite expressions that look like an apply by calling
+    [f ~loc longident args]. Returns [None] for other expressions. Expressions
+    that are treated as an apply:
+    - [Pexp_apply], obviously.
+    - Pipelines composed of [|>] and [@@].
+    - [Pexp_ident], interpreted as an apply with no arguments.
+    - [Pexp_infix], warning, Longident node doesn't appear in the parsetree.
+    - [Pexp_construct], as they cannot be confused with regular identifiers
+      thanks to their capital letter. *)
+let rewrite_apply exp f =
+  match (flatten_apply exp).pexp_desc with
+  | Pexp_apply ({ pexp_desc = Pexp_ident lid; pexp_attributes = []; _ }, args)
+    ->
+      f lid args
+  | Pexp_ident lid -> f lid []
+  | Pexp_infix (op, lhs, rhs) ->
+      let args = [ (Nolabel, lhs); (Nolabel, rhs) ] in
+      let lid = { op with txt = mk_longident' [ op.txt ] } in
+      f lid args
+  | Pexp_construct (lid, Some arg) -> f lid [ (Nolabel, arg) ]
+  | Pexp_construct (lid, None) -> f lid []
+  | _ -> None
+
 module Unpack_apply : sig
   type t
 
