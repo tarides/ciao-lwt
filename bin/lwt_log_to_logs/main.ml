@@ -86,6 +86,47 @@ let rewrite_apply_lwt_log_core ~state ident args =
       take @@ fun section -> return (Some (mk_set_level section mk_exp_none))
   | _ -> return None
 
+let rewrite_apply_lwt_log ~state ident args =
+  let open Unpack_apply in
+  unapply args
+  @@
+  match ident with
+  | "channel" ->
+      take_lblopt "template" @@ fun template ->
+      take_lbl "close_mode" @@ fun close_mode ->
+      take_lbl "channel" @@ fun channel ->
+      take @@ fun _unit ->
+      if Option.is_some template then
+        add_comment state
+          "Lwt_log.channel: The [~template] argument is unsupported. Use \
+           [~pp_header] instead.";
+      (match close_mode.pexp_desc with
+      | Pexp_variant (cstr, None) when cstr.txt.txt = "Keep" -> ()
+      | _ ->
+          add_comment state
+            "Lwt_log.channel: The [~close_mode] argument has been dropped. The \
+             behavior is always [`Keep].");
+      let fmt_ident = "logs_formatter" in
+      let fmt_val = mk_exp_var fmt_ident in
+      add_comment state
+        "Format.formatter_of_out_channel: Argument is a \
+         [Lwt_io.output_channel] but a [out_channel] is expected.";
+      return
+        (Some
+           (mk_let
+              (Pat.var (mk_loc fmt_ident))
+              (mk_apply_simple
+                 [ "Format"; "formatter_of_out_channel" ]
+                 [ channel ])
+              (mk_apply_ident
+                 [ "Logs"; "format_reporter" ]
+                 [
+                   (mk_lbl "app", fmt_val);
+                   (mk_lbl "dst", fmt_val);
+                   (Nolabel, mk_unit_val);
+                 ])))
+  | _ -> return None
+
 let rewrite_constructor_lwt_log_core ~state:_ ident arg =
   let mk_level cstr = Some (mk_constr_exp [ "Logs"; cstr ]) in
   match (ident, arg) with
@@ -103,6 +144,7 @@ let rewrite_expression ~state exp =
   | Pexp_apply ({ pexp_desc = Pexp_ident lid; _ }, args) ->
       Occ.may_rewrite state lid (function
         | "Lwt_log_core", ident -> rewrite_apply_lwt_log_core ~state ident args
+        | "Lwt_log", ident -> rewrite_apply_lwt_log ~state ident args
         | _ -> None)
   | Pexp_construct (lid, arg) ->
       Occ.may_rewrite state lid (function

@@ -1,13 +1,14 @@
   $ chmod a+w *.ml
   $ dune build @ocaml-index
   $ lwt-log-to-logs --migrate
-  Warning: foo.ml: 6 occurrences have not been rewritten.
+  Warning: foo.ml: 7 occurrences have not been rewritten.
     Lwt_log_core.null (line 38 column 35)
     Lwt_log_core.null (line 43 column 41)
     Lwt_log_core.ign_info (line 48 column 9)
     Lwt_log_core.null (line 52 column 34)
     Lwt_log_core.default (line 64 column 3)
-    Lwt_log.channel (line 64 column 22)
+    Lwt_log_core.default (line 67 column 12)
+    Lwt_log_core.null (line 68 column 11)
   Formatted 1 files, 0 errors
 
   $ cat foo.ml
@@ -171,4 +172,51 @@
     Logs.Src.set_level section (Some Logs.Error);
     Logs.Src.set_level section (Some Logs.Error);
     Logs.Src.set_level section None;
-    Lwt_log.default := Lwt_log.channel ~close_mode:`Keep ~channel:Lwt_io.stderr ()
+    Lwt_log.default :=
+      let logs_formatter =
+        Format.formatter_of_out_channel
+          (* TODO: lwt-log-to-logs: Format.formatter_of_out_channel: Argument is a [Lwt_io.output_channel] but a [out_channel] is expected. *)
+          Lwt_io.stderr
+      in
+      Logs.format_reporter ~app:logs_formatter ~dst:logs_formatter ()
+  
+  let () =
+    let _ = !Lwt_log.default in
+    let _ = Lwt_log.null in
+    let _ =
+      let logs_formatter =
+        Format.formatter_of_out_channel
+          (* TODO: lwt-log-to-logs: Lwt_log.channel: The [~template] argument is unsupported. Use [~pp_header] instead. *)
+          (* TODO: lwt-log-to-logs: Format.formatter_of_out_channel: Argument is a [Lwt_io.output_channel] but a [out_channel] is expected. *)
+          Lwt_io.stdout
+      in
+      Logs.format_reporter ~app:logs_formatter ~dst:logs_formatter ()
+    in
+    let keep = `Keep in
+    let _ =
+      let logs_formatter =
+        Format.formatter_of_out_channel
+          (* TODO: lwt-log-to-logs: Format.formatter_of_out_channel: Argument is a [Lwt_io.output_channel] but a [out_channel] is expected. *)
+          Lwt_io.stdout
+      in
+      Logs.format_reporter ~app:logs_formatter ~dst:logs_formatter ()
+    in
+    let _ =
+      let logs_formatter =
+        Format.formatter_of_out_channel
+          (* TODO: lwt-log-to-logs: Lwt_log.channel: The [~close_mode] argument has been dropped. The behavior is always [`Keep]. *)
+          (* TODO: lwt-log-to-logs: Format.formatter_of_out_channel: Argument is a [Lwt_io.output_channel] but a [out_channel] is expected. *)
+          Lwt_io.stdout
+      in
+      Logs.format_reporter ~app:logs_formatter ~dst:logs_formatter ()
+    in
+    let _ =
+      let logs_formatter =
+        Format.formatter_of_out_channel
+          (* TODO: lwt-log-to-logs: Lwt_log.channel: The [~close_mode] argument has been dropped. The behavior is always [`Keep]. *)
+          (* TODO: lwt-log-to-logs: Format.formatter_of_out_channel: Argument is a [Lwt_io.output_channel] but a [out_channel] is expected. *)
+          Lwt_io.stdout
+      in
+      Logs.format_reporter ~app:logs_formatter ~dst:logs_formatter ()
+    in
+    ()

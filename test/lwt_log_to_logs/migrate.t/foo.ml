@@ -62,3 +62,13 @@ let () =
   Lwt_log.Section.set_level section Lwt_log.Fatal;
   Lwt_log.Section.reset_level section;
   Lwt_log.default := Lwt_log.channel ~close_mode:`Keep ~channel:Lwt_io.stderr ()
+
+let () =
+  let _ = !Lwt_log.default in
+  let _ = Lwt_log.null in
+  let _ = Lwt_log.channel ~template:"foo" ~close_mode:`Keep ~channel:Lwt_io.stdout () in
+  let keep = `Keep in
+  let _ = Lwt_log.channel ~close_mode:`Keep ~channel:Lwt_io.stdout () in
+  let _ = Lwt_log.channel ~close_mode:keep ~channel:Lwt_io.stdout () in
+  let _ = Lwt_log.channel ~close_mode:`Close ~channel:Lwt_io.stdout () in
+  ()
