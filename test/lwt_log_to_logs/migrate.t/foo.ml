@@ -65,6 +65,7 @@ let () =
 
 let () =
   let _ = !Lwt_log.default in
+  let _ = Lwt_log.default in
   let _ = Lwt_log.null in
   let _ = Lwt_log.channel ~template:"foo" ~close_mode:`Keep ~channel:Lwt_io.stdout () in
   let keep = `Keep in

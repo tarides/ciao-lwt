@@ -115,6 +115,11 @@ let rewrite_apply_lwt_log ~state (unit, ident) args =
           take @@ fun section ->
           return (Some (mk_set_level section mk_exp_none))
       | "null" -> return (Some (mk_exp_ident [ "Logs"; "nop_reporter" ]))
+      | "!default" ->
+          return (Some (mk_apply_simple [ "Logs"; "reporter" ] [ mk_unit_val ]))
+      | "default :=" ->
+          take @@ fun r ->
+          return (Some (mk_apply_simple [ "Logs"; "set_reporter" ] [ r ]))
       | "default" ->
           add_comment state "Use [Logs.set_reporter : reporter -> unit].";
           return None
@@ -138,9 +143,25 @@ let rewrite_apply_lwt_log ~state (unit, ident) args =
   | _ -> return None
 
 let rewrite_expression ~state exp =
-  rewrite_apply exp (fun lid args ->
-      Occ.may_rewrite state lid (fun ident ->
-          rewrite_apply_lwt_log ~state ident args))
+  match
+    rewrite_apply exp (fun lid args ->
+        Occ.may_rewrite state lid (fun ident ->
+            rewrite_apply_lwt_log ~state ident args))
+  with
+  | Some _ as x -> x
+  | None -> (
+      (* Rewrite uses of [Lwt_log.default]. *)
+      match exp.pexp_desc with
+      | Pexp_prefix ({ txt = "!"; _ }, { pexp_desc = Pexp_ident lid; _ }) ->
+          Occ.may_rewrite state lid (fun (unit, ident) ->
+              rewrite_apply_lwt_log ~state (unit, "!" ^ ident) [])
+      | Pexp_infix ({ txt = ":="; _ }, { pexp_desc = Pexp_ident lid; _ }, rhs)
+        ->
+          Occ.may_rewrite state lid (fun (unit, ident) ->
+              rewrite_apply_lwt_log ~state
+                (unit, ident ^ " :=")
+                [ (Nolabel, rhs) ])
+      | _ -> None)
 
 let rewrite_type ~state typ =
   match typ.ptyp_desc with
