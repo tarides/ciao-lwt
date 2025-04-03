@@ -73,3 +73,47 @@ let () =
   let _ = Lwt_log.channel ~close_mode:keep ~channel:Lwt_io.stdout () in
   let _ = Lwt_log.channel ~close_mode:`Close ~channel:Lwt_io.stdout () in
   ()
+
+let _open_files () =
+  (* Extracted from ocsigenserver's [src/server/ocsigen_messages.ml]. *)
+  let open Lwt.Infix in
+  let access_file = "access.log" in
+  let warning_file = "warnings.log" in
+  let error_file = "errors.log" in
+  let access_logger = ref Lwt_log_core.null in
+  let stderr = Lwt_log.channel ~close_mode:`Keep ~channel:Lwt_io.stderr () in
+  let stdout = Lwt_log.channel ~close_mode:`Keep ~channel:Lwt_io.stdout () in
+  let loggers = ref [] in
+  (* CHECK: we are closing asynchronously! That should be ok, though. *)
+  List.iter (fun l -> ignore (Lwt_log.close l : unit Lwt.t)) !loggers;
+  match None with
+  | Some facility ->
+      (* log to syslog *)
+      let syslog = Lwt_log.syslog ~facility () in
+      loggers := [ syslog ];
+      Lwt_log.default := Lwt_log.broadcast [ syslog; stderr ];
+      Lwt.return ()
+  | None ->
+      (* log to files *)
+      let open_log path = Lwt_log.file ~file_name:path () in
+      open_log access_file >>= fun acc ->
+      access_logger := acc;
+      open_log warning_file >>= fun war ->
+      open_log error_file >>= fun err ->
+      loggers := [ acc; war; err ];
+      Lwt_log.default :=
+        Lwt_log.broadcast
+          [
+            Lwt_log.dispatch (fun _sect lev ->
+                match lev with
+                | Lwt_log.Error | Lwt_log.Fatal -> err
+                | Lwt_log.Warning -> war
+                | _ -> Lwt_log.null);
+            Lwt_log.dispatch (fun _sect lev ->
+                if false then Lwt_log.null
+                else
+                  match lev with
+                  | Lwt_log.Warning | Lwt_log.Error | Lwt_log.Fatal -> stderr
+                  | _ -> stdout);
+          ];
+      Lwt.return ()

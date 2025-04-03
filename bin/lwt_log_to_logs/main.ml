@@ -53,6 +53,34 @@ let mk_format_reporter ~state ~template ~close_mode channel =
          (mk_lbl "app", fmt_val); (mk_lbl "dst", fmt_val); (Nolabel, mk_unit_val);
        ])
 
+let mk_broadcast ~state:_ loggers =
+  mk_let_var "broadcast_reporters" loggers @@ fun reporters_var ->
+  let report =
+    let open Mk_function in
+    mk_function
+      ((Nolabel, "src") @ (Nolabel, "level")
+      @ (mk_lbl "over", "over")
+      @ (Nolabel, "k") @ (Nolabel, "msgf")
+      @ return (fun src level over k msgf ->
+            mk_apply_simple [ "List"; "iter" ]
+              [
+                mk_function
+                  ((Nolabel, "r")
+                  @ return (fun r ->
+                        Exp.apply
+                          (Exp.field r (mk_longident [ "Logs"; "report" ]))
+                          [
+                            (Nolabel, src);
+                            (Nolabel, level);
+                            (mk_lbl "over", over);
+                            (Nolabel, k);
+                            (Nolabel, msgf);
+                          ]));
+                reporters_var;
+              ]))
+  in
+  Exp.record [ (mk_longident [ "Logs"; "report" ], None, Some report) ] None
+
 let rewrite_apply_lwt_log ~state (unit, ident) args =
   let open Unpack_apply in
   let ignore_lblarg arg k =
@@ -123,6 +151,8 @@ let rewrite_apply_lwt_log ~state (unit, ident) args =
       | "default" ->
           add_comment state "Use [Logs.set_reporter : reporter -> unit].";
           return None
+      | "broadcast" ->
+          take @@ fun loggers -> return (Some (mk_broadcast ~state loggers))
       | "Debug" -> mk_level "Debug"
       | "Info" -> mk_level "Info"
       | "Notice" -> mk_level "App"

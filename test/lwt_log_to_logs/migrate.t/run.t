@@ -1,11 +1,22 @@
   $ chmod a+w *.ml
   $ dune build @ocaml-index
   $ lwt-log-to-logs --migrate
-  Warning: foo.ml: 4 occurrences have not been rewritten.
+  Warning: foo.ml: 15 occurrences have not been rewritten.
     Lwt_log_core.null (line 38 column 35)
     Lwt_log_core.null (line 43 column 41)
     Lwt_log_core.null (line 52 column 34)
     Lwt_log_core.default (line 68 column 11)
+    Lwt_log_core.close (line 88 column 31)
+    Lwt_log.syslog (line 92 column 20)
+    Lwt_log.file (line 98 column 27)
+    Lwt_log_core.dispatch (line 107 column 13)
+    Lwt_log_core.Error (line 109 column 19)
+    Lwt_log_core.Fatal (line 109 column 35)
+    Lwt_log_core.Warning (line 110 column 19)
+    Lwt_log_core.dispatch (line 112 column 13)
+    Lwt_log_core.Warning (line 116 column 21)
+    Lwt_log_core.Error (line 116 column 39)
+    Lwt_log_core.Fatal (line 116 column 55)
   Formatted 1 files, 0 errors
 
   $ cat foo.ml
@@ -226,3 +237,77 @@
       Logs.format_reporter ~app:logs_formatter ~dst:logs_formatter ()
     in
     ()
+  
+  let _open_files () =
+    (* Extracted from ocsigenserver's [src/server/ocsigen_messages.ml]. *)
+    let open Lwt.Infix in
+    let access_file = "access.log" in
+    let warning_file = "warnings.log" in
+    let error_file = "errors.log" in
+    let access_logger = ref Logs.nop_reporter in
+    let stderr =
+      let logs_formatter =
+        Format.formatter_of_out_channel
+          (* TODO: lwt-log-to-logs: Format.formatter_of_out_channel: Argument is a [Lwt_io.output_channel] but a [out_channel] is expected. *)
+          Lwt_io.stderr
+      in
+      Logs.format_reporter ~app:logs_formatter ~dst:logs_formatter ()
+    in
+    let stdout =
+      let logs_formatter =
+        Format.formatter_of_out_channel
+          (* TODO: lwt-log-to-logs: Format.formatter_of_out_channel: Argument is a [Lwt_io.output_channel] but a [out_channel] is expected. *)
+          Lwt_io.stdout
+      in
+      Logs.format_reporter ~app:logs_formatter ~dst:logs_formatter ()
+    in
+    let loggers = ref [] in
+    (* CHECK: we are closing asynchronously! That should be ok, though. *)
+    List.iter (fun l -> ignore (Lwt_log.close l : unit Lwt.t)) !loggers;
+    match None with
+    | Some facility ->
+        (* log to syslog *)
+        let syslog = Lwt_log.syslog ~facility () in
+        loggers := [ syslog ];
+        Logs.set_reporter
+          (let broadcast_reporters = [ syslog; stderr ] in
+           {
+             Logs.report =
+               (fun src level ~over k msgf ->
+                 List.iter
+                   (fun r -> r.Logs.report msgf k ~over level src)
+                   broadcast_reporters);
+           });
+        Lwt.return ()
+    | None ->
+        (* log to files *)
+        let open_log path = Lwt_log.file ~file_name:path () in
+        open_log access_file >>= fun acc ->
+        access_logger := acc;
+        open_log warning_file >>= fun war ->
+        open_log error_file >>= fun err ->
+        loggers := [ acc; war; err ];
+        Logs.set_reporter
+          (let broadcast_reporters =
+             [
+               Lwt_log.dispatch (fun _sect lev ->
+                   match lev with
+                   | Lwt_log.Error | Lwt_log.Fatal -> err
+                   | Lwt_log.Warning -> war
+                   | _ -> Logs.nop_reporter);
+               Lwt_log.dispatch (fun _sect lev ->
+                   if false then Logs.nop_reporter
+                   else
+                     match lev with
+                     | Lwt_log.Warning | Lwt_log.Error | Lwt_log.Fatal -> stderr
+                     | _ -> stdout);
+             ]
+           in
+           {
+             Logs.report =
+               (fun src level ~over k msgf ->
+                 List.iter
+                   (fun r -> r.Logs.report msgf k ~over level src)
+                   broadcast_reporters);
+           });
+        Lwt.return ()

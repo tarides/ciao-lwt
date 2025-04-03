@@ -43,6 +43,41 @@ let mk_exp_some x = Exp.construct mk_some_ident (Some x)
 let mk_exp_none = Exp.construct mk_none_ident None
 let mk_typ_constr ?(params = []) lid = Typ.constr (mk_longident lid) params
 
+(* Construct [let var = lhs in (rhs var)]. *)
+let mk_let_var ident lhs rhs =
+  let pat = Pat.var (mk_loc ident) in
+  mk_let pat lhs (rhs (mk_exp_var ident))
+
+module Mk_function : sig
+  (** Construct a [fun .. -> ..] node. Usage:
+
+      {[
+        let f =
+          let open Mk_function in
+          mk_function
+            ((Nolabel, "a") @ (Nolabel, "b")
+             @ return (fun a b -> Exp.tuple [ a; b ]))
+        in
+      ]} *)
+
+  type 'a t
+
+  val ( @ ) : arg_label * string -> (expression -> 'a) t -> 'a t
+  val return : 'a -> 'a t
+  val mk_function : ?typ:type_constraint -> expression t -> expression
+end = struct
+  type 'a t = expr_function_param list * 'a
+
+  let ( @ ) (lbl, ident) (params, body) =
+    let exp = mk_exp_var ident and pat = Pat.var (mk_loc ident) in
+    (mk_function_param ~lbl pat :: params, body exp)
+
+  let return f = ([], f)
+
+  let mk_function ?typ (params, body) =
+    Exp.function_ params typ (Pfunction_body body)
+end
+
 let is_unit_val = function
   | { pexp_desc = Pexp_construct (ident, None); _ } ->
       same_longident ident.txt [ "()" ]
