@@ -78,6 +78,10 @@ end = struct
     Exp.function_ params typ (Pfunction_body body)
 end
 
+let mk_fun ?(arg_lbl = Nolabel) ?(arg_name = "x") f =
+  let open Mk_function in
+  mk_function ((arg_lbl, arg_name) @ return f)
+
 let is_unit_val = function
   | { pexp_desc = Pexp_construct (ident, None); _ } ->
       same_longident ident.txt [ "()" ]

@@ -53,33 +53,42 @@ let mk_format_reporter ~state ~template ~close_mode channel =
          (mk_lbl "app", fmt_val); (mk_lbl "dst", fmt_val); (Nolabel, mk_unit_val);
        ])
 
-let mk_broadcast ~state:_ loggers =
-  mk_let_var "broadcast_reporters" loggers @@ fun reporters_var ->
+let mk_reporter report_f =
   let report =
     let open Mk_function in
     mk_function
       ((Nolabel, "src") @ (Nolabel, "level")
       @ (mk_lbl "over", "over")
-      @ (Nolabel, "k") @ (Nolabel, "msgf")
-      @ return (fun src level over k msgf ->
-            mk_apply_simple [ "List"; "iter" ]
-              [
-                mk_function
-                  ((Nolabel, "r")
-                  @ return (fun r ->
-                        Exp.apply
-                          (Exp.field r (mk_longident [ "Logs"; "report" ]))
-                          [
-                            (Nolabel, src);
-                            (Nolabel, level);
-                            (mk_lbl "over", over);
-                            (Nolabel, k);
-                            (Nolabel, msgf);
-                          ]));
-                reporters_var;
-              ]))
+      @ (Nolabel, "k") @ (Nolabel, "msgf") @ return report_f)
   in
   Exp.record [ (mk_longident [ "Logs"; "report" ], None, Some report) ] None
+
+let call_reporter r src level over k msgf =
+  Exp.apply
+    (Exp.field r (mk_longident [ "Logs"; "report" ]))
+    [
+      (Nolabel, src);
+      (Nolabel, level);
+      (mk_lbl "over", over);
+      (Nolabel, k);
+      (Nolabel, msgf);
+    ]
+
+let mk_broadcast ~state:_ loggers =
+  mk_let_var "broadcast_reporters" loggers @@ fun reporters_var ->
+  mk_reporter (fun src level over k msgf ->
+      mk_apply_simple [ "List"; "iter" ]
+        [
+          mk_fun ~arg_name:"r" (fun r -> call_reporter r src level over k msgf);
+          reporters_var;
+        ])
+
+let mk_dispatch ~state:_ dispatch_f =
+  mk_let_var "dispatch_f" dispatch_f @@ fun dispatch_f ->
+  mk_reporter (fun src level ->
+      call_reporter
+        (Exp.apply dispatch_f [ (Nolabel, src); (Nolabel, level) ])
+        src level)
 
 let rewrite_apply_lwt_log ~state (unit, ident) args =
   let open Unpack_apply in
@@ -153,6 +162,7 @@ let rewrite_apply_lwt_log ~state (unit, ident) args =
           return None
       | "broadcast" ->
           take @@ fun loggers -> return (Some (mk_broadcast ~state loggers))
+      | "dispatch" -> take @@ fun f -> return (Some (mk_dispatch ~state f))
       | "Debug" -> mk_level "Debug"
       | "Info" -> mk_level "Info"
       | "Notice" -> mk_level "App"
