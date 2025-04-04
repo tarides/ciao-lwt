@@ -273,7 +273,7 @@
              Logs.report =
                (fun src level ~over k msgf ->
                  List.iter
-                   (fun r -> r.Logs.report msgf k ~over level src)
+                   (fun r -> r.Logs.report src level ~over k msgf)
                    broadcast_reporters);
            });
         Lwt.return ()
@@ -298,7 +298,7 @@
                 {
                   Logs.report =
                     (fun src level ~over k msgf ->
-                      (dispatch_f msgf k).Logs.report msgf k ~over level src);
+                      (dispatch_f src level).Logs.report src level ~over k msgf);
                 });
                (let dispatch_f =
                  fun _sect lev ->
@@ -311,7 +311,7 @@
                 {
                   Logs.report =
                     (fun src level ~over k msgf ->
-                      (dispatch_f msgf k).Logs.report msgf k ~over level src);
+                      (dispatch_f src level).Logs.report src level ~over k msgf);
                 });
              ]
            in
@@ -319,7 +319,7 @@
              Logs.report =
                (fun src level ~over k msgf ->
                  List.iter
-                   (fun r -> r.Logs.report msgf k ~over level src)
+                   (fun r -> r.Logs.report src level ~over k msgf)
                    broadcast_reporters);
            });
         Lwt.return ()

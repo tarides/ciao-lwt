@@ -55,32 +55,33 @@ module Mk_function : sig
         let f =
           let open Mk_function in
           mk_function
-            ((Nolabel, "a") @ (Nolabel, "b")
-             @ return (fun a b -> Exp.tuple [ a; b ]))
+            (return (fun a b -> Exp.tuple [ a; b ])
+             $ (Nolabel, "a") $ (Nolabel, "b"))
         in
       ]} *)
 
   type 'a t
 
-  val ( @ ) : arg_label * string -> (expression -> 'a) t -> 'a t
+  val ( $ ) : (expression -> 'a) t -> arg_label * string -> 'a t
   val return : 'a -> 'a t
   val mk_function : ?typ:type_constraint -> expression t -> expression
 end = struct
   type 'a t = expr_function_param list * 'a
 
-  let ( @ ) (lbl, ident) (params, body) =
+  let ( $ ) (params, body) (lbl, ident) =
     let exp = mk_exp_var ident and pat = Pat.var (mk_loc ident) in
-    (mk_function_param ~lbl pat :: params, body exp)
+    let params = mk_function_param ~lbl pat :: params in
+    (params, body exp)
 
   let return f = ([], f)
 
   let mk_function ?typ (params, body) =
-    Exp.function_ params typ (Pfunction_body body)
+    Exp.function_ (List.rev params) typ (Pfunction_body body)
 end
 
 let mk_fun ?(arg_lbl = Nolabel) ?(arg_name = "x") f =
   let open Mk_function in
-  mk_function ((arg_lbl, arg_name) @ return f)
+  mk_function (return f $ (arg_lbl, arg_name))
 
 let is_unit_val = function
   | { pexp_desc = Pexp_construct (ident, None); _ } ->

@@ -57,9 +57,9 @@ let mk_reporter report_f =
   let report =
     let open Mk_function in
     mk_function
-      ((Nolabel, "src") @ (Nolabel, "level")
-      @ (mk_lbl "over", "over")
-      @ (Nolabel, "k") @ (Nolabel, "msgf") @ return report_f)
+      (return report_f $ (Nolabel, "src") $ (Nolabel, "level")
+      $ (mk_lbl "over", "over")
+      $ (Nolabel, "k") $ (Nolabel, "msgf"))
   in
   Exp.record [ (mk_longident [ "Logs"; "report" ], None, Some report) ] None
 
