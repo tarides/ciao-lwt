@@ -283,7 +283,7 @@
           (let broadcast_reporters =
              [
                (let dispatch_f =
-                 fun _sect lev ->
+                 fun _sect (lev : Logs.level) ->
                   match lev with
                   | Logs.Error | Logs.Error -> err
                   | Logs.Warning -> war

@@ -210,6 +210,8 @@ let rewrite_type ~state typ =
           match (ident, params) with
           | ("Lwt_log_core", "section"), [] ->
               Some (mk_typ_constr [ "Logs"; "src" ])
+          | ("Lwt_log_core", "level"), [] ->
+              Some (mk_typ_constr [ "Logs"; "level" ])
           | _ -> None)
   | _ -> None
 

@@ -104,7 +104,7 @@ let _open_files () =
       Lwt_log.default :=
         Lwt_log.broadcast
           [
-            Lwt_log.dispatch (fun _sect lev ->
+            Lwt_log.dispatch (fun _sect (lev : Lwt_log.level) ->
                 match lev with
                 | Lwt_log.Error | Lwt_log.Fatal -> err
                 | Lwt_log.Warning -> war
