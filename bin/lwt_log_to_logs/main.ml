@@ -90,6 +90,27 @@ let mk_dispatch ~state:_ dispatch_f =
         (Exp.apply dispatch_f [ (Nolabel, src); (Nolabel, level) ])
         src level)
 
+let mk_syslog ~state ~paths ~facility =
+  let socket_arg =
+    match paths with
+    | Some (paths, lbl) ->
+        let lbl = match lbl with `Lbl -> mk_lbl | `Opt -> mk_lblopt in
+        (match paths.pexp_desc with
+        | Pexp_list [ _ ] -> ()
+        | _ ->
+            add_comment state
+              "[Logs_syslog_unix.unix_reporter] take a single path but a list \
+               is passed.");
+        [ (lbl "socket", paths) ]
+    | None -> []
+  in
+  add_comment state
+    "Add dependency on library [logs-syslog.unix] and package [logs-syslog].";
+  add_comment state "The [~facility] argument is not of the right type.";
+  Exp.apply
+    (mk_exp_ident [ "Logs_syslog_unix"; "unix_reporter" ])
+    (socket_arg @ [ (mk_lbl "facility", facility); (Nolabel, mk_unit_val) ])
+
 (** Whether an expression can be used as a format spec. *)
 let format_safe exp =
   match exp.pexp_desc with
@@ -196,7 +217,12 @@ let rewrite_apply_lwt_log ~state (unit, ident) args =
           take @@ fun _unit ->
           return
             (Some (mk_format_reporter ~state ~template ~close_mode channel))
-      | "syslog" | "file" ->
+      | "syslog" ->
+          ignore_lblarg "template" @@ take_lblopt "paths"
+          @@ fun paths ->
+          take_lbl "facility" @@ fun facility ->
+          take @@ fun _unit -> return (Some (mk_syslog ~state ~paths ~facility))
+      | "file" ->
           add_comment state (ident ^ " is no longer supported.");
           return None
       | _ -> return None)

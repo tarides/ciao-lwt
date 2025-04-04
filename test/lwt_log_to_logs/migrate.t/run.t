@@ -1,7 +1,7 @@
   $ chmod a+w *.ml
   $ dune build @ocaml-index
   $ lwt-log-to-logs --migrate
-  Warning: foo.ml: 12 occurrences have not been rewritten.
+  Warning: foo.ml: 10 occurrences have not been rewritten.
     Lwt_log_core.null (line 46 column 35)
     Lwt_log_core.null (line 51 column 41)
     Lwt_log_core.null (line 60 column 34)
@@ -9,10 +9,8 @@
     Lwt_log_core.close (line 86 column 11)
     Lwt_log_core.close (line 87 column 11)
     Lwt_log_core.add_rule (line 88 column 11)
-    Lwt_log.syslog (line 89 column 11)
     Lwt_log.file (line 90 column 11)
     Lwt_log_core.close (line 104 column 31)
-    Lwt_log.syslog (line 108 column 20)
     Lwt_log.file (line 114 column 27)
   Formatted 1 files, 0 errors
 
@@ -258,8 +256,14 @@
       Lwt_log.add_rule
       (* TODO: lwt-log-to-logs: add_rule is no longer supported. *)
     in
-    let _ =
-      Lwt_log.syslog (* TODO: lwt-log-to-logs: syslog is no longer supported. *)
+    let _
+        (* TODO: lwt-log-to-logs: [Logs_syslog_unix.unix_reporter] take a single path but a list is passed. *)
+        (* TODO: lwt-log-to-logs: The [~facility] argument is not of the right type. *)
+        (* TODO: lwt-log-to-logs: Labelled argument ?template was dropped. *)
+        (* TODO: lwt-log-to-logs: Add dependency on library [logs-syslog.unix] and package [logs-syslog]. *)
+        =
+     fun ?template:x1 ?paths:x2 ~facility:x3 x4 ->
+      Logs_syslog_unix.unix_reporter ?socket:x2 ~facility:x3 ()
     in
     let _ =
       Lwt_log.file (* TODO: lwt-log-to-logs: file is no longer supported. *)
@@ -304,9 +308,9 @@
     | Some facility ->
         (* log to syslog *)
         let syslog =
-          Lwt_log.syslog
-          (* TODO: lwt-log-to-logs: syslog is no longer supported. *)
-          (* TODO: lwt-log-to-logs: syslog is no longer supported. *)
+          Logs_syslog_unix.unix_reporter
+          (* TODO: lwt-log-to-logs: The [~facility] argument is not of the right type. *)
+          (* TODO: lwt-log-to-logs: Add dependency on library [logs-syslog.unix] and package [logs-syslog]. *)
             ~facility ()
         in
         loggers := [ syslog ];
