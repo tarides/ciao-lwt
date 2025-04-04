@@ -107,10 +107,7 @@
   
   (* Other arguments *)
   let () =
-    Logs.info (fun fmt ->
-        fmt
-          (* TODO: lwt-log-to-logs: Labelled argument ~exn was dropped. Use [Printexc.to_string]. *)
-          "exn")
+    Logs.info (fun fmt -> fmt ("exn" ^^ "@\n%s") (Printexc.to_string Not_found))
   
   let () =
     Logs.info (fun fmt ->
@@ -127,9 +124,10 @@
   (* Other arguments as opt labels *)
   let () =
     Logs.info (fun fmt ->
-        fmt
-          (* TODO: lwt-log-to-logs: Labelled argument ?exn was dropped. Use [Printexc.to_string]. *)
-          "exn")
+        fmt ("exn" ^^ "@\n%s")
+          (Printexc.to_string
+             (* TODO: lwt-log-to-logs: Last argument is a [exception option] while [exception] is expected. *)
+             (Some Not_found)))
   
   let () =
     Logs.info (fun fmt ->
@@ -147,27 +145,30 @@
   [@@@warning "-5"]
   
   let _
+      (* TODO: lwt-log-to-logs: Last argument is a [exception option] while [exception] is expected. *)
       (* TODO: lwt-log-to-logs: Labelled argument ?logger was dropped. *)
-      (* TODO: lwt-log-to-logs: Labelled argument ?location was dropped. *)
-      (* TODO: lwt-log-to-logs: Labelled argument ?exn was dropped. Use [Printexc.to_string]. *)
-      =
+      (* TODO: lwt-log-to-logs: Labelled argument ?location was dropped. *) =
    fun ?section:x1 ?exn:x2 ?location:x3 ?logger:x4 x5 ->
-    Logs.info ?src:x1 (fun fmt -> fmt "%s" x5)
+    Logs.info ?src:x1 (fun fmt ->
+        fmt ("%s" ^^ "@\n%s") x5 (Printexc.to_string x2))
   
   let _ =
    fun ?exn:x1 ?location:x2 ?logger:x3 x4 ->
     Logs.info
       ~src:
+        (* TODO: lwt-log-to-logs: Last argument is a [exception option] while [exception] is expected. *)
         (* TODO: lwt-log-to-logs: Labelled argument ?logger was dropped. *)
         (* TODO: lwt-log-to-logs: Labelled argument ?location was dropped. *)
-        (* TODO: lwt-log-to-logs: Labelled argument ?exn was dropped. Use [Printexc.to_string]. *)
-        section (fun fmt -> fmt "%s" x4)
+        section (fun fmt -> fmt ("%s" ^^ "@\n%s") x4 (Printexc.to_string x1))
   
-  let _
-      (* TODO: lwt-log-to-logs: Labelled argument ~exn was dropped. Use [Printexc.to_string]. *)
-      (* TODO: lwt-log-to-logs: Labelled argument ?logger was dropped. *)
-      (* TODO: lwt-log-to-logs: Labelled argument ?location was dropped. *) =
-   fun ?location:x1 ?logger:x2 x3 -> Logs.info (fun fmt -> fmt "%s" x3)
+  let _ =
+   fun ?location:x1 ?logger:x2 x3 ->
+    Logs.info (fun fmt ->
+        fmt ("%s" ^^ "@\n%s") x3
+          (Printexc.to_string
+             (* TODO: lwt-log-to-logs: Labelled argument ?logger was dropped. *)
+             (* TODO: lwt-log-to-logs: Labelled argument ?location was dropped. *)
+             Not_found))
   
   let _
       (* TODO: lwt-log-to-logs: Labelled argument ~location was dropped. *)

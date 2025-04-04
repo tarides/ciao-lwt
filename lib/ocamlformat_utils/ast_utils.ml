@@ -48,11 +48,15 @@ let mk_none_ident = mk_longident [ "None" ]
 let mk_exp_some x = Exp.construct mk_some_ident (Some x)
 let mk_exp_none = Exp.construct mk_none_ident None
 let mk_typ_constr ?(params = []) lid = Typ.constr (mk_longident lid) params
-let mk_const_int i = Exp.constant (Const.integer i)
 let mk_lbl s = Labelled (mk_loc s)
 let mk_lblopt s = Optional (mk_loc s)
 let mk_pat_some arg = mk_constr_pat ~arg [ "Some" ]
 let mk_pat_none = mk_constr_pat [ "None" ]
+
+(* Exp *)
+
+let mk_const_string s = Exp.constant (Const.string s)
+let mk_const_int i = Exp.constant (Const.integer i)
 
 (* Construct [let var = lhs in (rhs var)]. *)
 let mk_let_var ident lhs rhs =

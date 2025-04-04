@@ -155,18 +155,32 @@ let rewrite_apply_lwt_log ~state (unit, ident) args =
   in
   let logf ~ident ~mk_log logs_name =
     take_lblopt "section" @@ fun section ->
-    ignore_lblarg ~cmt:" Use [Printexc.to_string]." "exn"
-    @@ ignore_lblarg "location" @@ ignore_lblarg "logger" @@ take
+    take_lblopt "exn" @@ fun exn ->
+    ignore_lblarg "location" @@ ignore_lblarg "logger" @@ take
     @@ fun fmt_arg ->
     take_all @@ fun args ->
-    let args = (Nolabel, fmt_arg) :: args in
-    let args =
+    let fmt_arg, args =
       (* Log calls that don't end in [_f] use a ["%s"] format string to avoid
          any typing and escaping issues. *)
-      if String.ends_with ~suffix:"_f" ident || format_safe fmt_arg then args
-      else (Nolabel, Exp.constant (Const.string "%s")) :: args
+      if String.ends_with ~suffix:"_f" ident || format_safe fmt_arg then
+        (fmt_arg, args)
+      else (mk_const_string "%s", (Nolabel, fmt_arg) :: args)
     in
-    Some (mk_log section logs_name args)
+    let fmt_arg, args =
+      (* Print the [exn] argument. *)
+      match exn with
+      | Some (exn, lbl) ->
+          if lbl = `Opt then
+            add_comment state
+              "Last argument is a [exception option] while [exception] is \
+               expected.";
+          ( Exp.infix (mk_loc "^^") fmt_arg (mk_const_string "@\n%s"),
+            args
+            @ [ (Nolabel, mk_apply_simple [ "Printexc"; "to_string" ] [ exn ]) ]
+          )
+      | None -> (fmt_arg, args)
+    in
+    Some (mk_log section logs_name ((Nolabel, fmt_arg) :: args))
   in
   let log_unit ~ident n = logf ~ident ~mk_log n in
   let log_lwt ~ident n =
