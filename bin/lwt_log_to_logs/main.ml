@@ -213,6 +213,26 @@ let rewrite_type ~state typ =
           | _ -> None)
   | _ -> None
 
+let rewrite_pat ~state pat =
+  let mk_level cstr =
+    Some (Pat.construct (mk_longident [ "Logs"; cstr ]) None)
+  in
+  match pat.ppat_desc with
+  | Ppat_construct (lid, arg) ->
+      Occ.may_rewrite state lid (fun (unit, ident) ->
+          match unit with
+          | "Lwt_log_core" -> (
+              match (ident, arg) with
+              | "Debug", None -> mk_level "Debug"
+              | "Info", None -> mk_level "Info"
+              | "Notice", None -> mk_level "App"
+              | "Warning", None -> mk_level "Warning"
+              | "Error", None -> mk_level "Error"
+              | "Fatal", None -> mk_level "Error"
+              | _ -> None)
+          | _ -> None)
+  | _ -> None
+
 let mapper ~state =
   let default = Ast_mapper.default_mapper in
   let rec call_rewrite ~default ~loc f m x =
@@ -230,7 +250,10 @@ let mapper ~state =
   let typ m x =
     call_rewrite ~default:default.typ ~loc:x.ptyp_loc (rewrite_type ~state) m x
   in
-  { default with expr; typ }
+  let pat m x =
+    call_rewrite ~default:default.pat ~loc:x.ppat_loc (rewrite_pat ~state) m x
+  in
+  { default with expr; typ; pat }
 
 let modify_ast ~fname:_ =
   let structure state str =

@@ -1,7 +1,7 @@
   $ chmod a+w *.ml
   $ dune build @ocaml-index
   $ lwt-log-to-logs --migrate
-  Warning: foo.ml: 13 occurrences have not been rewritten.
+  Warning: foo.ml: 7 occurrences have not been rewritten.
     Lwt_log_core.null (line 38 column 35)
     Lwt_log_core.null (line 43 column 41)
     Lwt_log_core.null (line 52 column 34)
@@ -9,12 +9,6 @@
     Lwt_log_core.close (line 88 column 31)
     Lwt_log.syslog (line 92 column 20)
     Lwt_log.file (line 98 column 27)
-    Lwt_log_core.Error (line 109 column 19)
-    Lwt_log_core.Fatal (line 109 column 35)
-    Lwt_log_core.Warning (line 110 column 19)
-    Lwt_log_core.Warning (line 116 column 21)
-    Lwt_log_core.Error (line 116 column 39)
-    Lwt_log_core.Fatal (line 116 column 55)
   Formatted 1 files, 0 errors
 
   $ cat foo.ml
@@ -291,8 +285,8 @@
                (let dispatch_f =
                  fun _sect lev ->
                   match lev with
-                  | Lwt_log.Error | Lwt_log.Fatal -> err
-                  | Lwt_log.Warning -> war
+                  | Logs.Error | Logs.Error -> err
+                  | Logs.Warning -> war
                   | _ -> Logs.nop_reporter
                 in
                 {
@@ -305,7 +299,7 @@
                   if false then Logs.nop_reporter
                   else
                     match lev with
-                    | Lwt_log.Warning | Lwt_log.Error | Lwt_log.Fatal -> stderr
+                    | Logs.Warning | Logs.Error | Logs.Error -> stderr
                     | _ -> stdout
                 in
                 {
