@@ -1,7 +1,7 @@
   $ chmod a+w *.ml
   $ dune build @ocaml-index
   $ lwt-log-to-logs --migrate
-  Warning: foo.ml: 10 occurrences have not been rewritten.
+  Warning: foo.ml: 8 occurrences have not been rewritten.
     Lwt_log_core.null (line 46 column 35)
     Lwt_log_core.null (line 51 column 41)
     Lwt_log_core.null (line 60 column 34)
@@ -9,9 +9,7 @@
     Lwt_log_core.close (line 86 column 11)
     Lwt_log_core.close (line 87 column 11)
     Lwt_log_core.add_rule (line 88 column 11)
-    Lwt_log.file (line 90 column 11)
-    Lwt_log_core.close (line 104 column 31)
-    Lwt_log.file (line 114 column 27)
+    Lwt_log_core.close (line 115 column 31)
   Formatted 1 files, 0 errors
 
   $ cat foo.ml
@@ -265,8 +263,164 @@
      fun ?template:x1 ?paths:x2 ~facility:x3 x4 ->
       Logs_syslog_unix.unix_reporter ?socket:x2 ~facility:x3 ()
     in
+    let _
+        (* TODO: lwt-log-to-logs: [file]: Channel is never closed. *)
+        (* TODO: lwt-log-to-logs: Labelled argument ?template was dropped. *) =
+     fun ?template:x1 ?mode:x2 ?perm:x3 ~file_name:x4 x5 ->
+      let logs_formatter =
+        Format.formatter_of_out_channel
+          (open_out_gen
+             (let append_mode =
+                match match x2 with Some x -> x | None -> `Append with
+                | `Append -> Open_append
+                | `Truncate -> Open_trunc
+              in
+              [ append_mode; Open_wronly; Open_creat; Open_text ])
+             (match x3 with Some x -> x | None -> 0o640)
+             x4)
+      in
+      Logs.format_reporter ~app:logs_formatter ~dst:logs_formatter ()
+    in
+    ()
+  
+  let () =
     let _ =
-      Lwt_log.file (* TODO: lwt-log-to-logs: file is no longer supported. *)
+      let logs_formatter =
+        Format.formatter_of_out_channel
+          (open_out_gen
+             (let append_mode =
+                match `Append with
+                | `Append -> Open_append
+                | `Truncate -> Open_trunc
+              in
+              [ append_mode; Open_wronly; Open_creat; Open_text ])
+             0o640
+             (* TODO: lwt-log-to-logs: [file]: Channel is never closed. *)
+             (* TODO: lwt-log-to-logs: Labelled argument ~template was dropped. *)
+             "")
+      in
+      Logs.format_reporter ~app:logs_formatter ~dst:logs_formatter ()
+    in
+    let _ =
+      let logs_formatter =
+        Format.formatter_of_out_channel
+          (open_out_gen
+             (let append_mode =
+                match
+                  (* TODO: lwt-log-to-logs: [file]: Channel is never closed. *)
+                  `Truncate
+                with
+                | `Append -> Open_append
+                | `Truncate -> Open_trunc
+              in
+              [ append_mode; Open_wronly; Open_creat; Open_text ])
+             0o640 "")
+      in
+      Logs.format_reporter ~app:logs_formatter ~dst:logs_formatter ()
+    in
+    let _ =
+      let mode = `Append in
+      let logs_formatter =
+        Format.formatter_of_out_channel
+          (open_out_gen
+             (let append_mode =
+                match
+                  (* TODO: lwt-log-to-logs: [file]: Channel is never closed. *)
+                  mode
+                with
+                | `Append -> Open_append
+                | `Truncate -> Open_trunc
+              in
+              [ append_mode; Open_wronly; Open_creat; Open_text ])
+             0o640 "")
+      in
+      Logs.format_reporter ~app:logs_formatter ~dst:logs_formatter ()
+    in
+    let _ =
+      let mode = Some `Append in
+      let logs_formatter =
+        Format.formatter_of_out_channel
+          (open_out_gen
+             (let append_mode =
+                match
+                  match
+                    (* TODO: lwt-log-to-logs: [file]: Channel is never closed. *)
+                    mode
+                  with
+                  | Some x -> x
+                  | None -> `Append
+                with
+                | `Append -> Open_append
+                | `Truncate -> Open_trunc
+              in
+              [ append_mode; Open_wronly; Open_creat; Open_text ])
+             0o640 "")
+      in
+      Logs.format_reporter ~app:logs_formatter ~dst:logs_formatter ()
+    in
+    let _ =
+      let logs_formatter =
+        Format.formatter_of_out_channel
+          (open_out_gen
+             (let append_mode =
+                match `Append with
+                | `Append -> Open_append
+                | `Truncate -> Open_trunc
+              in
+              [ append_mode; Open_wronly; Open_creat; Open_text ])
+             (* TODO: lwt-log-to-logs: [file]: Channel is never closed. *) 1 "")
+      in
+      Logs.format_reporter ~app:logs_formatter ~dst:logs_formatter ()
+    in
+    let _ =
+      let perm = 1 in
+      let logs_formatter =
+        Format.formatter_of_out_channel
+          (open_out_gen
+             (let append_mode =
+                match `Append with
+                | `Append -> Open_append
+                | `Truncate -> Open_trunc
+              in
+              [ append_mode; Open_wronly; Open_creat; Open_text ])
+             (* TODO: lwt-log-to-logs: [file]: Channel is never closed. *) perm "")
+      in
+      Logs.format_reporter ~app:logs_formatter ~dst:logs_formatter ()
+    in
+    let _ =
+      let perm = Some 1 in
+      let logs_formatter =
+        Format.formatter_of_out_channel
+          (open_out_gen
+             (let append_mode =
+                match `Append with
+                | `Append -> Open_append
+                | `Truncate -> Open_trunc
+              in
+              [ append_mode; Open_wronly; Open_creat; Open_text ])
+             (match
+                (* TODO: lwt-log-to-logs: [file]: Channel is never closed. *) perm
+              with
+             | Some x -> x
+             | None -> 0o640)
+             "")
+      in
+      Logs.format_reporter ~app:logs_formatter ~dst:logs_formatter ()
+    in
+    let _ =
+      let logs_formatter =
+        Format.formatter_of_out_channel
+          (open_out_gen
+             (let append_mode =
+                match `Append with
+                | `Append -> Open_append
+                | `Truncate -> Open_trunc
+              in
+              [ append_mode; Open_wronly; Open_creat; Open_text ])
+             0o640
+             (* TODO: lwt-log-to-logs: [file]: Channel is never closed. *) "")
+      in
+      Logs.format_reporter ~app:logs_formatter ~dst:logs_formatter ()
     in
     ()
   
@@ -327,10 +481,20 @@
     | None ->
         (* log to files *)
         let open_log path =
-          Lwt_log.file
-          (* TODO: lwt-log-to-logs: file is no longer supported. *)
-          (* TODO: lwt-log-to-logs: file is no longer supported. *)
-            ~file_name:path ()
+          let logs_formatter =
+            Format.formatter_of_out_channel
+              (open_out_gen
+                 (let append_mode =
+                    match `Append with
+                    | `Append -> Open_append
+                    | `Truncate -> Open_trunc
+                  in
+                  [ append_mode; Open_wronly; Open_creat; Open_text ])
+                 0o640
+                 (* TODO: lwt-log-to-logs: [file]: Channel is never closed. *)
+                 path)
+          in
+          Logs.format_reporter ~app:logs_formatter ~dst:logs_formatter ()
         in
         open_log access_file >>= fun acc ->
         access_logger := acc;

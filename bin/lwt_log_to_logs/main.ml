@@ -28,7 +28,15 @@ let mk_log section cmd args =
 let mk_set_level section lvl =
   mk_apply_simple [ "Logs"; "Src"; "set_level" ] [ section; lvl ]
 
-let mk_format_reporter ~state ~template ~close_mode channel =
+let mk_format_reporter_of_channel channel =
+  mk_let_var "logs_formatter"
+    (mk_apply_simple [ "Format"; "formatter_of_out_channel" ] [ channel ])
+  @@ fun fmt ->
+  mk_apply_ident
+    [ "Logs"; "format_reporter" ]
+    [ (mk_lbl "app", fmt); (mk_lbl "dst", fmt); (Nolabel, mk_unit_val) ]
+
+let mk_channel ~state ~template ~close_mode channel =
   if Option.is_some template then
     add_comment state
       "Lwt_log.channel: The [~template] argument is unsupported. Use \
@@ -39,27 +47,42 @@ let mk_format_reporter ~state ~template ~close_mode channel =
       add_comment state
         "Lwt_log.channel: The [~close_mode] argument has been dropped. The \
          behavior is always [`Keep].");
-  let fmt_ident = "logs_formatter" in
-  let fmt_val = mk_exp_var fmt_ident in
   add_comment state
     "Format.formatter_of_out_channel: Argument is a [Lwt_io.output_channel] \
      but a [out_channel] is expected.";
-  mk_let
-    (Pat.var (mk_loc fmt_ident))
-    (mk_apply_simple [ "Format"; "formatter_of_out_channel" ] [ channel ])
-    (mk_apply_ident
-       [ "Logs"; "format_reporter" ]
-       [
-         (mk_lbl "app", fmt_val); (mk_lbl "dst", fmt_val); (Nolabel, mk_unit_val);
-       ])
+  mk_format_reporter_of_channel channel
+
+let mk_file ~state ~mode ~perm ~file_name =
+  let mk_mode append_mode =
+    Exp.list
+      [
+        append_mode;
+        mk_constr_exp [ "Open_wronly" ];
+        mk_constr_exp [ "Open_creat" ];
+        mk_constr_exp [ "Open_text" ];
+      ]
+  in
+  let mode =
+    mk_let_var "append_mode"
+      (Exp.match_
+         (value_of_lblopt ~default:(mk_variant_exp "Append") mode)
+         [
+           Exp.case (mk_variant_pat "Append") (mk_constr_exp [ "Open_append" ]);
+           Exp.case (mk_variant_pat "Truncate") (mk_constr_exp [ "Open_trunc" ]);
+         ])
+      mk_mode
+  in
+  let perm = value_of_lblopt ~default:(mk_const_int "0o640") perm in
+  add_comment state "[file]: Channel is never closed.";
+  mk_format_reporter_of_channel
+    (mk_apply_simple [ "open_out_gen" ] [ mode; perm; file_name ])
 
 let mk_reporter report_f =
   let report =
     let open Mk_function in
     mk_function
-      (return report_f $ (Nolabel, "src") $ (Nolabel, "level")
-      $ (mk_lbl "over", "over")
-      $ (Nolabel, "k") $ (Nolabel, "msgf"))
+      (return report_f $ arg "src" $ arg "level" $ arg ~lbl:`Lbl "over"
+     $ arg "k" $ arg "msgf")
   in
   Exp.record [ (mk_longident [ "Logs"; "report" ], None, Some report) ] None
 
@@ -215,16 +238,19 @@ let rewrite_apply_lwt_log ~state (unit, ident) args =
           take_lbl "close_mode" @@ fun close_mode ->
           take_lbl "channel" @@ fun channel ->
           take @@ fun _unit ->
-          return
-            (Some (mk_format_reporter ~state ~template ~close_mode channel))
+          return (Some (mk_channel ~state ~template ~close_mode channel))
       | "syslog" ->
           ignore_lblarg "template" @@ take_lblopt "paths"
           @@ fun paths ->
           take_lbl "facility" @@ fun facility ->
           take @@ fun _unit -> return (Some (mk_syslog ~state ~paths ~facility))
       | "file" ->
-          add_comment state (ident ^ " is no longer supported.");
-          return None
+          ignore_lblarg "template" @@ take_lblopt "mode"
+          @@ fun mode ->
+          take_lblopt "perm" @@ fun perm ->
+          take_lbl "file_name" @@ fun file_name ->
+          take @@ fun _unit ->
+          return (Some (mk_file ~state ~mode ~perm ~file_name))
       | _ -> return None)
   | _ -> return None
 
