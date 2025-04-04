@@ -174,7 +174,11 @@ let maybe_disabled_k c (loc : Location.t) (l : attributes) f k =
   else
     let loc = Source.extend_loc_to_include_attributes loc l in
     Cmts.drop_inside c.cmts loc ;
-    let s = Source.string_at c.source loc in
+    let s =
+      match Source.string_at c.source loc with
+      | Some s -> s
+      | None -> ""
+    in
     k (Cmts.fmt c loc (str s))
 
 let maybe_disabled c loc l f = maybe_disabled_k c loc l f Fn.id
@@ -287,7 +291,7 @@ let fmt_constant c ?epi {pconst_desc; pconst_loc= loc} =
         then str_as 1000
         else str )
         (Format_.sprintf "{%s|%s|%s}" delim s delim)
-  | Pconst_string (_, loc', None) -> (
+  | Pconst_string (ast_str, loc', None) -> (
       let delim = ["@,"; "@;"] in
       let contains_pp_commands s =
         let is_substring substring = String.is_substring s ~substring in
@@ -343,7 +347,9 @@ let fmt_constant c ?epi {pconst_desc; pconst_loc= loc} =
         | `Never -> `Preserve
         | `Auto -> `Normalize
       in
-      let s = Source.string_literal c.source preserve_or_normalize loc in
+      let s = match Source.string_literal c.source preserve_or_normalize loc with
+        | Some s -> s
+        | None -> ast_str in
       Cmts.fmt c loc'
       @@
       match c.conf.fmt_opts.break_string_literals.v with
@@ -4780,14 +4786,17 @@ module Chunk = struct
         let output, locs =
           match chunk.state with
           | `Disable ->
+              let text =
+                match (Source.string_at c.source chunk.chunk_loc) with
+                | Some s -> (String.strip s)
+                | None -> ""
+              in
               let output =
                 output
                 $ Cmts.fmt_before c chunk.attr_loc
                     ~eol:(str "\n" $ force_break)
                 $ fmt_if (i > 0) (str "\n" $ force_break)
-                $ str
-                    (String.strip
-                       (Source.string_at c.source chunk.chunk_loc) )
+                $ str text
               in
               (output, chunk.chunk_loc :: locs)
           | `Enable ->

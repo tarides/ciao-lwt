@@ -31,7 +31,7 @@ val tokens_between :
   -> Lexing.position
   -> (Parser.token * Location.t) list
 
-val string_at : t -> Location.t -> string
+val string_at : t -> Location.t -> string option
 
 val find_token_after :
      t
@@ -45,7 +45,7 @@ val find_token_before :
   -> Lexing.position
   -> (Parser.token * Location.t) option
 
-val string_literal : t -> [`Normalize | `Preserve] -> Location.t -> string
+val string_literal : t -> [`Normalize | `Preserve] -> Location.t -> string option
 
 val begins_line : ?ignore_spaces:bool -> t -> Location.t -> bool
 
