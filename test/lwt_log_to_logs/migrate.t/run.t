@@ -2,13 +2,13 @@
   $ dune build @ocaml-index
   $ lwt-log-to-logs --migrate
   Warning: foo.ml: 7 occurrences have not been rewritten.
-    Lwt_log_core.null (line 38 column 35)
-    Lwt_log_core.null (line 43 column 41)
-    Lwt_log_core.null (line 52 column 34)
-    Lwt_log_core.default (line 68 column 11)
-    Lwt_log_core.close (line 88 column 31)
-    Lwt_log.syslog (line 92 column 20)
-    Lwt_log.file (line 98 column 27)
+    Lwt_log_core.null (line 46 column 35)
+    Lwt_log_core.null (line 51 column 41)
+    Lwt_log_core.null (line 60 column 34)
+    Lwt_log_core.default (line 76 column 11)
+    Lwt_log_core.close (line 96 column 31)
+    Lwt_log.syslog (line 100 column 20)
+    Lwt_log.file (line 106 column 27)
   Formatted 1 files, 0 errors
 
   $ cat foo.ml
@@ -96,11 +96,19 @@
         (* TODO: lwt-log-to-logs: This message was previously on the [fatal] level. *)
         section (fun fmt -> fmt "%s" "log")
   
+  (* Format string *)
+  let () = Logs.info (fun fmt -> fmt "%s" "@")
+  let () = Logs.info (fun fmt -> fmt "%s" "%")
+  
+  let () =
+    let s = "foo" in
+    Logs.info (fun fmt -> fmt "%s" s)
+  
   (* Other arguments *)
   let () =
     Logs.info (fun fmt ->
         fmt
-          (* TODO: lwt-log-to-logs: Labelled argument ~exn was dropped. *)
+          (* TODO: lwt-log-to-logs: Labelled argument ~exn was dropped. Use [Printexc.to_string]. *)
           "exn")
   
   let () =
@@ -119,7 +127,7 @@
   let () =
     Logs.info (fun fmt ->
         fmt
-          (* TODO: lwt-log-to-logs: Labelled argument ?exn was dropped. *)
+          (* TODO: lwt-log-to-logs: Labelled argument ?exn was dropped. Use [Printexc.to_string]. *)
           "exn")
   
   let () =
@@ -140,9 +148,10 @@
   let _
       (* TODO: lwt-log-to-logs: Labelled argument ?logger was dropped. *)
       (* TODO: lwt-log-to-logs: Labelled argument ?location was dropped. *)
-      (* TODO: lwt-log-to-logs: Labelled argument ?exn was dropped. *) =
+      (* TODO: lwt-log-to-logs: Labelled argument ?exn was dropped. Use [Printexc.to_string]. *)
+      =
    fun ?section:x1 ?exn:x2 ?location:x3 ?logger:x4 x5 ->
-    Logs.info ?src:x1 (fun fmt -> fmt x5)
+    Logs.info ?src:x1 (fun fmt -> fmt "%s" x5)
   
   let _ =
    fun ?exn:x1 ?location:x2 ?logger:x3 x4 ->
@@ -150,22 +159,22 @@
       ~src:
         (* TODO: lwt-log-to-logs: Labelled argument ?logger was dropped. *)
         (* TODO: lwt-log-to-logs: Labelled argument ?location was dropped. *)
-        (* TODO: lwt-log-to-logs: Labelled argument ?exn was dropped. *)
-        section (fun fmt -> fmt x4)
+        (* TODO: lwt-log-to-logs: Labelled argument ?exn was dropped. Use [Printexc.to_string]. *)
+        section (fun fmt -> fmt "%s" x4)
   
   let _
-      (* TODO: lwt-log-to-logs: Labelled argument ~exn was dropped. *)
+      (* TODO: lwt-log-to-logs: Labelled argument ~exn was dropped. Use [Printexc.to_string]. *)
       (* TODO: lwt-log-to-logs: Labelled argument ?logger was dropped. *)
       (* TODO: lwt-log-to-logs: Labelled argument ?location was dropped. *) =
-   fun ?location:x1 ?logger:x2 x3 -> Logs.info (fun fmt -> fmt x3)
+   fun ?location:x1 ?logger:x2 x3 -> Logs.info (fun fmt -> fmt "%s" x3)
   
   let _
       (* TODO: lwt-log-to-logs: Labelled argument ~location was dropped. *)
       (* TODO: lwt-log-to-logs: Labelled argument ?logger was dropped. *) =
-   fun ?logger:x1 x2 -> Logs.info (fun fmt -> fmt x2)
+   fun ?logger:x1 x2 -> Logs.info (fun fmt -> fmt "%s" x2)
   
   let _ (* TODO: lwt-log-to-logs: Labelled argument ~logger was dropped. *) =
-   fun x1 -> Logs.info (fun fmt -> fmt x1)
+   fun x1 -> Logs.info (fun fmt -> fmt "%s" x1)
   
   [@@@warning "+5"]
   

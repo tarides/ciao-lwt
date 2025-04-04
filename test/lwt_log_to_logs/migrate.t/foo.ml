@@ -32,6 +32,14 @@ let () = Lwt_log.ign_warning_f ~section "%s" "log"
 let () = Lwt_log.ign_error_f ~section "%s" "log"
 let () = Lwt_log.ign_fatal_f ~section "%s" "log"
 
+(* Format string *)
+let () = Lwt_log.ign_info "@"
+let () = Lwt_log.ign_info "%"
+
+let () =
+  let s = "foo" in
+  Lwt_log.ign_info s
+
 (* Other arguments *)
 let () = Lwt_log.ign_info ~exn:Not_found "exn"
 let () = Lwt_log.ign_info ~location:("here", 1, 2) "location"

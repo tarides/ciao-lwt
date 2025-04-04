@@ -90,32 +90,46 @@ let mk_dispatch ~state:_ dispatch_f =
         (Exp.apply dispatch_f [ (Nolabel, src); (Nolabel, level) ])
         src level)
 
+(** Whether an expression can be used as a format spec. *)
+let format_safe exp =
+  match exp.pexp_desc with
+  | Pexp_constant { pconst_desc = Pconst_string (s, _, _); _ } ->
+      String.for_all (function '%' | '@' -> false | _ -> true) s
+  | _ -> false
+
 let rewrite_apply_lwt_log ~state (unit, ident) args =
   let open Unpack_apply in
-  let ignore_lblarg arg k =
+  let ignore_lblarg ?(cmt = "") arg k =
     take_lblopt arg @@ fun value ->
     (match value with
     | Some (_, kind) ->
         let prefix = match kind with `Lbl -> '~' | `Opt -> '?' in
         Printf.ksprintf (add_comment state)
-          "Labelled argument %c%s was dropped." prefix arg
+          "Labelled argument %c%s was dropped.%s" prefix arg cmt
     | None -> ());
     k
   in
-  let logf ~mk_log logs_name =
+  let logf ~ident ~mk_log logs_name =
     take_lblopt "section" @@ fun section ->
-    ignore_lblarg "exn" @@ ignore_lblarg "location" @@ ignore_lblarg "logger"
-    @@ take
+    ignore_lblarg ~cmt:" Use [Printexc.to_string]." "exn"
+    @@ ignore_lblarg "location" @@ ignore_lblarg "logger" @@ take
     @@ fun fmt_arg ->
     take_all @@ fun args ->
-    Some (mk_log section logs_name ((Nolabel, fmt_arg) :: args))
+    let args = (Nolabel, fmt_arg) :: args in
+    let args =
+      (* Log calls that don't end in [_f] use a ["%s"] format string to avoid
+         any typing and escaping issues. *)
+      if String.ends_with ~suffix:"_f" ident || format_safe fmt_arg then args
+      else (Nolabel, Exp.constant (Const.string "%s")) :: args
+    in
+    Some (mk_log section logs_name args)
   in
-  let log_unit n = logf ~mk_log n in
-  let log_lwt n =
+  let log_unit ~ident n = logf ~ident ~mk_log n in
+  let log_lwt ~ident n =
     let mk_log section n args =
       Exp.sequence (mk_log section n args) mk_lwt_return_unit
     in
-    logf ~mk_log n
+    logf ~ident ~mk_log n
   in
   let mk_level cstr = return (Some (mk_constr_exp [ "Logs"; cstr ])) in
 
@@ -124,22 +138,22 @@ let rewrite_apply_lwt_log ~state (unit, ident) args =
   match unit with
   | "Lwt_log_core" -> (
       match ident with
-      | "ign_debug" | "ign_debug_f" -> log_unit "debug"
-      | "ign_info" | "ign_info_f" -> log_unit "info"
-      | "ign_notice" | "ign_notice_f" -> log_unit "app"
-      | "ign_warning" | "ign_warning_f" -> log_unit "warn"
-      | "ign_error" | "ign_error_f" -> log_unit "err"
+      | "ign_debug" | "ign_debug_f" -> log_unit ~ident "debug"
+      | "ign_info" | "ign_info_f" -> log_unit ~ident "info"
+      | "ign_notice" | "ign_notice_f" -> log_unit ~ident "app"
+      | "ign_warning" | "ign_warning_f" -> log_unit ~ident "warn"
+      | "ign_error" | "ign_error_f" -> log_unit ~ident "err"
       | "ign_fatal" | "ign_fatal_f" ->
           add_comment state "This message was previously on the [fatal] level.";
-          log_unit "err"
-      | "debug" | "debug_f" -> log_lwt "debug"
-      | "info" | "info_f" -> log_lwt "info"
-      | "notice" | "notice_f" -> log_lwt "app"
-      | "warning" | "warning_f" -> log_lwt "warn"
-      | "error" | "error_f" -> log_lwt "err"
+          log_unit ~ident "err"
+      | "debug" | "debug_f" -> log_lwt ~ident "debug"
+      | "info" | "info_f" -> log_lwt ~ident "info"
+      | "notice" | "notice_f" -> log_lwt ~ident "app"
+      | "warning" | "warning_f" -> log_lwt ~ident "warn"
+      | "error" | "error_f" -> log_lwt ~ident "err"
       | "fatal" | "fatal_f" ->
           add_comment state "This message was previously on the [fatal] level.";
-          log_lwt "err"
+          log_lwt ~ident "err"
       | "make" ->
           (* [Lwt_log.Section.make] is detected as [("Lwt_log_core", "make")]. *)
           take @@ fun name ->
