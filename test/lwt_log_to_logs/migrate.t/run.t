@@ -1,14 +1,19 @@
   $ chmod a+w *.ml
   $ dune build @ocaml-index
   $ lwt-log-to-logs --migrate
-  Warning: foo.ml: 7 occurrences have not been rewritten.
+  Warning: foo.ml: 12 occurrences have not been rewritten.
     Lwt_log_core.null (line 46 column 35)
     Lwt_log_core.null (line 51 column 41)
     Lwt_log_core.null (line 60 column 34)
     Lwt_log_core.default (line 76 column 11)
-    Lwt_log_core.close (line 96 column 31)
-    Lwt_log.syslog (line 100 column 20)
-    Lwt_log.file (line 106 column 27)
+    Lwt_log_core.close (line 86 column 11)
+    Lwt_log_core.close (line 87 column 11)
+    Lwt_log_core.add_rule (line 88 column 11)
+    Lwt_log.syslog (line 89 column 11)
+    Lwt_log.file (line 90 column 11)
+    Lwt_log_core.close (line 104 column 31)
+    Lwt_log.syslog (line 108 column 20)
+    Lwt_log.file (line 114 column 27)
   Formatted 1 files, 0 errors
 
   $ cat foo.ml
@@ -239,6 +244,28 @@
     in
     ()
   
+  let () =
+    let _ =
+      Lwt_log.close
+        (* TODO: lwt-log-to-logs: close is no longer supported. *)
+        (* TODO: lwt-log-to-logs: close is no longer supported. *)
+        (Logs.reporter ())
+    in
+    let _ =
+      Lwt_log.close (* TODO: lwt-log-to-logs: close is no longer supported. *)
+    in
+    let _ =
+      Lwt_log.add_rule
+      (* TODO: lwt-log-to-logs: add_rule is no longer supported. *)
+    in
+    let _ =
+      Lwt_log.syslog (* TODO: lwt-log-to-logs: syslog is no longer supported. *)
+    in
+    let _ =
+      Lwt_log.file (* TODO: lwt-log-to-logs: file is no longer supported. *)
+    in
+    ()
+  
   let _open_files () =
     (* Extracted from ocsigenserver's [src/server/ocsigen_messages.ml]. *)
     let open Lwt.Infix in
@@ -264,11 +291,24 @@
     in
     let loggers = ref [] in
     (* CHECK: we are closing asynchronously! That should be ok, though. *)
-    List.iter (fun l -> ignore (Lwt_log.close l : unit Lwt.t)) !loggers;
+    List.iter
+      (fun l ->
+        ignore
+          (Lwt_log.close
+             (* TODO: lwt-log-to-logs: close is no longer supported. *)
+             (* TODO: lwt-log-to-logs: close is no longer supported. *)
+             l
+            : unit Lwt.t))
+      !loggers;
     match None with
     | Some facility ->
         (* log to syslog *)
-        let syslog = Lwt_log.syslog ~facility () in
+        let syslog =
+          Lwt_log.syslog
+          (* TODO: lwt-log-to-logs: syslog is no longer supported. *)
+          (* TODO: lwt-log-to-logs: syslog is no longer supported. *)
+            ~facility ()
+        in
         loggers := [ syslog ];
         Logs.set_reporter
           (let broadcast_reporters = [ syslog; stderr ] in
@@ -282,7 +322,12 @@
         Lwt.return ()
     | None ->
         (* log to files *)
-        let open_log path = Lwt_log.file ~file_name:path () in
+        let open_log path =
+          Lwt_log.file
+          (* TODO: lwt-log-to-logs: file is no longer supported. *)
+          (* TODO: lwt-log-to-logs: file is no longer supported. *)
+            ~file_name:path ()
+        in
         open_log access_file >>= fun acc ->
         access_logger := acc;
         open_log warning_file >>= fun war ->

@@ -183,6 +183,9 @@ let rewrite_apply_lwt_log ~state (unit, ident) args =
       | "Warning" -> mk_level "Warning"
       | "Error" -> mk_level "Error"
       | "Fatal" -> mk_level "Error"
+      | "add_rule" | "close" ->
+          add_comment state (ident ^ " is no longer supported.");
+          return None
       | _ -> return None)
   | "Lwt_log" -> (
       match ident with
@@ -193,6 +196,9 @@ let rewrite_apply_lwt_log ~state (unit, ident) args =
           take @@ fun _unit ->
           return
             (Some (mk_format_reporter ~state ~template ~close_mode channel))
+      | "syslog" | "file" ->
+          add_comment state (ident ^ " is no longer supported.");
+          return None
       | _ -> return None)
   | _ -> return None
 

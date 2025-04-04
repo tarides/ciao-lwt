@@ -82,6 +82,14 @@ let () =
   let _ = Lwt_log.channel ~close_mode:`Close ~channel:Lwt_io.stdout () in
   ()
 
+let () =
+  let _ = Lwt_log.close !Lwt_log.default in
+  let _ = Lwt_log.close in
+  let _ = Lwt_log.add_rule in
+  let _ = Lwt_log.syslog in
+  let _ = Lwt_log.file in
+  ()
+
 let _open_files () =
   (* Extracted from ocsigenserver's [src/server/ocsigen_messages.ml]. *)
   let open Lwt.Infix in
