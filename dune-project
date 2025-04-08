@@ -23,3 +23,12 @@
  (name lwt_ppx_to_let_syntax)
  (synopsis "A tool for migrating away from lwt_ppx")
  (depends ocaml cmdliner))
+
+(package
+ (name lwt_log_to_logs)
+ (synopsis "A tool for migrating from Lwt_log to Logs.")
+ (depends
+  ocaml
+  cmdliner
+  (lwt_log :with-test)
+  (ocaml-index :with-test)))
