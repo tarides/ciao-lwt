@@ -6,6 +6,17 @@
   $ cat test.ml
   let () = Logs.set_reporter (Logs_browser.console_reporter ())
   
+  let _lwt =
+    Logs.msg Logs.App (fun fmt -> fmt "log");
+    Lwt.return_unit
+  
+  let _lwt =
+    Logs.msg Logs.App (fun fmt -> fmt "log");
+    Lwt.return_unit
+  
+  let () = Logs.msg Logs.App (fun fmt -> fmt "log")
+  let () = Logs.msg Logs.App (fun fmt -> fmt "log")
+  
   (* All logging functions *)
   let _lwt =
     Logs.debug (fun fmt -> fmt "log");

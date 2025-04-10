@@ -1,5 +1,10 @@
 let section : Lwt_log.section = Lwt_log.Section.make "test:section"
 
+let _lwt = Lwt_log.log ~level:Notice "log"
+let _lwt = Lwt_log.log_f ~level:Notice "log"
+let () = Lwt_log.ign_log ~level:Notice "log"
+let () = Lwt_log.ign_log_f ~level:Notice "log"
+
 (* String log lwt *)
 let _lwt = Lwt_log.debug ~section "log"
 let _lwt = Lwt_log.info ~section "log"

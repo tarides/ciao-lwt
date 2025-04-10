@@ -2,18 +2,29 @@
   $ dune build @ocaml-index
   $ lwt-log-to-logs --migrate
   Warning: foo.ml: 8 occurrences have not been rewritten.
-    Lwt_log_core.null (line 46 column 35)
-    Lwt_log_core.null (line 51 column 41)
-    Lwt_log_core.null (line 60 column 34)
-    Lwt_log_core.default (line 76 column 11)
-    Lwt_log_core.close (line 88 column 11)
-    Lwt_log_core.close (line 89 column 11)
-    Lwt_log_core.add_rule (line 90 column 11)
-    Lwt_log_core.close (line 129 column 31)
+    Lwt_log_core.null (line 51 column 35)
+    Lwt_log_core.null (line 56 column 41)
+    Lwt_log_core.null (line 65 column 34)
+    Lwt_log_core.default (line 81 column 11)
+    Lwt_log_core.close (line 93 column 11)
+    Lwt_log_core.close (line 94 column 11)
+    Lwt_log_core.add_rule (line 95 column 11)
+    Lwt_log_core.close (line 134 column 31)
   Formatted 1 files, 0 errors
 
   $ cat foo.ml
   let section : Logs.src = Logs.Src.create "test:section"
+  
+  let _lwt =
+    Logs.msg Logs.App (fun fmt -> fmt "log");
+    Lwt.return_unit
+  
+  let _lwt =
+    Logs.msg Logs.App (fun fmt -> fmt "log");
+    Lwt.return_unit
+  
+  let () = Logs.msg Logs.App (fun fmt -> fmt "log")
+  let () = Logs.msg Logs.App (fun fmt -> fmt "log")
   
   (* String log lwt *)
   let _lwt =

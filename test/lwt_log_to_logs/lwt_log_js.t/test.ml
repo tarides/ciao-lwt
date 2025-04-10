@@ -1,5 +1,10 @@
 let () = Lwt_log.default := Lwt_log_js.console
 
+let _lwt = Lwt_log_js.log ~level:Notice "log"
+let _lwt = Lwt_log_js.log_f ~level:Notice "log"
+let () = Lwt_log_js.ign_log ~level:Notice "log"
+let () = Lwt_log_js.ign_log_f ~level:Notice "log"
+
 (* All logging functions *)
 let _lwt = Lwt_log_js.debug "log"
 let _lwt = Lwt_log_js.info "log"

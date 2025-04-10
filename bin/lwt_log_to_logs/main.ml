@@ -10,7 +10,7 @@ let add_comment state ?loc text =
 
 let mk_lwt_return_unit = Exp.ident (mk_longident [ "Lwt"; "return_unit" ])
 
-let mk_log section cmd args =
+let mk_log section cmd ~extra_args args =
   (* Logs.$cmd ~src:$section (fun fmt -> fmt $arg) *)
   let msgf =
     let fmt_pat = Pat.var (mk_loc "fmt") and fmt_exp = mk_exp_var "fmt" in
@@ -23,7 +23,7 @@ let mk_log section cmd args =
     | Some (section, `Opt) -> [ (mk_lblopt "src", section) ]
     | None -> []
   in
-  mk_apply_ident [ "Logs"; cmd ] (src_arg @ [ (Nolabel, msgf) ])
+  mk_apply_ident [ "Logs"; cmd ] (src_arg @ extra_args @ [ (Nolabel, msgf) ])
 
 let mk_set_level section lvl =
   mk_apply_simple [ "Logs"; "Src"; "set_level" ] [ section; lvl ]
@@ -159,10 +159,10 @@ let rewrite_apply_lwt_log ~state (unit, ident) args =
     | None -> ());
     k
   in
-  let logf ~ident logs_name =
-    let mk_log section n args =
-      if String.starts_with ~prefix:"ign_" ident then mk_log section n args
-      else Exp.sequence (mk_log section n args) mk_lwt_return_unit
+  let logf ?(extra_args = []) ~ident logs_name =
+    let wrap_lwt exp =
+      if String.starts_with ~prefix:"ign_" ident then exp
+      else Exp.sequence exp mk_lwt_return_unit
     in
     take_lblopt "section" @@ fun section ->
     take_lblopt "exn" @@ fun exn ->
@@ -190,7 +190,9 @@ let rewrite_apply_lwt_log ~state (unit, ident) args =
           )
       | None -> (fmt_arg, args)
     in
-    Some (mk_log section logs_name ((Nolabel, fmt_arg) :: args))
+    Some
+      (wrap_lwt
+         (mk_log section logs_name ~extra_args ((Nolabel, fmt_arg) :: args)))
   in
   let mk_level cstr = return (Some (mk_constr_exp [ "Logs"; cstr ])) in
 
@@ -198,6 +200,9 @@ let rewrite_apply_lwt_log ~state (unit, ident) args =
   @@
   match (unit, ident) with
   (* Logging functions are defined in [Lwt_log_core] and [Lwt_log_js]. *)
+  | _, ("log" | "log_f" | "ign_log" | "ign_log_f") ->
+      take_lbl "level" @@ fun level ->
+      logf ~extra_args:[ (Nolabel, level) ] ~ident "msg"
   | _, ("debug" | "debug_f" | "ign_debug" | "ign_debug_f") ->
       logf ~ident "debug"
   | _, ("info" | "info_f" | "ign_info" | "ign_info_f") -> logf ~ident "info"
