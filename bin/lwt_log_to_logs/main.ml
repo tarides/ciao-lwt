@@ -159,7 +159,11 @@ let rewrite_apply_lwt_log ~state (unit, ident) args =
     | None -> ());
     k
   in
-  let logf ~ident ~mk_log logs_name =
+  let logf ~ident logs_name =
+    let mk_log section n args =
+      if String.starts_with ~prefix:"ign_" ident then mk_log section n args
+      else Exp.sequence (mk_log section n args) mk_lwt_return_unit
+    in
     take_lblopt "section" @@ fun section ->
     take_lblopt "exn" @@ fun exn ->
     ignore_lblarg "location" @@ ignore_lblarg "logger" @@ take
@@ -188,35 +192,23 @@ let rewrite_apply_lwt_log ~state (unit, ident) args =
     in
     Some (mk_log section logs_name ((Nolabel, fmt_arg) :: args))
   in
-  let log_unit ~ident n = logf ~ident ~mk_log n in
-  let log_lwt ~ident n =
-    let mk_log section n args =
-      Exp.sequence (mk_log section n args) mk_lwt_return_unit
-    in
-    logf ~ident ~mk_log n
-  in
   let mk_level cstr = return (Some (mk_constr_exp [ "Logs"; cstr ])) in
 
   unapply args
   @@
   match (unit, ident) with
   (* Logging functions are defined in [Lwt_log_core] and [Lwt_log_js]. *)
-  | _, "ign_debug" | _, "ign_debug_f" -> log_unit ~ident "debug"
-  | _, "ign_info" | _, "ign_info_f" -> log_unit ~ident "info"
-  | _, "ign_notice" | _, "ign_notice_f" -> log_unit ~ident "app"
-  | _, "ign_warning" | _, "ign_warning_f" -> log_unit ~ident "warn"
-  | _, "ign_error" | _, "ign_error_f" -> log_unit ~ident "err"
-  | _, "ign_fatal" | _, "ign_fatal_f" ->
+  | _, ("debug" | "debug_f" | "ign_debug" | "ign_debug_f") ->
+      logf ~ident "debug"
+  | _, ("info" | "info_f" | "ign_info" | "ign_info_f") -> logf ~ident "info"
+  | _, ("notice" | "notice_f" | "ign_notice" | "ign_notice_f") ->
+      logf ~ident "app"
+  | _, ("warning" | "warning_f" | "ign_warning" | "ign_warning_f") ->
+      logf ~ident "warn"
+  | _, ("error" | "error_f" | "ign_error" | "ign_error_f") -> logf ~ident "err"
+  | _, ("fatal" | "fatal_f" | "ign_fatal" | "ign_fatal_f") ->
       add_comment state "This message was previously on the [fatal] level.";
-      log_unit ~ident "err"
-  | _, "debug" | _, "debug_f" -> log_lwt ~ident "debug"
-  | _, "info" | _, "info_f" -> log_lwt ~ident "info"
-  | _, "notice" | _, "notice_f" -> log_lwt ~ident "app"
-  | _, "warning" | _, "warning_f" -> log_lwt ~ident "warn"
-  | _, "error" | _, "error_f" -> log_lwt ~ident "err"
-  | _, "fatal" | _, "fatal_f" ->
-      add_comment state "This message was previously on the [fatal] level.";
-      log_lwt ~ident "err"
+      logf ~ident "err"
   | "Lwt_log_core", _ -> (
       match ident with
       | "make" ->
