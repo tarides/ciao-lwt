@@ -158,10 +158,11 @@
   let _
       (* TODO: lwt-log-to-logs: Last argument is a [exception option] while [exception] is expected. *)
       (* TODO: lwt-log-to-logs: Labelled argument ?logger was dropped. *)
-      (* TODO: lwt-log-to-logs: Labelled argument ?location was dropped. *) =
-   fun ?section:x1 ?exn:x2 ?location:x3 ?logger:x4 x5 ->
-    Logs.info ?src:x1 (fun fmt ->
-        fmt ("%s" ^^ "@\n%s") x5 (Printexc.to_string x2))
+      (* TODO: lwt-log-to-logs: Labelled argument ?location was dropped. *)
+      (* TODO: lwt-log-to-logs: Labelled argument ?inspect was dropped. *) =
+   fun ?inspect:x1 ?section:x2 ?exn:x3 ?location:x4 ?logger:x5 x6 ->
+    Logs.info ?src:x2 (fun fmt ->
+        fmt ("%s" ^^ "@\n%s") x6 (Printexc.to_string x3))
   
   let _ =
    fun ?exn:x1 ?location:x2 ?logger:x3 x4 ->

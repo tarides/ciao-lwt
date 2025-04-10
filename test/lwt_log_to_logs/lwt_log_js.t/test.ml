@@ -30,3 +30,5 @@ let () = Lwt_log_js.ign_notice_f "%s" "log"
 let () = Lwt_log_js.ign_warning_f "%s" "log"
 let () = Lwt_log_js.ign_error_f "%s" "log"
 let () = Lwt_log_js.ign_fatal_f "%s" "log"
+
+let _ = Lwt_log_js.ign_notice ~inspect:42 "log"

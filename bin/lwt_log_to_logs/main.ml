@@ -164,7 +164,8 @@ let rewrite_apply_lwt_log ~state (unit, ident) args =
       if String.starts_with ~prefix:"ign_" ident then exp
       else Exp.sequence exp mk_lwt_return_unit
     in
-    take_lblopt "section" @@ fun section ->
+    ignore_lblarg "inspect" @@ take_lblopt "section"
+    @@ fun section ->
     take_lblopt "exn" @@ fun exn ->
     ignore_lblarg "location" @@ ignore_lblarg "logger" @@ take
     @@ fun fmt_arg ->

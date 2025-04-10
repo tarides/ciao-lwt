@@ -97,3 +97,9 @@
           (* TODO: lwt-log-to-logs: This message was previously on the [fatal] level. *)
           "%s"
           "log")
+  
+  let _ =
+    Logs.app (fun fmt ->
+        fmt
+          (* TODO: lwt-log-to-logs: Labelled argument ~inspect was dropped. *)
+          "log")
