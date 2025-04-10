@@ -1,0 +1,3 @@
+(executable
+ (name test)
+ (libraries lwt_log js_of_ocaml-lwt.logger))

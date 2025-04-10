@@ -195,25 +195,26 @@ let rewrite_apply_lwt_log ~state (unit, ident) args =
 
   unapply args
   @@
-  match unit with
-  | "Lwt_log_core" -> (
+  match (unit, ident) with
+  (* Logging functions are defined in [Lwt_log_core] and [Lwt_log_js]. *)
+  | _, "ign_debug" | _, "ign_debug_f" -> log_unit ~ident "debug"
+  | _, "ign_info" | _, "ign_info_f" -> log_unit ~ident "info"
+  | _, "ign_notice" | _, "ign_notice_f" -> log_unit ~ident "app"
+  | _, "ign_warning" | _, "ign_warning_f" -> log_unit ~ident "warn"
+  | _, "ign_error" | _, "ign_error_f" -> log_unit ~ident "err"
+  | _, "ign_fatal" | _, "ign_fatal_f" ->
+      add_comment state "This message was previously on the [fatal] level.";
+      log_unit ~ident "err"
+  | _, "debug" | _, "debug_f" -> log_lwt ~ident "debug"
+  | _, "info" | _, "info_f" -> log_lwt ~ident "info"
+  | _, "notice" | _, "notice_f" -> log_lwt ~ident "app"
+  | _, "warning" | _, "warning_f" -> log_lwt ~ident "warn"
+  | _, "error" | _, "error_f" -> log_lwt ~ident "err"
+  | _, "fatal" | _, "fatal_f" ->
+      add_comment state "This message was previously on the [fatal] level.";
+      log_lwt ~ident "err"
+  | "Lwt_log_core", _ -> (
       match ident with
-      | "ign_debug" | "ign_debug_f" -> log_unit ~ident "debug"
-      | "ign_info" | "ign_info_f" -> log_unit ~ident "info"
-      | "ign_notice" | "ign_notice_f" -> log_unit ~ident "app"
-      | "ign_warning" | "ign_warning_f" -> log_unit ~ident "warn"
-      | "ign_error" | "ign_error_f" -> log_unit ~ident "err"
-      | "ign_fatal" | "ign_fatal_f" ->
-          add_comment state "This message was previously on the [fatal] level.";
-          log_unit ~ident "err"
-      | "debug" | "debug_f" -> log_lwt ~ident "debug"
-      | "info" | "info_f" -> log_lwt ~ident "info"
-      | "notice" | "notice_f" -> log_lwt ~ident "app"
-      | "warning" | "warning_f" -> log_lwt ~ident "warn"
-      | "error" | "error_f" -> log_lwt ~ident "err"
-      | "fatal" | "fatal_f" ->
-          add_comment state "This message was previously on the [fatal] level.";
-          log_lwt ~ident "err"
       | "make" ->
           (* [Lwt_log.Section.make] is detected as [("Lwt_log_core", "make")]. *)
           take @@ fun name ->
@@ -247,7 +248,7 @@ let rewrite_apply_lwt_log ~state (unit, ident) args =
           add_comment state (ident ^ " is no longer supported.");
           return None
       | _ -> return None)
-  | "Lwt_log" -> (
+  | "Lwt_log", _ -> (
       match ident with
       | "channel" ->
           take_lblopt "template" @@ fun template ->
@@ -365,10 +366,12 @@ let modify_ast ~fname:_ =
 
 let main migrate =
   let units = function
-    | "Lwt_log" | "Lwt_daemon" | "Lwt_log_core" | "Lwt_log_rules" -> true
+    | "Lwt_log" | "Lwt_daemon" | "Lwt_log_core" | "Lwt_log_rules" | "Lwt_log_js"
+      ->
+        true
     | _ -> false
   in
-  let packages = [ "lwt_log"; "lwt_log.core" ] in
+  let packages = [ "lwt_log"; "lwt_log.core"; "js_of_ocaml-lwt.logger" ] in
   if migrate then Migrate_utils.migrate ~packages ~units ~modify_ast
   else Migrate_utils.print_occurrences ~packages ~units
 

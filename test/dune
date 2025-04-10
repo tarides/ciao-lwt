@@ -11,4 +11,5 @@
   (deps
    %{bin:lwt-log-to-logs}
    %{bin:ocaml-index}
-   (package lwt_log))))
+   (package lwt_log)
+   (package js_of_ocaml-lwt))))
