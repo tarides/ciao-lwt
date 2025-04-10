@@ -103,3 +103,15 @@
         fmt
           (* TODO: lwt-log-to-logs: Labelled argument ~inspect was dropped. *)
           "log")
+  
+  let _f () : Logs.src * Logs.src * Logs.reporter * string
+      (* TODO: lwt-log-to-logs: Templates are no longer supported *) =
+    assert false
+  
+  let _f = function
+    | Logs.Debug -> ()
+    | Logs.Info -> ()
+    | Logs.App -> ()
+    | Logs.Warning -> ()
+    | Logs.Error -> ()
+    | Logs.Error -> ()

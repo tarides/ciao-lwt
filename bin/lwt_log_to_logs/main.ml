@@ -298,20 +298,19 @@ let rewrite_expression ~state exp =
 let rewrite_type ~state typ =
   match typ.ptyp_desc with
   | Ptyp_constr (lid, params) ->
-      Occ.may_rewrite state lid (fun ident ->
-          match (ident, params) with
-          | ("Lwt_log_core", "section"), [] | ("Lwt_log_core", "t"), [] ->
-              (* Type [Lwt_log.Section.t] is detected as ["Lwt_log_core",
-                 "t"] *)
-              Some (mk_typ_constr [ "Logs"; "src" ])
-          | ("Lwt_log_core", "level"), [] ->
-              Some (mk_typ_constr [ "Logs"; "level" ])
-          | ("Lwt_log_core", "logger"), [] ->
-              Some (mk_typ_constr [ "Logs"; "reporter" ])
-          | ("Lwt_log_core", "template"), [] ->
-              add_comment state "Templates are no longer supported";
-              Some (mk_typ_constr [ "string" ])
-          | _ -> None)
+      Occ.may_rewrite state lid (function
+        | ("Lwt_log_core" | "Lwt_log_js"), ident -> (
+            match (ident, params) with
+            | "section", [] | "t", [] ->
+                (* Type [Lwt_log.Section.t] is detected as ["Lwt_log_core", "t"] *)
+                Some (mk_typ_constr [ "Logs"; "src" ])
+            | "level", [] -> Some (mk_typ_constr [ "Logs"; "level" ])
+            | "logger", [] -> Some (mk_typ_constr [ "Logs"; "reporter" ])
+            | "template", [] ->
+                add_comment state "Templates are no longer supported";
+                Some (mk_typ_constr [ "string" ])
+            | _ -> None)
+        | _ -> None)
   | _ -> None
 
 let rewrite_pat ~state pat =
@@ -322,7 +321,7 @@ let rewrite_pat ~state pat =
   | Ppat_construct (lid, arg) ->
       Occ.may_rewrite state lid (fun (unit, ident) ->
           match unit with
-          | "Lwt_log_core" -> (
+          | "Lwt_log_core" | "Lwt_log_js" -> (
               match (ident, arg) with
               | "Debug", None -> mk_level "Debug"
               | "Info", None -> mk_level "Info"
