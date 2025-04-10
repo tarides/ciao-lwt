@@ -300,6 +300,8 @@ let rewrite_type ~state typ =
               Some (mk_typ_constr [ "Logs"; "src" ])
           | ("Lwt_log_core", "level"), [] ->
               Some (mk_typ_constr [ "Logs"; "level" ])
+          | ("Lwt_log_core", "logger"), [] ->
+              Some (mk_typ_constr [ "Logs"; "reporter" ])
           | _ -> None)
   | _ -> None
 

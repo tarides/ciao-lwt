@@ -6,10 +6,10 @@
     Lwt_log_core.null (line 51 column 41)
     Lwt_log_core.null (line 60 column 34)
     Lwt_log_core.default (line 76 column 11)
-    Lwt_log_core.close (line 86 column 11)
-    Lwt_log_core.close (line 87 column 11)
-    Lwt_log_core.add_rule (line 88 column 11)
-    Lwt_log_core.close (line 115 column 31)
+    Lwt_log_core.close (line 88 column 11)
+    Lwt_log_core.close (line 89 column 11)
+    Lwt_log_core.add_rule (line 90 column 11)
+    Lwt_log_core.close (line 129 column 31)
   Formatted 1 files, 0 errors
 
   $ cat foo.ml
@@ -197,7 +197,7 @@
        Logs.format_reporter ~app:logs_formatter ~dst:logs_formatter ())
   
   let () =
-    let _ = Logs.reporter () in
+    let _ : Logs.reporter = Logs.reporter () in
     let _ =
       Lwt_log.default
       (* TODO: lwt-log-to-logs: Use [Logs.set_reporter : reporter -> unit]. *)
@@ -384,7 +384,8 @@
                 | `Truncate -> Open_trunc
               in
               [ append_mode; Open_wronly; Open_creat; Open_text ])
-             (* TODO: lwt-log-to-logs: [file]: Channel is never closed. *) perm "")
+             (* TODO: lwt-log-to-logs: [file]: Channel is never closed. *)
+             perm "")
       in
       Logs.format_reporter ~app:logs_formatter ~dst:logs_formatter ()
     in
@@ -400,7 +401,8 @@
               in
               [ append_mode; Open_wronly; Open_creat; Open_text ])
              (match
-                (* TODO: lwt-log-to-logs: [file]: Channel is never closed. *) perm
+                (* TODO: lwt-log-to-logs: [file]: Channel is never closed. *)
+                perm
               with
              | Some x -> x
              | None -> 0o640)
