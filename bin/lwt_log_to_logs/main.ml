@@ -136,6 +136,10 @@ let mk_syslog ~state ~paths ~facility =
     (mk_exp_ident [ "Logs_syslog_unix"; "unix_reporter" ])
     (socket_arg @ [ (mk_lbl "facility", facility); (Nolabel, mk_unit_val) ])
 
+(** Translate [Lwt_log_js.console] using the [logs.browser] library. *)
+let mk_console ~state:_ =
+  mk_apply_simple [ "Logs_browser"; "console_reporter" ] [ mk_unit_val ]
+
 (** Whether an expression can be used as a format spec. *)
 let format_safe exp =
   match exp.pexp_desc with
@@ -269,6 +273,7 @@ let rewrite_apply_lwt_log ~state (unit, ident) args =
           take @@ fun _unit ->
           return (Some (mk_file ~state ~mode ~perm ~file_name))
       | _ -> return None)
+  | "Lwt_log_js", "console" -> return (Some (mk_console ~state))
   | _ -> return None
 
 let rewrite_expression ~state exp =

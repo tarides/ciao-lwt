@@ -1,12 +1,10 @@
   $ chmod a+w *.ml
   $ dune build @ocaml-index
   $ lwt-log-to-logs --migrate
-  Warning: test.ml: 1 occurrences have not been rewritten.
-    Lwt_log_js.console (line 1 column 29)
   Formatted 1 files, 0 errors
 
   $ cat test.ml
-  let () = Logs.set_reporter Lwt_log_js.console
+  let () = Logs.set_reporter (Logs_browser.console_reporter ())
   
   (* All logging functions *)
   let _lwt =
