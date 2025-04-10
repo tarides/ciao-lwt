@@ -158,3 +158,5 @@ let _open_files () =
                   | _ -> stdout);
           ];
       Lwt.return ()
+
+let _ : Lwt_log.template = ""

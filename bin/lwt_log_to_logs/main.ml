@@ -302,6 +302,9 @@ let rewrite_type ~state typ =
               Some (mk_typ_constr [ "Logs"; "level" ])
           | ("Lwt_log_core", "logger"), [] ->
               Some (mk_typ_constr [ "Logs"; "reporter" ])
+          | ("Lwt_log_core", "template"), [] ->
+              add_comment state "Templates are no longer supported";
+              Some (mk_typ_constr [ "string" ])
           | _ -> None)
   | _ -> None
 

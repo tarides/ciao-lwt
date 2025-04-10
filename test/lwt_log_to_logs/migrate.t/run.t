@@ -542,3 +542,6 @@
                    k broadcast_reporters ());
            });
         Lwt.return ()
+  
+  let _ : string =
+    (* TODO: lwt-log-to-logs: Templates are no longer supported *) ""
