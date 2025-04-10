@@ -296,10 +296,17 @@ let rewrite_type ~state typ =
   | Ptyp_constr (lid, params) ->
       Occ.may_rewrite state lid (fun ident ->
           match (ident, params) with
-          | ("Lwt_log_core", "section"), [] ->
+          | ("Lwt_log_core", "section"), [] | ("Lwt_log_core", "t"), [] ->
+              (* Type [Lwt_log.Section.t] is detected as ["Lwt_log_core",
+                 "t"] *)
               Some (mk_typ_constr [ "Logs"; "src" ])
           | ("Lwt_log_core", "level"), [] ->
               Some (mk_typ_constr [ "Logs"; "level" ])
+          | ("Lwt_log_core", "logger"), [] ->
+              Some (mk_typ_constr [ "Logs"; "reporter" ])
+          | ("Lwt_log_core", "template"), [] ->
+              add_comment state "Templates are no longer supported";
+              Some (mk_typ_constr [ "string" ])
           | _ -> None)
   | _ -> None
 

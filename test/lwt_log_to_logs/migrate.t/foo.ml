@@ -72,10 +72,12 @@ let () =
   Lwt_log.default := Lwt_log.channel ~close_mode:`Keep ~channel:Lwt_io.stderr ()
 
 let () =
-  let _ = !Lwt_log.default in
+  let _ : Lwt_log.logger = !Lwt_log.default in
   let _ = Lwt_log.default in
   let _ = Lwt_log.null in
-  let _ = Lwt_log.channel ~template:"foo" ~close_mode:`Keep ~channel:Lwt_io.stdout () in
+  let _ =
+    Lwt_log.channel ~template:"foo" ~close_mode:`Keep ~channel:Lwt_io.stdout ()
+  in
   let keep = `Keep in
   let _ = Lwt_log.channel ~close_mode:`Keep ~channel:Lwt_io.stdout () in
   let _ = Lwt_log.channel ~close_mode:keep ~channel:Lwt_io.stdout () in
@@ -93,11 +95,23 @@ let () =
 let () =
   let _ = Lwt_log.file ~template:"" ~file_name:"" () in
   let _ = Lwt_log.file ~mode:`Truncate ~file_name:"" () in
-  let _ = let mode = `Append in Lwt_log.file ~mode ~file_name:"" () in
-  let _ = let mode = Some `Append in Lwt_log.file ?mode ~file_name:"" () in
+  let _ =
+    let mode = `Append in
+    Lwt_log.file ~mode ~file_name:"" ()
+  in
+  let _ =
+    let mode = Some `Append in
+    Lwt_log.file ?mode ~file_name:"" ()
+  in
   let _ = Lwt_log.file ~perm:1 ~file_name:"" () in
-  let _ = let perm = 1 in Lwt_log.file ~perm ~file_name:"" () in
-  let _ = let perm = Some 1 in Lwt_log.file ?perm ~file_name:"" () in
+  let _ =
+    let perm = 1 in
+    Lwt_log.file ~perm ~file_name:"" ()
+  in
+  let _ =
+    let perm = Some 1 in
+    Lwt_log.file ?perm ~file_name:"" ()
+  in
   let _ = Lwt_log.file ~file_name:"" () in
   ()
 
@@ -144,3 +158,6 @@ let _open_files () =
                   | _ -> stdout);
           ];
       Lwt.return ()
+
+let _ : Lwt_log.template = ""
+let _ : Lwt_log.Section.t = Lwt_log.Section.make "test:section"
