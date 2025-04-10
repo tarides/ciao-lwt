@@ -545,3 +545,5 @@
   
   let _ : string =
     (* TODO: lwt-log-to-logs: Templates are no longer supported *) ""
+  
+  let _ : Logs.src = Logs.Src.create "test:section"

@@ -160,3 +160,4 @@ let _open_files () =
       Lwt.return ()
 
 let _ : Lwt_log.template = ""
+let _ : Lwt_log.Section.t = Lwt_log.Section.make "test:section"
