@@ -10,7 +10,7 @@ let add_comment state ?loc text =
 
 let mk_lwt_return_unit = Exp.ident (mk_longident [ "Lwt"; "return_unit" ])
 
-let mk_log section cmd args =
+let mk_log section cmd ~extra_args args =
   (* Logs.$cmd ~src:$section (fun fmt -> fmt $arg) *)
   let msgf =
     let fmt_pat = Pat.var (mk_loc "fmt") and fmt_exp = mk_exp_var "fmt" in
@@ -23,7 +23,7 @@ let mk_log section cmd args =
     | Some (section, `Opt) -> [ (mk_lblopt "src", section) ]
     | None -> []
   in
-  mk_apply_ident [ "Logs"; cmd ] (src_arg @ [ (Nolabel, msgf) ])
+  mk_apply_ident [ "Logs"; cmd ] (src_arg @ extra_args @ [ (Nolabel, msgf) ])
 
 let mk_set_level section lvl =
   mk_apply_simple [ "Logs"; "Src"; "set_level" ] [ section; lvl ]
@@ -136,6 +136,10 @@ let mk_syslog ~state ~paths ~facility =
     (mk_exp_ident [ "Logs_syslog_unix"; "unix_reporter" ])
     (socket_arg @ [ (mk_lbl "facility", facility); (Nolabel, mk_unit_val) ])
 
+(** Translate [Lwt_log_js.console] using the [logs.browser] library. *)
+let mk_console ~state:_ =
+  mk_apply_simple [ "Logs_browser"; "console_reporter" ] [ mk_unit_val ]
+
 (** Whether an expression can be used as a format spec. *)
 let format_safe exp =
   match exp.pexp_desc with
@@ -155,8 +159,13 @@ let rewrite_apply_lwt_log ~state (unit, ident) args =
     | None -> ());
     k
   in
-  let logf ~ident ~mk_log logs_name =
-    take_lblopt "section" @@ fun section ->
+  let logf ?(extra_args = []) ~ident logs_name =
+    let wrap_lwt exp =
+      if String.starts_with ~prefix:"ign_" ident then exp
+      else Exp.sequence exp mk_lwt_return_unit
+    in
+    ignore_lblarg "inspect" @@ take_lblopt "section"
+    @@ fun section ->
     take_lblopt "exn" @@ fun exn ->
     ignore_lblarg "location" @@ ignore_lblarg "logger" @@ take
     @@ fun fmt_arg ->
@@ -182,38 +191,32 @@ let rewrite_apply_lwt_log ~state (unit, ident) args =
           )
       | None -> (fmt_arg, args)
     in
-    Some (mk_log section logs_name ((Nolabel, fmt_arg) :: args))
-  in
-  let log_unit ~ident n = logf ~ident ~mk_log n in
-  let log_lwt ~ident n =
-    let mk_log section n args =
-      Exp.sequence (mk_log section n args) mk_lwt_return_unit
-    in
-    logf ~ident ~mk_log n
+    Some
+      (wrap_lwt
+         (mk_log section logs_name ~extra_args ((Nolabel, fmt_arg) :: args)))
   in
   let mk_level cstr = return (Some (mk_constr_exp [ "Logs"; cstr ])) in
 
   unapply args
   @@
-  match unit with
-  | "Lwt_log_core" -> (
+  match (unit, ident) with
+  (* Logging functions are defined in [Lwt_log_core] and [Lwt_log_js]. *)
+  | _, ("log" | "log_f" | "ign_log" | "ign_log_f") ->
+      take_lbl "level" @@ fun level ->
+      logf ~extra_args:[ (Nolabel, level) ] ~ident "msg"
+  | _, ("debug" | "debug_f" | "ign_debug" | "ign_debug_f") ->
+      logf ~ident "debug"
+  | _, ("info" | "info_f" | "ign_info" | "ign_info_f") -> logf ~ident "info"
+  | _, ("notice" | "notice_f" | "ign_notice" | "ign_notice_f") ->
+      logf ~ident "app"
+  | _, ("warning" | "warning_f" | "ign_warning" | "ign_warning_f") ->
+      logf ~ident "warn"
+  | _, ("error" | "error_f" | "ign_error" | "ign_error_f") -> logf ~ident "err"
+  | _, ("fatal" | "fatal_f" | "ign_fatal" | "ign_fatal_f") ->
+      add_comment state "This message was previously on the [fatal] level.";
+      logf ~ident "err"
+  | "Lwt_log_core", _ -> (
       match ident with
-      | "ign_debug" | "ign_debug_f" -> log_unit ~ident "debug"
-      | "ign_info" | "ign_info_f" -> log_unit ~ident "info"
-      | "ign_notice" | "ign_notice_f" -> log_unit ~ident "app"
-      | "ign_warning" | "ign_warning_f" -> log_unit ~ident "warn"
-      | "ign_error" | "ign_error_f" -> log_unit ~ident "err"
-      | "ign_fatal" | "ign_fatal_f" ->
-          add_comment state "This message was previously on the [fatal] level.";
-          log_unit ~ident "err"
-      | "debug" | "debug_f" -> log_lwt ~ident "debug"
-      | "info" | "info_f" -> log_lwt ~ident "info"
-      | "notice" | "notice_f" -> log_lwt ~ident "app"
-      | "warning" | "warning_f" -> log_lwt ~ident "warn"
-      | "error" | "error_f" -> log_lwt ~ident "err"
-      | "fatal" | "fatal_f" ->
-          add_comment state "This message was previously on the [fatal] level.";
-          log_lwt ~ident "err"
       | "make" ->
           (* [Lwt_log.Section.make] is detected as [("Lwt_log_core", "make")]. *)
           take @@ fun name ->
@@ -247,7 +250,7 @@ let rewrite_apply_lwt_log ~state (unit, ident) args =
           add_comment state (ident ^ " is no longer supported.");
           return None
       | _ -> return None)
-  | "Lwt_log" -> (
+  | "Lwt_log", _ -> (
       match ident with
       | "channel" ->
           take_lblopt "template" @@ fun template ->
@@ -268,6 +271,7 @@ let rewrite_apply_lwt_log ~state (unit, ident) args =
           take @@ fun _unit ->
           return (Some (mk_file ~state ~mode ~perm ~file_name))
       | _ -> return None)
+  | "Lwt_log_js", "console" -> return (Some (mk_console ~state))
   | _ -> return None
 
 let rewrite_expression ~state exp =
@@ -294,20 +298,19 @@ let rewrite_expression ~state exp =
 let rewrite_type ~state typ =
   match typ.ptyp_desc with
   | Ptyp_constr (lid, params) ->
-      Occ.may_rewrite state lid (fun ident ->
-          match (ident, params) with
-          | ("Lwt_log_core", "section"), [] | ("Lwt_log_core", "t"), [] ->
-              (* Type [Lwt_log.Section.t] is detected as ["Lwt_log_core",
-                 "t"] *)
-              Some (mk_typ_constr [ "Logs"; "src" ])
-          | ("Lwt_log_core", "level"), [] ->
-              Some (mk_typ_constr [ "Logs"; "level" ])
-          | ("Lwt_log_core", "logger"), [] ->
-              Some (mk_typ_constr [ "Logs"; "reporter" ])
-          | ("Lwt_log_core", "template"), [] ->
-              add_comment state "Templates are no longer supported";
-              Some (mk_typ_constr [ "string" ])
-          | _ -> None)
+      Occ.may_rewrite state lid (function
+        | ("Lwt_log_core" | "Lwt_log_js"), ident -> (
+            match (ident, params) with
+            | "section", [] | "t", [] ->
+                (* Type [Lwt_log.Section.t] is detected as ["Lwt_log_core", "t"] *)
+                Some (mk_typ_constr [ "Logs"; "src" ])
+            | "level", [] -> Some (mk_typ_constr [ "Logs"; "level" ])
+            | "logger", [] -> Some (mk_typ_constr [ "Logs"; "reporter" ])
+            | "template", [] ->
+                add_comment state "Templates are no longer supported";
+                Some (mk_typ_constr [ "string" ])
+            | _ -> None)
+        | _ -> None)
   | _ -> None
 
 let rewrite_pat ~state pat =
@@ -318,7 +321,7 @@ let rewrite_pat ~state pat =
   | Ppat_construct (lid, arg) ->
       Occ.may_rewrite state lid (fun (unit, ident) ->
           match unit with
-          | "Lwt_log_core" -> (
+          | "Lwt_log_core" | "Lwt_log_js" -> (
               match (ident, arg) with
               | "Debug", None -> mk_level "Debug"
               | "Info", None -> mk_level "Info"
@@ -365,10 +368,12 @@ let modify_ast ~fname:_ =
 
 let main migrate =
   let units = function
-    | "Lwt_log" | "Lwt_daemon" | "Lwt_log_core" | "Lwt_log_rules" -> true
+    | "Lwt_log" | "Lwt_daemon" | "Lwt_log_core" | "Lwt_log_rules" | "Lwt_log_js"
+      ->
+        true
     | _ -> false
   in
-  let packages = [ "lwt_log"; "lwt_log.core" ] in
+  let packages = [ "lwt_log"; "lwt_log.core"; "js_of_ocaml-lwt.logger" ] in
   if migrate then Migrate_utils.migrate ~packages ~units ~modify_ast
   else Migrate_utils.print_occurrences ~packages ~units
 

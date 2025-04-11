@@ -31,4 +31,5 @@
   ocaml
   cmdliner
   (lwt_log :with-test)
+  (js_of_ocaml-lwt :with-test)
   (ocaml-index :with-test)))
