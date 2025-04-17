@@ -324,6 +324,27 @@ let split_binding_op ~state pb =
   in
   (pat, exp)
 
+(** Whether the RHS of a sequence can be omitted. *)
+let can_simply_sequence ~state rhs =
+  match rhs.pexp_desc with
+  | Pexp_apply
+      ( { pexp_desc = Pexp_ident lid; _ },
+        [
+          ( Nolabel,
+            {
+              pexp_desc = Pexp_construct ({ txt = Lident "()"; _ }, None);
+              pexp_attributes = [];
+              _;
+            } );
+        ] )
+    when Occ.get state lid = Some ("Lwt", "return") ->
+      Occ.remove state lid;
+      true
+  | Pexp_ident lid when Occ.get state lid = Some ("Lwt", "return_unit") ->
+      Occ.remove state lid;
+      true
+  | _ -> false
+
 let rewrite_letop ~backend ~state let_ ands body = function
   | "Lwt", ("let*" | "let+") -> (
       match ands with
@@ -367,6 +388,7 @@ let rewrite_expression ~backend ~state exp =
   | Pexp_letop { let_; ands; body; _ } ->
       Occ.may_rewrite state let_.pbop_op
         (rewrite_letop ~backend ~state let_ ands body)
+  | Pexp_sequence (lhs, rhs) when can_simply_sequence ~state rhs -> Some lhs
   | _ -> None
 
 let rewrite_pattern ~backend ~state pat =

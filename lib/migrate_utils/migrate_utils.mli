@@ -11,6 +11,8 @@ module Occ : sig
       change the internal table and any subsequent calls for the same longident
       will return [false]. *)
 
+  val get : state -> 'a Location.loc -> (string * string) option
+
   val may_rewrite :
     state -> 'a Location.loc -> (string * string -> 'b option) -> 'b option
   (** Calls [f] if [lid] should be rewritten. A rewrite happen if

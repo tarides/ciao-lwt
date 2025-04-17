@@ -8,7 +8,7 @@ Make a writable directory tree:
   _build/default/bin/.main.eobjs/cctx.ocaml-index
 
   $ lwt-to-direct-style
-  bin/main.ml: (35 occurrences)
+  bin/main.ml: (39 occurrences)
     Lwt.return (bin/main.ml[9,150+15]..[9,150+25])
     Lwt.return (bin/main.ml[16,317+45]..[16,317+55])
     Lwt.return (bin/main.ml[19,410+24]..[19,410+34])
@@ -16,7 +16,11 @@ Make a writable directory tree:
     Lwt.return (bin/main.ml[35,790+52]..[35,790+62])
     Lwt.return (bin/main.ml[36,858+4]..[36,858+14])
     Lwt.return (bin/main.ml[37,873+34]..[37,873+44])
+    Lwt.return (bin/main.ml[45,1055+2]..[45,1055+12])
+    Lwt.return (bin/main.ml[53,1157+2]..[53,1157+12])
+    Lwt.return (bin/main.ml[57,1206+2]..[57,1206+12])
     Lwt.return_unit (bin/main.ml[19,410+48]..[19,410+63])
+    Lwt.return_unit (bin/main.ml[49,1105+2]..[49,1105+17])
     Lwt.return_none (bin/main.ml[16,317+28]..[16,317+43])
     Lwt.return_none (bin/main.ml[23,537+8]..[23,537+23])
     Lwt.return_nil (bin/main.ml[24,561+8]..[24,561+22])
@@ -264,6 +268,16 @@ Make a writable directory tree:
   open Lwt
   
   let _ = match x with 0 -> true | _ -> false
+  let _ = print_endline "Hello"
+  let _ = print_endline "Hello"
+  
+  let _ =
+    print_endline "Hello";
+    1
+  
+  let _ =
+    print_endline "Hello";
+    () [@foo]
 
   $ cat lib/test.ml
   open Eio.Std
@@ -276,9 +290,7 @@ Make a writable directory tree:
       Format.printf "2";
       `Ok
     with
-    | `Ok ->
-        Format.printf "3";
-        ()
+    | `Ok -> Format.printf "3"
     | exception _ -> ()
   
   let lwt_calls_point_free () =
@@ -313,8 +325,7 @@ Make a writable directory tree:
       (fun () ->
         Format.printf
           (* TODO: lwt-to-direct-style: This computation might not be suspended correctly. *)
-          "3";
-        ())
+          "3")
   
   let lwt_calls_open () =
     let open Lwt in
@@ -324,9 +335,7 @@ Make a writable directory tree:
       Format.printf "2";
       `Ok
     with
-    | `Ok ->
-        Format.printf "3";
-        ()
+    | `Ok -> Format.printf "3"
     | exception _ -> ()
   
   let lwt_calls_rebind () =
@@ -354,8 +363,7 @@ Make a writable directory tree:
       (fun () ->
         Format.printf
           (* TODO: lwt-to-direct-style: This computation might not be suspended correctly. *)
-          "3";
-        ())
+          "3")
   
   let lwt_calls_include () =
     let module L = struct
@@ -368,9 +376,7 @@ Make a writable directory tree:
       Format.printf "2";
       `Ok
     with
-    | `Ok ->
-        Format.printf "3";
-        ()
+    | `Ok -> Format.printf "3"
     | exception _ -> ()
   
   let test () =

@@ -39,3 +39,19 @@ let x =
 open Lwt
 
 let _ = x >>= function 0 -> Lwt.return_true | _ -> Lwt.return_false
+
+let _ =
+  print_endline "Hello";
+  Lwt.return ()
+
+let _ =
+  print_endline "Hello";
+  Lwt.return_unit
+
+let _ =
+  print_endline "Hello";
+  Lwt.return 1
+
+let _ =
+  print_endline "Hello";
+  Lwt.return (() [@foo])
