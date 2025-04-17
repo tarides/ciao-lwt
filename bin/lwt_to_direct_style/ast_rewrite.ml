@@ -438,6 +438,11 @@ let remove_lwt_opens ~state stri =
       false
   | _ -> true
 
+let remove_lwt_opens_sg ~state sgi =
+  match sgi.psig_desc with
+  | Psig_open { popen_expr = lid; _ } when Occ.pop state lid -> false
+  | _ -> true
+
 let add_extra_opens ~backend str =
   let extra_opens =
     List.fold_left
@@ -451,6 +456,19 @@ let add_extra_opens ~backend str =
     |> List.map (fun ident -> Str.open_ (Opn.mk (Mod.ident (mk_loc ident))))
   in
   extra_opens @ str
+
+let add_extra_opens_sg ~backend sg =
+  let extra_opens =
+    List.fold_left
+      (fun extra_opens sgi ->
+        match sgi.psig_desc with
+        | Psig_open { popen_expr; _ } ->
+            List.filter (( <> ) popen_expr.txt) extra_opens
+        | _ -> extra_opens)
+      backend#extra_opens sg
+    |> List.map (fun ident -> Sig.open_ (Opn.mk (mk_loc ident)))
+  in
+  extra_opens @ sg
 
 let mapper ~backend ~state =
   let default = Ast_mapper.default_mapper in
@@ -477,7 +495,10 @@ let mapper ~backend ~state =
   let structure m str =
     default.structure m (List.filter (remove_lwt_opens ~state) str)
   in
-  { default with expr; pat; typ; structure }
+  let signature m sg =
+    default.signature m (List.filter (remove_lwt_opens_sg ~state) sg)
+  in
+  { default with expr; pat; typ; structure; signature }
 
 let rewrite_lwt_uses ~fname:_ ~(backend : (string -> unit) -> _) =
   let structure state str =
@@ -489,6 +510,7 @@ let rewrite_lwt_uses ~fname:_ ~(backend : (string -> unit) -> _) =
   let signature state sg =
     let backend = backend (add_comment state) in
     let m = mapper ~backend ~state in
-    m.signature m sg
+    let sg = m.signature m sg in
+    add_extra_opens_sg ~backend sg
   in
   { Migrate_utils.structure; signature }

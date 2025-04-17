@@ -565,6 +565,8 @@ Make a writable directory tree:
   let i : (unit Promise.t -> unit) -> unit = fun f -> f x
 
   $ cat lib/test.mli
+  open Eio.Std
+  
   val f1 :
     Eio.Condition.t ->
     (* TODO: lwt-to-direct-style: Eio conditions don't carry a value. Use a mutable variable and a dedicated mutex. *)
