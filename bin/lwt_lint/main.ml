@@ -37,6 +37,15 @@ let lint_expression exp =
   match exp.pexp_desc with
   | Pexp_let ({ pvbs_bindings; _ }, _, _) ->
       List.iter lint_value_binding pvbs_bindings
+  | Pexp_apply
+      ( { pexp_desc = Pexp_ident { txt = Lident "ignore"; _ }; _ },
+        [ (Nolabel, arg) ] ) -> (
+      match arg.pexp_desc with
+      | Pexp_constraint _ | Pexp_coerce _ -> ()
+      | _ ->
+          warn ~loc:arg.pexp_loc
+            "Ignored value without a type annotation. Argument of \"ignore\" \
+             should have a type annotation.")
   | _ -> ()
 
 let lint_mapper =
