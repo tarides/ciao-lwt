@@ -13,3 +13,9 @@
    %{bin:ocaml-index}
    (package lwt_log)
    (package js_of_ocaml-lwt))))
+
+(subdir
+ lwt_lint
+ (cram
+  (package lwt_lint)
+  (deps %{bin:lwt-lint})))
