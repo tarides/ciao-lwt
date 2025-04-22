@@ -48,7 +48,7 @@ let lint_file file =
 let main paths =
   error_count := 0;
   List.iter (Fs_utils.find_ml_files lint_file) paths;
-  Format.printf "%d errors\n%!" !error_count;
+  Format.eprintf "%d errors\n%!" !error_count;
   if !error_count > 0 then exit 1
 
 open Cmdliner
