@@ -29,13 +29,23 @@ let lint_structure_item stri =
       List.iter lint_value_binding pvbs_bindings
   | _ -> ()
 
+let lint_expression exp =
+  match exp.pexp_desc with
+  | Pexp_let ({ pvbs_bindings; _ }, _, _) ->
+      List.iter lint_value_binding pvbs_bindings
+  | _ -> ()
+
 let lint_mapper =
   let default = Ast_mapper.default_mapper in
   let structure_item m stri =
     lint_structure_item stri;
     default.structure_item m stri
   in
-  { default with structure_item }
+  let expr m exp =
+    lint_expression exp;
+    default.expr m exp
+  in
+  { default with structure_item; expr }
 
 let lint_file file =
   match Ocamlformat_utils.parse ~file with
