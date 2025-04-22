@@ -9,6 +9,8 @@ The tools in the collection are:
 - [lwt-ppx-to-let-syntax](#remove-usages-of-lwt_ppx): Remove usages of `lwt_ppx`.
   These are replaced by Lwt library function calls.
 
+- [lwt_lint](#find-implicit-forks): Find implicit forks
+
 - [lwt-log-to-logs](#migrate-from-Lwt_log-to-Logs): Migrate from `Lwt_log` to `Logs`.
 
 ## Remove usages of `lwt_ppx`
@@ -76,6 +78,18 @@ let _ =
 - Backtraces are less accurate. In addition to adding a shorter syntax,
   `lwt_ppx` also helped generate better backtraces in case of an exception
   within asynchronous code. This is removed to avoid poluting the codebase.
+
+## Find implicit forks
+
+This tool warns about values bound to `let _` or passed to `ignore` that do not have a type annotation.
+The type annotations help find ignored Lwt threads, which are otherwise a challenge to translate into direct-style concurrency.
+
+Usage:
+```
+$ lwt-lint .
+```
+
+Ignoring a Lwt thread makes it implicitly fork in the background, which requires an explicit call with other concurrency libraries.
 
 ## Migrate from `Lwt_log` to `Logs`
 
