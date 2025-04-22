@@ -10,17 +10,21 @@ let warn ~loc fmt =
     ("@[<hv 2>%s:%d:%d@;<2 0>" ^^ fmt ^^ "@]@\n")
     p.pos_fname p.pos_lnum (p.pos_cnum - p.pos_bol)
 
-let lint_ignore_pat ignore_ident loc =
-  warn ~loc
-    "Ignored value without a type annotation. Patterns %S ignores a value that \
-     might be a Lwt promise."
-    ignore_ident
+let rec is_ignore_pat pat =
+  match pat.ppat_desc with
+  | Ppat_any -> Some ("_", pat.ppat_loc)
+  | Ppat_var var when String.starts_with ~prefix:"_" var.txt ->
+      Some (var.txt, pat.ppat_loc)
+  | Ppat_tuple pats -> List.find_map is_ignore_pat pats
+  | _ -> None
 
 let lint_value_binding pvb =
-  match (pvb.pvb_pat.ppat_desc, pvb.pvb_constraint) with
-  | Ppat_any, None -> lint_ignore_pat "_" pvb.pvb_loc
-  | Ppat_var var, None when String.starts_with ~prefix:"_" var.txt ->
-      lint_ignore_pat var.txt pvb.pvb_loc
+  match (is_ignore_pat pvb.pvb_pat, pvb.pvb_constraint) with
+  | Some (ignore_ident, loc), None ->
+      warn ~loc
+        "Ignored value without a type annotation. Pattern %S ignores a value \
+         that might be a Lwt promise."
+        ignore_ident
   | _ -> ()
 
 let lint_structure_item stri =
