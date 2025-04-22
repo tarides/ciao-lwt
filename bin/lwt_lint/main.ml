@@ -19,8 +19,8 @@ let rec is_ignore_pat pat =
   | _ -> None
 
 let lint_value_binding pvb =
-  match (is_ignore_pat pvb.pvb_pat, pvb.pvb_constraint) with
-  | Some (ignore_ident, loc), None ->
+  match (is_ignore_pat pvb.pvb_pat, pvb.pvb_constraint, pvb.pvb_args) with
+  | Some (ignore_ident, loc), None, [] ->
       warn ~loc
         "Ignored value without a type annotation. Pattern %S ignores a value \
          that might be a Lwt promise."
