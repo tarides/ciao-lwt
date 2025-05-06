@@ -94,7 +94,9 @@ let eio add_comment =
       mk_apply_ident
         [ "Eio"; "Mutex"; "use_rw" ]
         [
-          (mk_lbl "protect", mk_constr_exp "false"); (Nolabel, t); (Nolabel, f);
+          (mk_lbl "protect", mk_constr_exp [ "false" ]);
+          (Nolabel, t);
+          (Nolabel, f);
         ]
 
     method key_new () =

@@ -1,0 +1,3 @@
+(executable
+ (name foo)
+ (libraries lwt_log lwt lwt.unix))

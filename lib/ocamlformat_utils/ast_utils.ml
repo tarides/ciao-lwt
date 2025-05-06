@@ -28,7 +28,13 @@ let mk_longident' = function
       List.fold_left (fun acc seg -> Ldot (acc, seg)) (Lident hd) tl
 
 let mk_longident ident = mk_loc (mk_longident' ident)
-let mk_constr_exp ?arg cstr = Exp.construct (mk_longident [ cstr ]) arg
+let mk_constr_exp ?arg cstr = Exp.construct (mk_longident cstr) arg
+
+let mk_constr_pat ?arg cstr =
+  Pat.construct (mk_longident cstr) (Option.map (fun a -> ([], a)) arg)
+
+let mk_variant_exp ?arg cstr = Exp.variant (mk_loc (mk_loc cstr)) arg
+let mk_variant_pat ?arg cstr = Pat.variant (mk_loc (mk_loc cstr)) arg
 let same_longident a b = Longident.flatten a = b
 let mk_exp_ident ident = Exp.ident (mk_longident ident)
 let mk_exp_var s = mk_exp_ident [ s ]
@@ -42,6 +48,64 @@ let mk_none_ident = mk_longident [ "None" ]
 let mk_exp_some x = Exp.construct mk_some_ident (Some x)
 let mk_exp_none = Exp.construct mk_none_ident None
 let mk_typ_constr ?(params = []) lid = Typ.constr (mk_longident lid) params
+let mk_lbl s = Labelled (mk_loc s)
+let mk_lblopt s = Optional (mk_loc s)
+let mk_pat_some arg = mk_constr_pat ~arg [ "Some" ]
+let mk_pat_none = mk_constr_pat [ "None" ]
+
+(* Exp *)
+
+let mk_const_string s = Exp.constant (Const.string s)
+let mk_const_int i = Exp.constant (Const.integer i)
+
+(* Construct [let var = lhs in (rhs var)]. *)
+let mk_let_var ident lhs rhs =
+  let pat = Pat.var (mk_loc ident) in
+  mk_let pat lhs (rhs (mk_exp_var ident))
+
+module Mk_function : sig
+  (** Construct a [fun .. -> ..] node. Usage:
+
+      {[
+        let f =
+          let open Mk_function in
+          mk_function
+            (return (fun a b -> Exp.tuple [ a; b ])
+             $ arg "a" $ arg "b")
+        in
+      ]} *)
+
+  type 'a t
+  type arg
+
+  val arg : ?lbl:[ `Lbl | `Opt of expression option ] -> string -> arg
+  val ( $ ) : (expression -> 'a) t -> arg -> 'a t
+  val return : 'a -> 'a t
+  val mk_function : ?typ:type_constraint -> expression t -> expression
+end = struct
+  type 'a t = expr_function_param list * 'a
+  type arg = expr_function_param * expression
+
+  let ( $ ) (params, body) (param, exp) = (param :: params, body exp)
+  let return f = ([], f)
+
+  let arg ?lbl name =
+    let lbl, def =
+      match lbl with
+      | Some `Lbl -> (Some (mk_lbl name), None)
+      | Some (`Opt def) -> (Some (mk_lblopt name), def)
+      | None -> (None, None)
+    in
+    let exp = mk_exp_var name and pat = Pat.var (mk_loc name) in
+    (mk_function_param ?lbl ?def pat, exp)
+
+  let mk_function ?typ (params, body) =
+    Exp.function_ (List.rev params) typ (Pfunction_body body)
+end
+
+let mk_fun ?(arg_name = "x") f =
+  let open Mk_function in
+  mk_function (return f $ arg arg_name)
 
 let is_unit_val = function
   | { pexp_desc = Pexp_construct (ident, None); _ } ->
@@ -58,11 +122,23 @@ let mk_binding_op ?(loc = !default_loc) ?(is_pun = false) op pat ?(args = [])
     ?(typ = None) exp =
   Exp.binding_op op pat args typ exp is_pun loc
 
-let mk_lbl s = Labelled (mk_loc s)
 let mk_apply_ident ident args = Exp.apply (mk_exp_ident ident) args
 
 let mk_apply_simple f_ident args =
   mk_apply_ident f_ident (List.map (fun x -> (Nolabel, x)) args)
+
+(** Generate an expression that read the value of a optional argument obtained
+    with [Unpack_apply.take_lblopt]. *)
+let value_of_lblopt ~default arg =
+  match arg with
+  | Some (exp, `Lbl) -> exp
+  | Some (exp, `Opt) ->
+      Exp.match_ exp
+        [
+          Exp.case (mk_pat_some (Pat.var (mk_loc "x"))) (mk_exp_var "x");
+          Exp.case mk_pat_none default;
+        ]
+  | None -> default
 
 (** Flatten a pipelines composed of [|>] and [@@] into a [Pexp_apply] node. *)
 let rec flatten_apply exp =
@@ -78,6 +154,29 @@ let rec flatten_apply exp =
   | Pexp_infix ({ txt = "@@"; _ }, lhs, rhs) -> flatten lhs rhs
   | Pexp_infix ({ txt = "|>"; _ }, lhs, rhs) -> flatten rhs lhs
   | _ -> exp
+
+(** Rewrite expressions that look like an apply by calling
+    [f ~loc longident args]. Returns [None] for other expressions. Expressions
+    that are treated as an apply:
+    - [Pexp_apply], obviously.
+    - Pipelines composed of [|>] and [@@].
+    - [Pexp_ident], interpreted as an apply with no arguments.
+    - [Pexp_infix], warning, Longident node doesn't appear in the parsetree.
+    - [Pexp_construct], as they cannot be confused with regular identifiers
+      thanks to their capital letter. *)
+let rewrite_apply exp f =
+  match (flatten_apply exp).pexp_desc with
+  | Pexp_apply ({ pexp_desc = Pexp_ident lid; pexp_attributes = []; _ }, args)
+    ->
+      f lid args
+  | Pexp_ident lid -> f lid []
+  | Pexp_infix (op, lhs, rhs) ->
+      let args = [ (Nolabel, lhs); (Nolabel, rhs) ] in
+      let lid = { op with txt = mk_longident' [ op.txt ] } in
+      f lid args
+  | Pexp_construct (lid, Some arg) -> f lid [ (Nolabel, arg) ]
+  | Pexp_construct (lid, None) -> f lid []
+  | _ -> None
 
 module Unpack_apply : sig
   type t

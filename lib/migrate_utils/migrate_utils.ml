@@ -151,8 +151,15 @@ let migrate_file ~filename_map ~formatted ~errors ~modify_ast file =
 
 let dune_build_dir = "_build"
 
+let occurrences ~packages ~units =
+  match Ocaml_index_utils.occurrences ~dune_build_dir ~packages ~units with
+  | [] ->
+      Format.eprintf "Found no occurrences.\n%!";
+      exit 1
+  | occ -> occ
+
 let migrate ~packages ~units ~modify_ast =
-  let occurs = Ocaml_index_utils.occurrences ~dune_build_dir ~packages ~units in
+  let occurs = occurrences ~packages ~units in
   let errors = ref 0 in
   let formatted = ref 0 in
   let filename_map = lookup_filename_map () in
@@ -163,7 +170,7 @@ let migrate ~packages ~units ~modify_ast =
   if !errors > 0 then exit 1
 
 let print_occurrences ~packages ~units =
-  let occurs = Ocaml_index_utils.occurrences ~dune_build_dir ~packages ~units in
+  let occurs = occurrences ~packages ~units in
   let pp_occurrence ppf ((unit_name, ident), lid) =
     Format.fprintf ppf "%s.%s %a" unit_name ident Printast.fmt_location
       lid.Location.loc

@@ -139,7 +139,7 @@ let rewrite_lwt_condition_wait ~backend ~state mutex_opt cond =
   in
   backend#condition_wait mutex cond
 
-let mk_cstr c = Some (mk_constr_exp c)
+let mk_cstr c = Some (mk_constr_exp [ c ])
 
 (* Rewrite calls to functions from the [Lwt] module. See [rewrite_apply] for
    the other modules. *)
@@ -211,12 +211,13 @@ let rewrite_apply_lwt ~backend ~state ident args =
   | "return" -> take @@ fun value_arg -> return (Some value_arg)
   | "return_some" ->
       take @@ fun value_arg ->
-      return (Some (mk_constr_exp ~arg:value_arg "Some"))
+      return (Some (mk_constr_exp ~arg:value_arg [ "Some" ]))
   | "return_ok" ->
-      take @@ fun value_arg -> return (Some (mk_constr_exp ~arg:value_arg "Ok"))
+      take @@ fun value_arg ->
+      return (Some (mk_constr_exp ~arg:value_arg [ "Ok" ]))
   | "return_error" ->
       take @@ fun value_arg ->
-      return (Some (mk_constr_exp ~arg:value_arg "Error"))
+      return (Some (mk_constr_exp ~arg:value_arg [ "Error" ]))
   | "return_unit" -> return (mk_cstr "()")
   | "return_none" -> return (mk_cstr "None")
   | "return_nil" -> return (mk_cstr "[]")
