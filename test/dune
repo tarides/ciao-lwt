@@ -5,6 +5,15 @@
   (deps %{bin:lwt-ppx-to-let-syntax})))
 
 (subdir
+ lwt_to_direct_style
+ (cram
+  (package lwt_to_direct_style)
+  (deps
+   %{bin:lwt-to-direct-style}
+   %{bin:ocaml-index}
+   (package lwt))))
+
+(subdir
  lwt_log_to_logs
  (cram
   (package lwt_log_to_logs)

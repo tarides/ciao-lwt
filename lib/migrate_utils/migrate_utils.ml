@@ -54,6 +54,8 @@ module Occ = struct
       true)
     else false
 
+  let get state lid = Hashtbl.find_opt state.occ (Loc.of_location lid.loc)
+
   let may_rewrite state lid f =
     match Hashtbl.find_opt state.occ (Loc.of_location lid.loc) with
     | Some ident ->

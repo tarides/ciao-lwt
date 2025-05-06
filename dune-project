@@ -25,6 +25,16 @@
  (depends ocaml cmdliner))
 
 (package
+ (name lwt_to_direct_style)
+ (synopsis
+  "A tool for migrating from Lwt to direct-style concurrency libraries")
+ (depends
+  ocaml
+  cmdliner
+  (lwt :with-test)
+  (ocaml-index :with-test)))
+
+(package
  (name lwt_log_to_logs)
  (synopsis "A tool for migrating from Lwt_log to Logs.")
  (depends
