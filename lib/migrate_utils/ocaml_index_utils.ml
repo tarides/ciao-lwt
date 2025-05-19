@@ -23,15 +23,16 @@ end
 
 (* Find all the [.ocaml-index] files. *)
 let scan_dune_build_path ~dune_build_dir =
-  if not (Sys.is_directory dune_build_dir) then
-    fail "Directory %S not found." dune_build_dir
-  else
-    let collect_index_files acc path =
-      if Filename.extension path = ".ocaml-index" then path :: acc else acc
-    in
-    match Fs_utils.scan_dir collect_index_files [] dune_build_dir with
-    | [] -> failwith "No index found. Please run 'dune build @ocaml-index'."
-    | p -> p
+  match Sys.is_directory dune_build_dir with
+  | (exception Sys_error _) | false ->
+      fail "Directory %S not found." dune_build_dir
+  | true -> (
+      let collect_index_files acc path =
+        if Filename.extension path = ".ocaml-index" then path :: acc else acc
+      in
+      match Fs_utils.scan_dir collect_index_files [] dune_build_dir with
+      | [] -> failwith "No index found. Please run 'dune build @ocaml-index'."
+      | p -> p)
 
 (* Query a package's lib path using [ocamlfind]. *)
 let package_lib_paths packages =
