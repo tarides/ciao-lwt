@@ -158,16 +158,12 @@ let occurrences ~packages ~units =
       exit 1
   | occ -> occ
 
-let migrate ~packages ~units ~modify_ast =
+let migrate ~packages ~units ~modify_ast ~errors ~formatted =
   let occurs = occurrences ~packages ~units in
-  let errors = ref 0 in
-  let formatted = ref 0 in
   let filename_map = lookup_filename_map () in
   group_occurrences_by_file occurs (fun fname occurrences ->
       let modify_ast = make_modify_ast ~modify_ast ~fname occurrences in
-      migrate_file ~filename_map ~formatted ~errors ~modify_ast fname);
-  Format.printf "Formatted %d files, %d errors\n%!" !formatted !errors;
-  if !errors > 0 then exit 1
+      migrate_file ~filename_map ~formatted ~errors ~modify_ast fname)
 
 let print_occurrences ~packages ~units =
   let occurs = occurrences ~packages ~units in
@@ -180,3 +176,19 @@ let print_occurrences ~packages ~units =
         (List.length occurrences)
         (Format.pp_print_list pp_occurrence)
         occurrences)
+
+let migrate ~packages ~units ~modify_ast =
+  let formatted = ref 0 and errors = ref 0 in
+  try
+    migrate ~packages ~units ~modify_ast ~errors ~formatted;
+    Format.printf "Formatted %d files\n%!" !formatted;
+    if !errors > 0 then
+      Error (`Msg (Format.asprintf "%d errors were generated" !errors))
+    else Ok ()
+  with Failure msg -> Error (`Msg msg)
+
+let print_occurrences ~packages ~units =
+  try
+    print_occurrences ~packages ~units;
+    Ok ()
+  with Failure msg -> Error (`Msg msg)
