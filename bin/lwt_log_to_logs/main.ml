@@ -388,6 +388,6 @@ let opt_migrate =
 let cmd =
   let doc = "Migrate your codebase from Lwt_log to Logs." in
   let info = Cmd.info "lwt-log-to-logs" ~version:"%%VERSION%%" ~doc in
-  Cmd.v info Term.(const main $ opt_migrate)
+  Cmd.v info Term.(term_result (const main $ opt_migrate))
 
 let () = exit (Cmd.eval cmd)

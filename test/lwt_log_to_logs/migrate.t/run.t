@@ -10,7 +10,7 @@
     Lwt_log_core.close (line 94 column 11)
     Lwt_log_core.add_rule (line 95 column 11)
     Lwt_log_core.close (line 134 column 31)
-  Formatted 1 files, 0 errors
+  Formatted 1 files
 
   $ cat foo.ml
   let section : Logs.src = Logs.Src.create "test:section"

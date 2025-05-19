@@ -227,7 +227,7 @@ Make a writable directory tree:
   Warning: lib/test.mli: 2 occurrences have not been rewritten.
     Lwt_mutex.t (line 2 column 10)
     Lwt_mutex.t (line 3 column 10)
-  Formatted 3 files, 0 errors
+  Formatted 3 files
 
   $ cat bin/main.ml
   open Lwt.Syntax

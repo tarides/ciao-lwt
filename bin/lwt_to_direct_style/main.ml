@@ -21,6 +21,6 @@ let cmd =
     "Migrate your codebase from Lwt to direct-style concurrency libraries."
   in
   let info = Cmd.info "lwt-to-direct-style" ~version:"%%VERSION%%" ~doc in
-  Cmd.v info Term.(const main $ opt_migrate)
+  Cmd.v info Term.(term_result (const main $ opt_migrate))
 
 let () = exit (Cmd.eval cmd)

@@ -1,7 +1,7 @@
   $ chmod a+w *.ml
   $ dune build @ocaml-index
   $ lwt-log-to-logs --migrate
-  Formatted 1 files, 0 errors
+  Formatted 1 files
 
   $ cat test.ml
   let () = Logs.set_reporter (Logs_browser.console_reporter ())
