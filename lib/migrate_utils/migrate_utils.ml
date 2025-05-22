@@ -49,8 +49,9 @@ module Occ = struct
   let remove state lid = Hashtbl.remove state.occ (Loc.of_location lid.loc)
 
   let pop state lid =
-    if Hashtbl.mem state.occ (Loc.of_location lid.loc) then (
-      remove state lid;
+    let loc = Loc.of_location lid.loc in
+    if Hashtbl.mem state.occ loc then (
+      Hashtbl.remove state.occ loc;
       true)
     else false
 

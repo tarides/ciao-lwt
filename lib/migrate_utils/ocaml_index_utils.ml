@@ -68,7 +68,13 @@ let uid_map_of_unit ~packages ~units =
     | Type { typ_id = ident; _ }
     | Value_binding { vb_pat = { pat_desc = Tpat_var (ident, _, _); _ }; _ }
     | Constructor { cd_id = ident; _ }
-    | Extension_constructor { ext_id = ident; _ } ->
+    | Extension_constructor { ext_id = ident; _ }
+    | Module { md_id = Some ident; _ }
+    | Module_substitution { ms_id = ident; _ }
+    | Module_binding { mb_id = Some ident; _ }
+    | Module_type { mtd_id = ident; _ }
+    | Class { ci_id_class = ident; _ }
+    | Class_type { ci_id_class = ident; _ } ->
         `Found (unit_name, Ident.name ident)
     | _ -> `Ignore
   in
