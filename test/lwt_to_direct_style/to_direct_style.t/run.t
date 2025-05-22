@@ -49,7 +49,7 @@ Make a writable directory tree:
     Lwt_unix.sleep (bin/main.ml[31,739+8]..[31,739+22])
     Lwt_unix.Timeout (bin/main.ml[37,873+14]..[37,873+30])
     Lwt_unix.with_timeout (bin/main.ml[35,790+15]..[35,790+36])
-  lib/test.ml: (153 occurrences)
+  lib/test.ml: (158 occurrences)
     Lwt.t (lib/test.ml[103,2618+35]..[103,2618+40])
     Lwt.t (lib/test.ml[155,4038+13]..[155,4038+18])
     Lwt.t (lib/test.ml[156,4061+21]..[156,4061+26])
@@ -81,6 +81,7 @@ Make a writable directory tree:
     Lwt.return (lib/test.ml[111,2902+8]..[111,2902+18])
     Lwt.return (lib/test.ml[117,3039+19]..[117,3039+29])
     Lwt.return (lib/test.ml[140,3706+27]..[140,3706+37])
+    Lwt.return (lib/test.ml[161,4292+13]..[161,4292+19])
     Lwt.fail (lib/test.ml[109,2841+8]..[109,2841+16])
     Lwt.fail_with (lib/test.ml[110,2868+8]..[110,2868+21])
     Lwt.fail_invalid_arg (lib/test.ml[118,3074+32]..[118,3074+52])
@@ -137,6 +138,7 @@ Make a writable directory tree:
     Lwt.>>= (lib/test.ml[78,2113+2]..[78,2113+5])
     Lwt.>>= (lib/test.ml[88,2290+2]..[88,2290+5])
     Lwt.>>= (lib/test.ml[158,4164+59]..[158,4164+62])
+    Lwt.>>= (lib/test.ml[162,4316+19]..[162,4316+26])
     Lwt.=<< (lib/test.ml[111,2902+19]..[111,2902+22])
     Lwt.>|= (lib/test.ml[32,766+36]..[32,766+39])
     Lwt.>|= (lib/test.ml[46,1188+15]..[46,1188+32])
@@ -147,6 +149,7 @@ Make a writable directory tree:
     Lwt.<?> (lib/test.ml[113,2948+10]..[113,2948+13])
     Lwt.Infix (lib/test.ml[1,0+5]..[1,0+14])
     Lwt.Infix (lib/test.ml[57,1497+11]..[57,1497+18])
+    Lwt.Infix (lib/test.ml[162,4316+8]..[162,4316+17])
     Lwt.let* (lib/test.ml[17,428+2]..[17,428+6])
     Lwt.let* (lib/test.ml[18,441+4]..[18,441+8])
     Lwt.let* (lib/test.ml[22,555+2]..[22,555+6])
@@ -160,12 +163,14 @@ Make a writable directory tree:
     Lwt.let* (lib/test.ml[104,2675+2]..[104,2675+6])
     Lwt.let* (lib/test.ml[105,2725+2]..[105,2725+6])
     Lwt.let* (lib/test.ml[106,2798+2]..[106,2798+6])
+    Lwt.let* (lib/test.ml[163,4344+20]..[163,4344+28])
     Lwt.and* (lib/test.ml[21,521+2]..[21,521+6])
     Lwt.and* (lib/test.ml[26,648+2]..[26,648+6])
     Lwt.and* (lib/test.ml[27,679+2]..[27,679+6])
     Lwt.let+ (lib/test.ml[19,477+4]..[19,477+8])
     Lwt.let+ (lib/test.ml[24,604+4]..[24,604+8])
     Lwt.Syntax (lib/test.ml[2,15+5]..[2,15+15])
+    Lwt.Syntax (lib/test.ml[163,4344+8]..[163,4344+18])
     Lwt_condition.create (lib/test.ml[131,3409+8]..[131,3409+28])
     Lwt_condition.wait (lib/test.ml[132,3441+14]..[132,3441+32])
     Lwt_condition.wait (lib/test.ml[133,3479+20]..[133,3479+38])
@@ -224,11 +229,11 @@ Make a writable directory tree:
   Warning: bin/main.ml: 1 occurrences have not been rewritten.
     Lwt_main.run (line 22 column 10)
   Warning: lib/test.ml: 5 occurrences have not been rewritten.
-    Lwt.Infix (line 57 column 12)
     Lwt.<?> (line 113 column 11)
     Lwt.choose (line 115 column 9)
     Lwt_list.iteri_p (line 129 column 9)
     Lwt.Fail (line 147 column 5)
+    Lwt.let* (line 163 column 21)
   Warning: lib/test.mli: 2 occurrences have not been rewritten.
     Lwt_mutex.t (line 2 column 10)
     Lwt_mutex.t (line 3 column 10)
@@ -353,7 +358,6 @@ Make a writable directory tree:
   let lwt_calls_alias () =
     let module L = Lwt in
     let module F = Lwt_fmt in
-    let open L.Infix in
     Fiber.pair
       (fun () ->
         Format.printf
@@ -564,6 +568,9 @@ Make a writable directory tree:
     x
   
   let i : (unit Promise.t -> unit) -> unit = fun f -> f x
+  let _ = Lwt.(())
+  let _ = fun x1 x2 -> x2 x1
+  let _ = ( let* )
 
   $ cat lib/test.mli
   open Eio.Std

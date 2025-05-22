@@ -390,6 +390,10 @@ let rewrite_expression ~backend ~state exp =
       Occ.may_rewrite state let_.pbop_op
         (rewrite_letop ~backend ~state let_ ands body)
   | Pexp_sequence (lhs, rhs) when can_simply_sequence ~state rhs -> Some lhs
+  | Pexp_open (lid, rhs)
+  | Pexp_letopen ({ popen_expr = { pmod_desc = Pmod_ident lid; _ }; _ }, rhs)
+    when Occ.pop state lid ->
+      Some rhs
   | _ -> None
 
 let rewrite_pattern ~backend ~state pat =
