@@ -85,6 +85,9 @@ let uid_map_of_unit ~packages ~units =
   List.iter
     (fun (unit_name, cmt) ->
       let cmt = Cmt_format.read_cmt cmt in
+      Tbl.replace tbl
+        (Shape.Uid.of_compilation_unit_id (Ident.create_persistent unit_name))
+        (`Found (unit_name, ""));
       Tbl.iter
         (fun uid decl -> Tbl.replace tbl uid (ident_of_decl ~unit_name decl))
         cmt.cmt_uid_to_decl)

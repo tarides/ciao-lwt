@@ -8,7 +8,8 @@ Make a writable directory tree:
   _build/default/bin/.main.eobjs/cctx.ocaml-index
 
   $ lwt-to-direct-style
-  bin/main.ml: (40 occurrences)
+  bin/main.ml: (41 occurrences)
+    Lwt. (bin/main.ml[39,943+5]..[39,943+8])
     Lwt.return (bin/main.ml[9,150+15]..[9,150+25])
     Lwt.return (bin/main.ml[16,317+45]..[16,317+55])
     Lwt.return (bin/main.ml[19,410+24]..[19,410+34])
@@ -49,7 +50,14 @@ Make a writable directory tree:
     Lwt_unix.sleep (bin/main.ml[31,739+8]..[31,739+22])
     Lwt_unix.Timeout (bin/main.ml[37,873+14]..[37,873+30])
     Lwt_unix.with_timeout (bin/main.ml[35,790+15]..[35,790+36])
-  lib/test.ml: (158 occurrences)
+  lib/test.ml: (165 occurrences)
+    Lwt. (lib/test.ml[36,900+11]..[36,900+14])
+    Lwt. (lib/test.ml[55,1445+17]..[55,1445+20])
+    Lwt. (lib/test.ml[64,1681+12]..[64,1681+15])
+    Lwt. (lib/test.ml[161,4292+8]..[161,4292+11])
+    Lwt_fmt. (lib/test.ml[37,918+11]..[37,918+18])
+    Lwt_fmt. (lib/test.ml[56,1469+17]..[56,1469+24])
+    Lwt_fmt. (lib/test.ml[65,1697+12]..[65,1697+19])
     Lwt.t (lib/test.ml[103,2618+35]..[103,2618+40])
     Lwt.t (lib/test.ml[155,4038+13]..[155,4038+18])
     Lwt.t (lib/test.ml[156,4061+21]..[156,4061+26])
@@ -228,7 +236,11 @@ Make a writable directory tree:
   $ lwt-to-direct-style --migrate
   Warning: bin/main.ml: 1 occurrences have not been rewritten.
     Lwt_main.run (line 22 column 10)
-  Warning: lib/test.ml: 5 occurrences have not been rewritten.
+  Warning: lib/test.ml: 9 occurrences have not been rewritten.
+    Lwt. (line 55 column 18)
+    Lwt_fmt. (line 56 column 18)
+    Lwt. (line 64 column 13)
+    Lwt_fmt. (line 65 column 13)
     Lwt.<?> (line 113 column 11)
     Lwt.choose (line 115 column 9)
     Lwt_list.iteri_p (line 129 column 9)
@@ -272,8 +284,6 @@ Make a writable directory tree:
     with
     | v -> v
     | exception Eio.Time.Timeout -> 0
-  
-  open Lwt
   
   let _ = match x with 0 -> true | _ -> false
   let _ = print_endline "Hello"
@@ -334,8 +344,6 @@ Make a writable directory tree:
           "3")
   
   let lwt_calls_open () =
-    let open Lwt in
-    let open Lwt_fmt in
     match
       Format.printf "1";
       Format.printf "2";
@@ -568,7 +576,7 @@ Make a writable directory tree:
     x
   
   let i : (unit Promise.t -> unit) -> unit = fun f -> f x
-  let _ = Lwt.(())
+  let _ = ()
   let _ = fun x1 x2 -> x2 x1
   let _ = ( let* )
 
