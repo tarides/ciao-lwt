@@ -157,3 +157,19 @@ let f : unit -> unit Lwt.t = fun () -> x
 let g : unit Lwt.t -> unit = fun y -> Lwt.async (fun () -> y)
 let h : (unit -> unit Lwt.t) -> unit Lwt.t = fun f -> f () >>= fun () -> x
 let i : (unit Lwt.t -> unit) -> unit = fun f -> f x
+
+let _ = Lwt.(return ())
+let _ = Lwt.Infix.(( >>= ))
+let _ = Lwt.Syntax.(( let* ))
+
+let _ =
+  let open struct
+    include Lwt.Syntax
+  end in
+  ()
+
+module M = struct
+  include Lwt
+  include Lwt.Infix
+  include Lwt.Syntax
+end

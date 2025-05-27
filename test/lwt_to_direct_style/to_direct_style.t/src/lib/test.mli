@@ -7,3 +7,8 @@ val g : unit Lwt.t -> unit
 val h : (unit -> unit Lwt.t) -> unit Lwt.t
 val i : (unit Lwt.t -> unit) -> unit
 val test : unit -> unit Lwt.t
+
+module M : sig
+  include module type of Lwt
+  include module type of Lwt.Infix
+end

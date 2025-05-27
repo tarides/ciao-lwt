@@ -390,6 +390,10 @@ let rewrite_expression ~backend ~state exp =
       Occ.may_rewrite state let_.pbop_op
         (rewrite_letop ~backend ~state let_ ands body)
   | Pexp_sequence (lhs, rhs) when can_simply_sequence ~state rhs -> Some lhs
+  | Pexp_open (lid, rhs)
+  | Pexp_letopen ({ popen_expr = { pmod_desc = Pmod_ident lid; _ }; _ }, rhs)
+    when Occ.pop state lid ->
+      Some rhs
   | _ -> None
 
 let rewrite_pattern ~backend ~state pat =
@@ -432,16 +436,31 @@ let rewrite_type ~backend ~state typ =
           | _ -> None)
   | _ -> None
 
+(** Remove [open] and [include] items. *)
 let remove_lwt_opens ~state stri =
   match stri.pstr_desc with
   | Pstr_open { popen_expr = { pmod_desc = Pmod_ident lid; _ }; _ }
+  | Pstr_include { pincl_mod = { pmod_desc = Pmod_ident lid; _ }; _ }
     when Occ.pop state lid ->
       false
   | _ -> true
 
+(** Same as [remove_lwt_opens] for signatures. *)
 let remove_lwt_opens_sg ~state sgi =
   match sgi.psig_desc with
-  | Psig_open { popen_expr = lid; _ } when Occ.pop state lid -> false
+  | Psig_open { popen_expr = lid; _ }
+  | Psig_include
+      {
+        pincl_mod =
+          {
+            pmty_desc =
+              Pmty_ident lid | Pmty_typeof { pmod_desc = Pmod_ident lid; _ };
+            _;
+          };
+        _;
+      }
+    when Occ.pop state lid ->
+      false
   | _ -> true
 
 let add_extra_opens ~backend str =
