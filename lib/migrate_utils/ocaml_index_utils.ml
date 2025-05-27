@@ -74,9 +74,13 @@ let uid_map_of_unit ~packages ~units =
     | Module_binding { mb_id = Some ident; _ }
     | Module_type { mtd_id = ident; _ }
     | Class { ci_id_class = ident; _ }
-    | Class_type { ci_id_class = ident; _ } ->
+    | Class_type { ci_id_class = ident; _ }
+    | Label { ld_id = ident; _ } ->
         `Found (unit_name, Ident.name ident)
-    | _ -> `Ignore
+    | Value_binding { vb_pat = { pat_desc = _; _ }; _ }
+    | Module { md_id = None; _ }
+    | Module_binding { mb_id = None; _ } ->
+        `Ignore
   in
   if cmts = [] then
     failwith ("Found no [.cmt] in packages: " ^ String.concat ", " packages);
