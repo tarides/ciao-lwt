@@ -65,21 +65,38 @@ module Occ = struct
         r
     | None -> None
 
+  let pp_occurrences =
+    let is_word = function
+      | 'a' .. 'z' | 'A' .. 'Z' | '_' -> true
+      | _ -> false
+    in
+    let pp_ident ppf = function
+      | "" -> ()
+      | ident when not (is_word ident.[0]) -> Format.fprintf ppf ".(%s)" ident
+      | ident -> Format.fprintf ppf ".%s" ident
+    in
+    let pp_occurrence ppf (loc, (unit, ident)) =
+      Format.fprintf ppf "%s%a (%a)" unit pp_ident ident Loc.pp loc
+    in
+    Format.pp_print_list pp_occurrence
+
   (** Warn about locations that have not been rewritten so far. *)
   let warn_missing_locs state fname =
     let missing = Hashtbl.length state.occ in
-    if missing > 0 then (
-      Format.eprintf "Warning: %s: %d occurrences have not been rewritten.@\n"
-        fname missing;
-      Hashtbl.fold
-        (fun loc (unit_name, ident) acc ->
-          (loc, unit_name ^ "." ^ ident) :: acc)
-        state.occ []
-      |> List.sort compare (* Sort for a reproducible output. *)
-      |> List.iter (fun (loc, ident) ->
-             Format.eprintf "  %s (%a)@\n" ident Loc.pp loc);
-      Format.eprintf "%!")
+    if missing > 0 then
+      let occurs =
+        Hashtbl.fold (fun loc occ acc -> (loc, occ) :: acc) state.occ []
+        |> List.sort compare (* Sort for a reproducible output. *)
+      in
+      Format.eprintf
+        "@[<v 2>Warning: %s: %d occurrences have not been rewritten.@ %a@]@\n"
+        fname missing pp_occurrences occurs
 end
+
+(** Like [Occ.pp_occurrences] but work on occurrences directly out of Merlin. *)
+let pp_occurrences ppf occurs =
+  List.map (fun (occ, lid) -> (Loc.of_location lid.Location.loc, occ)) occurs
+  |> Occ.pp_occurrences ppf
 
 type modify_ast = {
   structure : state -> structure -> structure;
@@ -168,15 +185,9 @@ let migrate ~packages ~units ~modify_ast ~errors ~formatted =
 
 let print_occurrences ~packages ~units =
   let occurs = occurrences ~packages ~units in
-  let pp_occurrence ppf ((unit_name, ident), lid) =
-    Format.fprintf ppf "%s.%s %a" unit_name ident Printast.fmt_location
-      lid.Location.loc
-  in
-  group_occurrences_by_file occurs (fun file occurrences ->
+  group_occurrences_by_file occurs (fun file occurs ->
       Format.printf "@[<v 2>%s: (%d occurrences)@ %a@]@\n" file
-        (List.length occurrences)
-        (Format.pp_print_list pp_occurrence)
-        occurrences)
+        (List.length occurs) pp_occurrences occurs)
 
 let migrate ~packages ~units ~modify_ast =
   let formatted = ref 0 and errors = ref 0 in
