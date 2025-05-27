@@ -436,16 +436,31 @@ let rewrite_type ~backend ~state typ =
           | _ -> None)
   | _ -> None
 
+(** Remove [open] and [include] items. *)
 let remove_lwt_opens ~state stri =
   match stri.pstr_desc with
   | Pstr_open { popen_expr = { pmod_desc = Pmod_ident lid; _ }; _ }
+  | Pstr_include { pincl_mod = { pmod_desc = Pmod_ident lid; _ }; _ }
     when Occ.pop state lid ->
       false
   | _ -> true
 
+(** Same as [remove_lwt_opens] for signatures. *)
 let remove_lwt_opens_sg ~state sgi =
   match sgi.psig_desc with
-  | Psig_open { popen_expr = lid; _ } when Occ.pop state lid -> false
+  | Psig_open { popen_expr = lid; _ }
+  | Psig_include
+      {
+        pincl_mod =
+          {
+            pmty_desc =
+              Pmty_ident lid | Pmty_typeof { pmod_desc = Pmod_ident lid; _ };
+            _;
+          };
+        _;
+      }
+    when Occ.pop state lid ->
+      false
   | _ -> true
 
 let add_extra_opens ~backend str =
