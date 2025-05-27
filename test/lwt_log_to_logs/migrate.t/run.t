@@ -1,6 +1,7 @@
   $ chmod a+w *.ml
   $ dune build @ocaml-index
   $ lwt-log-to-logs --migrate
+  Formatted 1 files
   Warning: foo.ml: 8 occurrences have not been rewritten.
     Lwt_log_core.null (line 51 column 35)
     Lwt_log_core.null (line 56 column 41)
@@ -10,7 +11,6 @@
     Lwt_log_core.close (line 94 column 11)
     Lwt_log_core.add_rule (line 95 column 11)
     Lwt_log_core.close (line 134 column 31)
-  Formatted 1 files
 
   $ cat foo.ml
   let section : Logs.src = Logs.Src.create "test:section"
