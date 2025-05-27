@@ -73,7 +73,8 @@ module Occ = struct
         fname missing;
       Hashtbl.fold
         (fun loc (unit_name, ident) acc ->
-          (loc, unit_name ^ "." ^ ident) :: acc)
+          let ident = if ident = "" then "" else "." ^ ident in
+          (loc, unit_name ^ ident) :: acc)
         state.occ []
       |> List.sort compare (* Sort for a reproducible output. *)
       |> List.iter (fun (loc, ident) ->

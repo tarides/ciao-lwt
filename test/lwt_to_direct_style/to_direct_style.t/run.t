@@ -243,8 +243,8 @@ Make a writable directory tree:
   Warning: bin/main.ml: 1 occurrences have not been rewritten.
     Lwt_main.run (line 22 column 10)
   Warning: lib/test.ml: 7 occurrences have not been rewritten.
-    Lwt. (line 55 column 18)
-    Lwt_fmt. (line 56 column 18)
+    Lwt (line 55 column 18)
+    Lwt_fmt (line 56 column 18)
     Lwt.<?> (line 113 column 11)
     Lwt.choose (line 115 column 9)
     Lwt_list.iteri_p (line 129 column 9)
