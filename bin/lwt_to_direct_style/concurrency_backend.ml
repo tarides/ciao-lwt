@@ -14,6 +14,11 @@ let eio add_comment =
     used_eio_std := true;
     [ "Promise"; i ]
   in
+  let add_comment fmt = Format.kasprintf add_comment fmt in
+  let add_comment_dropped_exp ~label exp =
+    add_comment "Dropped expression (%s): [%s]." label
+      (Ocamlformat_utils.format_expression exp)
+  in
   object
     method both ~left ~right =
       mk_apply_simple (fiber_ident "pair") [ left; right ]
@@ -49,9 +54,9 @@ let eio add_comment =
           Some (fiber_ident "List" @ [ ident ])
       | ident ->
           add_comment
-            ("[" ^ ident
-           ^ "] can't be translated automatically. See \
-              https://ocaml.org/p/eio/latest/doc/Eio/Fiber/List/index.html");
+            "[%s] can't be translated automatically. See \
+             https://ocaml.org/p/eio/latest/doc/Eio/Fiber/List/index.html"
+            ident;
           None
 
     method sleep d = mk_apply_simple [ "Eio_unix"; "sleep" ] [ d ]
@@ -138,4 +143,11 @@ let eio add_comment =
             (Labelled (mk_loc "close_unix"), mk_constr_exp [ "true" ]);
             (Nolabel, fd);
           ])
+
+    method io_read input buffer buf_offset buf_len =
+      add_comment "[%s] should be a [Cstruct.t]."
+        (Ocamlformat_utils.format_expression buffer);
+      add_comment_dropped_exp ~label:"buffer offset" buf_offset;
+      add_comment_dropped_exp ~label:"buffer length" buf_len;
+      mk_apply_simple [ "Eio"; "Flow"; "single_read" ] [ input; buffer ]
   end

@@ -220,10 +220,14 @@ Make a writable directory tree:
     Lwt_mutex.lock (line 136 column 9)
     Lwt_mutex.unlock (line 137 column 9)
     Lwt_mutex.with_lock (line 138 column 9)
-  lib/test_lwt_unix.ml: (3 occurrences)
-    Lwt_io (line 4 column 6)
-    Lwt_io.of_fd (line 4 column 14)
-    Lwt_unix.of_unix_file_descr (line 3 column 6)
+  lib/test_lwt_unix.ml: (7 occurrences)
+    Lwt_io (line 7 column 8)
+    Lwt.return (line 11 column 3)
+    Lwt.let* (line 10 column 3)
+    Lwt.Syntax (line 1 column 6)
+    Lwt_io.of_fd (line 7 column 16)
+    Lwt_io.read_into (line 10 column 19)
+    Lwt_unix.of_unix_file_descr (line 6 column 8)
   lib/test.mli: (17 occurrences)
     Lwt (line 12 column 26)
     Lwt.t (line 1 column 35)
@@ -256,7 +260,7 @@ Make a writable directory tree:
     Lwt.Fail (line 147 column 5)
     Lwt.let* (line 163 column 21)
   Warning: lib/test_lwt_unix.ml: 1 occurrences have not been rewritten.
-    Lwt_io.of_fd (line 4 column 14)
+    Lwt_io.of_fd (line 7 column 16)
   Warning: lib/test.mli: 2 occurrences have not been rewritten.
     Lwt_mutex.t (line 2 column 10)
     Lwt_mutex.t (line 3 column 10)
@@ -613,12 +617,23 @@ Make a writable directory tree:
   module M : sig end
 
   $ cat lib/test_lwt_unix.ml
-  let _ =
-    (fun ?blocking:x1 ?set_flags:x2 ->
-      Eio_unix.Fd.of_unix ~sw ?blocking:x1 ~close_unix:true
-        (Unix
-         (* TODO: lwt-to-direct-style: [sw] must be propagated here. *)
-         (* TODO: lwt-to-direct-style: Labelled argument ?set_flags was dropped. *).(
-           openfile "foo" [ O_RDWR; O_NONBLOCK; O_APPEND ])
-           0o660))
-    |> of_fd ~mode:input
+  let _f fname =
+    let inp =
+      (fun ?blocking:x1 ?set_flags:x2 ->
+        Eio_unix.Fd.of_unix ~sw ?blocking:x1 ~close_unix:true
+          (Unix
+           (* TODO: lwt-to-direct-style: [sw] must be propagated here. *)
+           (* TODO: lwt-to-direct-style: Labelled argument ?set_flags was dropped. *).(
+             openfile fname [ O_RDWR; O_NONBLOCK; O_APPEND ])
+             0o660))
+      |> of_fd ~mode:input
+    in
+    let buf = Bytes.create 1024 in
+    let _n : int =
+      Eio.Flow.single_read
+        (* TODO: lwt-to-direct-style: [buf] should be a [Cstruct.t]. *)
+        (* TODO: lwt-to-direct-style: Dropped expression (buffer offset): [0]. *)
+        (* TODO: lwt-to-direct-style: Dropped expression (buffer length): [1024]. *)
+        inp buf
+    in
+    ()

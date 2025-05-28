@@ -319,6 +319,12 @@ let rewrite_apply ~backend ~state full_ident args =
   | "Lwt_mutex", "with_lock" ->
       take @@ fun t ->
       take @@ fun f -> return (Some (backend#mutex_with_lock t f))
+  | "Lwt_io", "read_into" ->
+      take @@ fun input ->
+      take @@ fun buffer ->
+      take @@ fun buf_off ->
+      take @@ fun buf_len ->
+      return (Some (backend#io_read input buffer buf_off buf_len))
   | _ -> return None
 
 (** Transform a [binding_op] into a [pattern] and an [expression] while
