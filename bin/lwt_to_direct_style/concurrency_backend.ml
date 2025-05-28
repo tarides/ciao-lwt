@@ -120,4 +120,22 @@ let eio add_comment =
       mk_typ_constr ~params:[ param ] (promise_ident "t")
 
     method direct_style_type param = param
+
+    method of_unix_file_descr ?blocking fd =
+      add_comment "[sw] must be propagated here.";
+      let blocking_arg =
+        let lbl = mk_loc "blocking" in
+        match blocking with
+        | Some (expr, `Lbl) -> [ (Labelled lbl, expr) ]
+        | Some (expr, `Opt) -> [ (Optional lbl, expr) ]
+        | None -> []
+      in
+      mk_apply_ident
+        [ "Eio_unix"; "Fd"; "of_unix" ]
+        ([ (Labelled (mk_loc "sw"), mk_exp_ident [ "sw" ]) ]
+        @ blocking_arg
+        @ [
+            (Labelled (mk_loc "close_unix"), mk_constr_exp [ "true" ]);
+            (Nolabel, fd);
+          ])
   end

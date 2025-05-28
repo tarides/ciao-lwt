@@ -267,6 +267,16 @@ let rewrite_apply ~backend ~state full_ident args =
   let transparent ident =
     take_all (fun args -> Some (mk_apply_ident ident args))
   in
+  let ignore_lblarg ?(cmt = "") arg k =
+    take_lblopt arg @@ fun value ->
+    (match value with
+    | Some (_, kind) ->
+        let prefix = match kind with `Lbl -> '~' | `Opt -> '?' in
+        Printf.ksprintf (add_comment state)
+          "Labelled argument %c%s was dropped.%s" prefix arg cmt
+    | None -> ());
+    k
+  in
   unapply args
   @@
   match full_ident with
@@ -290,6 +300,11 @@ let rewrite_apply ~backend ~state full_ident args =
   | "Lwt_unix", "with_timeout" ->
       take @@ fun d ->
       take @@ fun f -> return (Some (backend#with_timeout d f))
+  | "Lwt_unix", "of_unix_file_descr" ->
+      take @@ fun fd ->
+      take_lblopt "blocking" @@ fun blocking ->
+      ignore_lblarg "set_flags"
+      @@ return (Some (backend#of_unix_file_descr ?blocking fd))
   | "Lwt_condition", "create" ->
       take @@ fun _unit -> return (Some (backend#condition_create ()))
   | "Lwt_condition", "wait" ->

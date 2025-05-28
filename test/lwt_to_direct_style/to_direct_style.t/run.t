@@ -220,6 +220,10 @@ Make a writable directory tree:
     Lwt_mutex.lock (line 136 column 9)
     Lwt_mutex.unlock (line 137 column 9)
     Lwt_mutex.with_lock (line 138 column 9)
+  lib/test_lwt_unix.ml: (3 occurrences)
+    Lwt_io (line 4 column 6)
+    Lwt_io.of_fd (line 4 column 14)
+    Lwt_unix.of_unix_file_descr (line 3 column 6)
   lib/test.mli: (17 occurrences)
     Lwt (line 12 column 26)
     Lwt.t (line 1 column 35)
@@ -240,7 +244,7 @@ Make a writable directory tree:
     Lwt_mutex.t (line 3 column 10)
 
   $ lwt-to-direct-style --migrate
-  Formatted 3 files
+  Formatted 4 files
   Warning: bin/main.ml: 1 occurrences have not been rewritten.
     Lwt_main.run (line 22 column 10)
   Warning: lib/test.ml: 7 occurrences have not been rewritten.
@@ -251,6 +255,8 @@ Make a writable directory tree:
     Lwt_list.iteri_p (line 129 column 9)
     Lwt.Fail (line 147 column 5)
     Lwt.let* (line 163 column 21)
+  Warning: lib/test_lwt_unix.ml: 1 occurrences have not been rewritten.
+    Lwt_io.of_fd (line 4 column 14)
   Warning: lib/test.mli: 2 occurrences have not been rewritten.
     Lwt_mutex.t (line 2 column 10)
     Lwt_mutex.t (line 3 column 10)
@@ -605,3 +611,14 @@ Make a writable directory tree:
   val test : unit -> unit
   
   module M : sig end
+
+  $ cat lib/test_lwt_unix.ml
+  let _ =
+    (fun ?blocking:x1 ?set_flags:x2 ->
+      Eio_unix.Fd.of_unix ~sw ?blocking:x1 ~close_unix:true
+        (Unix
+         (* TODO: lwt-to-direct-style: [sw] must be propagated here. *)
+         (* TODO: lwt-to-direct-style: Labelled argument ?set_flags was dropped. *).(
+           openfile "foo" [ O_RDWR; O_NONBLOCK; O_APPEND ])
+           0o660))
+    |> of_fd ~mode:input
