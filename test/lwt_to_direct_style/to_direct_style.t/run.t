@@ -223,7 +223,7 @@ Make a writable directory tree:
     Lwt_mutex.lock (line 136 column 9)
     Lwt_mutex.unlock (line 137 column 9)
     Lwt_mutex.with_lock (line 138 column 9)
-  lib/test_lwt_unix.ml: (8 occurrences)
+  lib/test_lwt_unix.ml: (13 occurrences)
     Lwt_io (line 7 column 8)
     Lwt.return (line 11 column 3)
     Lwt.let* (line 10 column 3)
@@ -232,6 +232,11 @@ Make a writable directory tree:
     Lwt_io.read_into (line 10 column 19)
     Lwt_unix.Timeout (line 13 column 9)
     Lwt_unix.of_unix_file_descr (line 6 column 8)
+    Lwt_unix.sockaddr (line 14 column 9)
+    Lwt_unix.ADDR_UNIX (line 14 column 29)
+    Lwt_unix.ADDR_UNIX (line 16 column 6)
+    Lwt_unix.ADDR_INET (line 16 column 29)
+    Lwt_unix.ADDR_INET (line 17 column 3)
   lib/test.mli: (17 occurrences)
     Lwt (line 12 column 26)
     Lwt.t (line 1 column 35)
@@ -652,3 +657,7 @@ Make a writable directory tree:
     ()
   
   let _ = Eio.Time.Timeout
+  let _ : Unix.sockaddr = Unix.ADDR_UNIX ""
+  
+  let (Unix.ADDR_UNIX _ | Unix.ADDR_INET _) =
+    Unix.ADDR_INET (Unix.inet_addr_any, 0)

@@ -404,6 +404,10 @@ let rewrite_constructor_ident ~backend ~state ~loc =
   let return_none = ((fun _ -> None), fun _ -> None) in
   function
   | "Lwt_unix", "Timeout" -> same_arg backend#timeout_exn
+  (* [Lwt_unix] contains a hundred re-exported variant type from the [Unix]
+     module. The all-uppercase constructors are the re-exported ones. *)
+  | "Lwt_unix", cname when String.uppercase_ascii cname = cname ->
+      same_arg (mk_longident [ "Unix"; cname ])
   | "Lwt", "Return" -> same_arg mk_some_ident
   | "Lwt", "Sleep" -> same_arg mk_none_ident
   | "Lwt", "Fail" ->
@@ -471,8 +475,20 @@ let rewrite_type ~backend ~state typ =
           | ("Lwt", "t"), [ param ] -> Some (backend#promise_type param)
           | ("Lwt_condition", "t"), [ param ] ->
               Some (backend#condition_type param)
-          | ("Lwt_unix", "sockaddr"), [] ->
-              Some (mk_typ_constr [ "Unix"; "sockaddr" ])
+          (* [Lwt_unix] contains a lot of type aliases *)
+          | ( ( "Lwt_unix",
+                (( "inet_addr" | "socket_domain" | "socket_type" | "sockaddr"
+                 | "shutdown_command" | "msg_flag" | "socket_bool_option"
+                 | "socket_int_option" | "socket_optint_option"
+                 | "socket_float_option" | "addr_info" | "getaddrinfo_option"
+                 | "name_info" | "getnameinfo_option" | "terminal_io"
+                 | "setattr_when" | "flush_queue" | "flow_action"
+                 | "process_status" | "wait_flag" | "file_perm" | "open_flag"
+                 | "seek_command" | "file_kind" | "stats" | "access_permission"
+                 | "dir_handle" | "lock_command" | "passwd_entry"
+                 | "group_entry" ) as tname) ),
+              params ) ->
+              Some (mk_typ_constr ~params [ "Unix"; tname ])
           | _ -> None)
   | _ -> None
 
