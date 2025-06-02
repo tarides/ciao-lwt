@@ -305,6 +305,7 @@ let rewrite_apply ~backend ~state full_ident args =
       take_lblopt "blocking" @@ fun blocking ->
       ignore_lblarg "set_flags"
       @@ return (Some (backend#of_unix_file_descr ?blocking fd))
+  | "Lwt_unix", "close" -> take @@ fun fd -> return (Some (backend#fd_close fd))
   | "Lwt_condition", "create" ->
       take @@ fun _unit -> return (Some (backend#condition_create ()))
   | "Lwt_condition", "wait" ->

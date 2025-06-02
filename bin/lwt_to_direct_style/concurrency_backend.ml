@@ -150,4 +150,6 @@ let eio add_comment =
       add_comment_dropped_exp ~label:"buffer offset" buf_offset;
       add_comment_dropped_exp ~label:"buffer length" buf_len;
       mk_apply_simple [ "Eio"; "Flow"; "single_read" ] [ input; buffer ]
+
+    method fd_close fd = mk_apply_simple [ "Eio_unix"; "Fd" ] [ fd ]
   end
