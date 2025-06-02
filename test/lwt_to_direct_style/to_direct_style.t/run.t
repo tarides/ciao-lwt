@@ -50,7 +50,7 @@ Make a writable directory tree:
     Lwt_unix.sleep (line 31 column 9)
     Lwt_unix.Timeout (line 37 column 15)
     Lwt_unix.with_timeout (line 35 column 16)
-  lib/test.ml: (169 occurrences)
+  lib/test.ml: (172 occurrences)
     Lwt (line 36 column 12)
     Lwt (line 55 column 18)
     Lwt (line 64 column 13)
@@ -134,8 +134,11 @@ Make a writable directory tree:
     Lwt.pick (line 95 column 12)
     Lwt.pick (line 96 column 12)
     Lwt.Return (line 146 column 5)
+    Lwt.Return (line 177 column 9)
     Lwt.Fail (line 147 column 5)
+    Lwt.Fail (line 179 column 9)
     Lwt.Sleep (line 148 column 5)
+    Lwt.Sleep (line 178 column 9)
     Lwt.state (line 145 column 9)
     Lwt.pause (line 114 column 9)
     Lwt.(>>=) (line 32 column 3)
@@ -220,13 +223,14 @@ Make a writable directory tree:
     Lwt_mutex.lock (line 136 column 9)
     Lwt_mutex.unlock (line 137 column 9)
     Lwt_mutex.with_lock (line 138 column 9)
-  lib/test_lwt_unix.ml: (7 occurrences)
+  lib/test_lwt_unix.ml: (8 occurrences)
     Lwt_io (line 7 column 8)
     Lwt.return (line 11 column 3)
     Lwt.let* (line 10 column 3)
     Lwt.Syntax (line 1 column 6)
     Lwt_io.of_fd (line 7 column 16)
     Lwt_io.read_into (line 10 column 19)
+    Lwt_unix.Timeout (line 13 column 9)
     Lwt_unix.of_unix_file_descr (line 6 column 8)
   lib/test.mli: (17 occurrences)
     Lwt (line 12 column 26)
@@ -251,7 +255,7 @@ Make a writable directory tree:
   Formatted 4 files
   Warning: bin/main.ml: 1 occurrences have not been rewritten.
     Lwt_main.run (line 22 column 10)
-  Warning: lib/test.ml: 7 occurrences have not been rewritten.
+  Warning: lib/test.ml: 8 occurrences have not been rewritten.
     Lwt (line 55 column 18)
     Lwt_fmt (line 56 column 18)
     Lwt.(<?>) (line 113 column 11)
@@ -259,6 +263,7 @@ Make a writable directory tree:
     Lwt_list.iteri_p (line 129 column 9)
     Lwt.Fail (line 147 column 5)
     Lwt.let* (line 163 column 21)
+    Lwt.Fail (line 179 column 9)
   Warning: lib/test_lwt_unix.ml: 1 occurrences have not been rewritten.
     Lwt_io.of_fd (line 7 column 16)
   Warning: lib/test.mli: 2 occurrences have not been rewritten.
@@ -596,6 +601,14 @@ Make a writable directory tree:
     ()
   
   module M = struct end
+  
+  let _ = Some ()
+  let _ = None
+  
+  let _ =
+    Lwt.Fail
+      (* TODO: lwt-to-direct-style: [Lwt.Fail] shouldn't be used *)
+      Not_found
 
   $ cat lib/test.mli
   open Eio.Std
@@ -637,3 +650,5 @@ Make a writable directory tree:
         inp buf
     in
     ()
+  
+  let _ = Eio.Time.Timeout

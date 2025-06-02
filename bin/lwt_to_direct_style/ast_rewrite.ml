@@ -391,6 +391,26 @@ let rewrite_letop ~backend ~state let_ ands body = function
           Some (mk_let pat exp body))
   | _ -> None
 
+(** Rewrite constructors appearing in patterns and expressions. Returns two
+    functions for constructing the pattern and the expression for a given
+    identifier. *)
+let rewrite_constructor_ident ~backend ~state ~loc =
+  let same_arg ident =
+    (* Keep the argument present in the source. *)
+    let pat arg = Some (Pat.construct ident arg)
+    and exp arg = Some (Exp.construct ident arg) in
+    (pat, exp)
+  in
+  let return_none = ((fun _ -> None), fun _ -> None) in
+  function
+  | "Lwt_unix", "Timeout" -> same_arg backend#timeout_exn
+  | "Lwt", "Return" -> same_arg mk_some_ident
+  | "Lwt", "Sleep" -> same_arg mk_none_ident
+  | "Lwt", "Fail" ->
+      add_comment state ~loc "[Lwt.Fail] shouldn't be used";
+      return_none
+  | _ -> return_none
+
 let rewrite_expression ~backend ~state exp =
   (* Flatten pipelines before applying rewrites. *)
   match (flatten_apply exp).pexp_desc with
@@ -416,20 +436,16 @@ let rewrite_expression ~backend ~state exp =
   | Pexp_letopen ({ popen_expr = { pmod_desc = Pmod_ident lid; _ }; _ }, rhs)
     when Occ.pop state lid ->
       Some rhs
+  | Pexp_construct (lid, arg) ->
+      Occ.may_rewrite state lid (fun ident ->
+          snd (rewrite_constructor_ident ~backend ~state ~loc:lid.loc ident) arg)
   | _ -> None
 
 let rewrite_pattern ~backend ~state pat =
   match pat.ppat_desc with
   | Ppat_construct (lid, arg) ->
       Occ.may_rewrite state lid (fun ident ->
-          match (ident, arg) with
-          | ("Lwt_unix", "Timeout"), None -> Some backend#timeout_exn
-          | ("Lwt", "Return"), arg -> Some (Pat.construct mk_some_ident arg)
-          | ("Lwt", "Sleep"), arg -> Some (Pat.construct mk_none_ident arg)
-          | ("Lwt", "Fail"), Some _ ->
-              add_comment state ~loc:lid.loc "[Lwt.Fail] shouldn't be used";
-              None
-          | _ -> None)
+          fst (rewrite_constructor_ident ~backend ~state ~loc:lid.loc ident) arg)
   | _ -> None
 
 (** The return type of a function is transformed into the direct-style type
@@ -455,6 +471,8 @@ let rewrite_type ~backend ~state typ =
           | ("Lwt", "t"), [ param ] -> Some (backend#promise_type param)
           | ("Lwt_condition", "t"), [ param ] ->
               Some (backend#condition_type param)
+          | ("Lwt_unix", "sockaddr"), [] ->
+              Some (mk_typ_constr [ "Unix"; "sockaddr" ])
           | _ -> None)
   | _ -> None
 

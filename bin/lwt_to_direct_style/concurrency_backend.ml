@@ -66,8 +66,7 @@ let eio add_comment =
       let clock = Exp.send (mk_exp_ident [ "env" ]) (mk_loc "mono_clock") in
       mk_apply_simple [ "Eio"; "Time"; "with_timeout_exn" ] [ clock; d; f ]
 
-    method timeout_exn =
-      Pat.construct (mk_longident [ "Eio"; "Time"; "Timeout" ]) None
+    method timeout_exn = mk_longident [ "Eio"; "Time"; "Timeout" ]
 
     method condition_create () =
       mk_apply_simple [ "Eio"; "Condition"; "create" ] [ mk_unit_val ]

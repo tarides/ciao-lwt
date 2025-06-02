@@ -9,3 +9,5 @@ let _f fname =
   let buf = Bytes.create 1024 in
   let* _n : int = Lwt_io.read_into inp buf 0 1024 in
   Lwt.return ()
+
+let _ = Lwt_unix.Timeout
