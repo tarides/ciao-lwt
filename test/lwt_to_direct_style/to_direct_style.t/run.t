@@ -223,7 +223,7 @@ Make a writable directory tree:
     Lwt_mutex.lock (line 136 column 9)
     Lwt_mutex.unlock (line 137 column 9)
     Lwt_mutex.with_lock (line 138 column 9)
-  lib/test_lwt_unix.ml: (13 occurrences)
+  lib/test_lwt_unix.ml: (14 occurrences)
     Lwt_io (line 7 column 8)
     Lwt.return (line 11 column 3)
     Lwt.let* (line 10 column 3)
@@ -237,6 +237,7 @@ Make a writable directory tree:
     Lwt_unix.ADDR_UNIX (line 16 column 6)
     Lwt_unix.ADDR_INET (line 16 column 29)
     Lwt_unix.ADDR_INET (line 17 column 3)
+    Lwt_unix.getaddrinfo (line 19 column 9)
   lib/test.mli: (17 occurrences)
     Lwt (line 12 column 26)
     Lwt.t (line 1 column 35)
@@ -661,3 +662,8 @@ Make a writable directory tree:
   
   let (Unix.ADDR_UNIX _ | Unix.ADDR_INET _) =
     Unix.ADDR_INET (Unix.inet_addr_any, 0)
+  
+  let _
+      (* TODO: lwt-to-direct-style: This call to [Unix.getaddrinfo] was [Lwt_unix.getaddrinfo] before the rewrite. *)
+      =
+    Unix.getaddrinfo

@@ -306,6 +306,13 @@ let rewrite_apply ~backend ~state full_ident args =
       ignore_lblarg "set_flags"
       @@ return (Some (backend#of_unix_file_descr ?blocking fd))
   | "Lwt_unix", "close" -> take @@ fun fd -> return (Some (backend#fd_close fd))
+  (* [Lwt_unix] contains functions exactly equivalent to functions of the same
+     name in [Unix]. *)
+  | "Lwt_unix", ("getaddrinfo" as fname) ->
+      Format.kasprintf (add_comment state)
+        "This call to [Unix.%s] was [Lwt_unix.%s] before the rewrite." fname
+        fname;
+      transparent [ "Unix"; fname ]
   | "Lwt_condition", "create" ->
       take @@ fun _unit -> return (Some (backend#condition_create ()))
   | "Lwt_condition", "wait" ->
