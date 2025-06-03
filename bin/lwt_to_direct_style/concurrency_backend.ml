@@ -151,4 +151,12 @@ let eio add_comment =
       mk_apply_simple [ "Eio"; "Flow"; "single_read" ] [ input; buffer ]
 
     method fd_close fd = mk_apply_simple [ "Eio_unix"; "Fd" ] [ fd ]
+
+    method main_run promise =
+      add_comment
+        "[Eio_main.run] argument used to be a [Lwt] promise and is now a \
+         [fun]. Make sure no asynchronous or IO calls are done outside of this \
+         [fun].";
+      mk_apply_simple [ "Eio_main"; "run" ]
+        [ mk_fun ~arg_name:"env" (fun _env -> promise) ]
   end

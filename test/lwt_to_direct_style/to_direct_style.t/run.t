@@ -259,8 +259,6 @@ Make a writable directory tree:
 
   $ lwt-to-direct-style --migrate
   Formatted 4 files
-  Warning: bin/main.ml: 1 occurrences have not been rewritten.
-    Lwt_main.run (line 22 column 10)
   Warning: lib/test.ml: 8 occurrences have not been rewritten.
     Lwt (line 55 column 18)
     Lwt_fmt (line 56 column 18)
@@ -290,7 +288,11 @@ Make a writable directory tree:
     let main () = match None with v -> v in
     match main () with Some _ -> () | None -> () | exception _ -> ()
   
-  let () = Lwt_main.run (main ())
+  let () =
+    Eio_main.run (fun env ->
+        (* TODO: lwt-to-direct-style: [Eio_main.run] argument used to be a [Lwt] promise and is now a [fun]. Make sure no asynchronous or IO calls are done outside of this [fun]. *)
+        main ())
+  
   let _ = None
   let _ = []
   let _ = true

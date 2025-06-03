@@ -333,6 +333,8 @@ let rewrite_apply ~backend ~state full_ident args =
       take @@ fun buf_off ->
       take @@ fun buf_len ->
       return (Some (backend#io_read input buffer buf_off buf_len))
+  | "Lwt_main", "run" ->
+      take @@ fun promise -> return (Some (backend#main_run promise))
   | _ -> return None
 
 (** Transform a [binding_op] into a [pattern] and an [expression] while
