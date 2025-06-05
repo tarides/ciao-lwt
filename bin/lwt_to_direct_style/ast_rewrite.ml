@@ -139,6 +139,27 @@ let rewrite_lwt_condition_wait ~backend ~state mutex_opt cond =
   in
   backend#condition_wait mutex cond
 
+(** Decode constructors of [Lwt_io.mode]. *)
+let lwt_io_mode_of_ast ~state mode =
+  match mode.pexp_desc with
+  | Pexp_ident lid | Pexp_construct (lid, None) ->
+      Occ.may_rewrite state lid (function
+        | "Lwt_io", ("input" | "Input") -> Some `Input
+        | "Lwt_io", ("output" | "Output") -> Some `Output
+        | _ -> None)
+  | _ -> None
+
+let lwt_io_of_fd ~backend ~state ~mode fd =
+  match lwt_io_mode_of_ast ~state mode with
+  | Some `Input -> Some (backend#input_io_of_fd fd)
+  | Some `Output -> Some (backend#output_io_of_fd fd)
+  | None ->
+      add_comment state
+        "Couldn't translate this call to [Lwt_io.of_fd] because the [~mode] \
+         argument couldn't be decoded. Directly use [Lwt_io.input] or \
+         [Lwt_io.output].";
+      None
+
 let mk_cstr c = Some (mk_constr_exp [ c ])
 
 (* Rewrite calls to functions from the [Lwt] module. See [rewrite_apply] for
@@ -333,6 +354,12 @@ let rewrite_apply ~backend ~state full_ident args =
       take @@ fun buf_off ->
       take @@ fun buf_len ->
       return (Some (backend#io_read input buffer buf_off buf_len))
+  | "Lwt_io", "of_fd" ->
+      ignore_lblarg "buffer"
+      @@ ignore_lblarg ~cmt:"Will behave as if it was [true]." "close"
+      @@ take_lbl "mode"
+      @@ fun mode ->
+      take @@ fun fd -> return (lwt_io_of_fd ~backend ~state ~mode fd)
   | "Lwt_main", "run" ->
       take @@ fun promise -> return (Some (backend#main_run promise))
   | _ -> return None

@@ -53,6 +53,18 @@ let mk_lblopt s = Optional (mk_loc s)
 let mk_pat_some arg = mk_constr_pat ~arg [ "Some" ]
 let mk_pat_none = mk_constr_pat [ "None" ]
 
+let mk_row_field ?(loc = !default_loc) ?(attrs = []) desc =
+  { Parsetree.prf_desc = desc; prf_loc = loc; prf_attributes = attrs }
+
+let mk_poly_variant ?(open_ = false) ?labels ?(inherit_ = []) vars =
+  let mk_rtag (var, args) =
+    mk_row_field (Rtag (mk_loc (mk_loc var), List.is_empty args, args))
+  in
+  let mk_inherit t = mk_row_field (Rinherit t) in
+  let flag = if open_ then Open else Closed in
+  let constrs = List.map mk_rtag vars @ List.map mk_inherit inherit_ in
+  Typ.variant constrs flag labels
+
 (* Exp *)
 
 let mk_const_string s = Exp.constant (Const.string s)

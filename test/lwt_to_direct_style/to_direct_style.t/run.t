@@ -223,12 +223,19 @@ Make a writable directory tree:
     Lwt_mutex.lock (line 136 column 9)
     Lwt_mutex.unlock (line 137 column 9)
     Lwt_mutex.with_lock (line 138 column 9)
-  lib/test_lwt_unix.ml: (14 occurrences)
+  lib/test_lwt_unix.ml: (21 occurrences)
     Lwt_io (line 7 column 8)
     Lwt.return (line 11 column 3)
     Lwt.let* (line 10 column 3)
     Lwt.Syntax (line 1 column 6)
+    Lwt_io.Input (line 22 column 32)
+    Lwt_io.Output (line 23 column 32)
+    Lwt_io.input (line 7 column 28)
+    Lwt_io.output (line 21 column 32)
     Lwt_io.of_fd (line 7 column 16)
+    Lwt_io.of_fd (line 21 column 13)
+    Lwt_io.of_fd (line 22 column 13)
+    Lwt_io.of_fd (line 23 column 13)
     Lwt_io.read_into (line 10 column 19)
     Lwt_unix.Timeout (line 13 column 9)
     Lwt_unix.of_unix_file_descr (line 6 column 8)
@@ -268,8 +275,6 @@ Make a writable directory tree:
     Lwt.Fail (line 147 column 5)
     Lwt.let* (line 163 column 21)
     Lwt.Fail (line 179 column 9)
-  Warning: lib/test_lwt_unix.ml: 1 occurrences have not been rewritten.
-    Lwt_io.of_fd (line 7 column 16)
   Warning: lib/test.mli: 2 occurrences have not been rewritten.
     Lwt_mutex.t (line 2 column 10)
     Lwt_mutex.t (line 3 column 10)
@@ -647,7 +652,8 @@ Make a writable directory tree:
            (* TODO: lwt-to-direct-style: Labelled argument ?set_flags was dropped. *).(
              openfile fname [ O_RDWR; O_NONBLOCK; O_APPEND ])
              0o660))
-      |> of_fd ~mode:input
+      |> fun x1 ->
+      (Eio_unix.Net.import_socket_stream x1 : [ `R | `Flow | `Close ] Std.r)
     in
     let buf = Bytes.create 1024 in
     let _n : int =
@@ -669,3 +675,12 @@ Make a writable directory tree:
       (* TODO: lwt-to-direct-style: This call to [Unix.getaddrinfo] was [Lwt_unix.getaddrinfo] before the rewrite. *)
       =
     Unix.getaddrinfo
+  
+  let _f fd =
+    (Eio_unix.Net.import_socket_stream fd : [ `W | `Flow | `Close ] Std.r)
+  
+  let _f fd =
+    (Eio_unix.Net.import_socket_stream fd : [ `R | `Flow | `Close ] Std.r)
+  
+  let _f fd =
+    (Eio_unix.Net.import_socket_stream fd : [ `W | `Flow | `Close ] Std.r)

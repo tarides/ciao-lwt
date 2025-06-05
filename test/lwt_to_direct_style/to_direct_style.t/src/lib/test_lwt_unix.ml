@@ -17,3 +17,7 @@ let (Lwt_unix.ADDR_UNIX _ | ADDR_INET _) =
   Lwt_unix.ADDR_INET (Unix.inet_addr_any, 0)
 
 let _ = Lwt_unix.getaddrinfo
+
+let _f fd = Lwt_io.of_fd ~mode:Lwt_io.output fd
+let _f fd = Lwt_io.of_fd ~mode:Lwt_io.Input fd
+let _f fd = Lwt_io.of_fd ~mode:Lwt_io.Output fd

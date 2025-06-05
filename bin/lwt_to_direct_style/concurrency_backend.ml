@@ -159,4 +159,20 @@ let eio add_comment =
          [fun].";
       mk_apply_simple [ "Eio_main"; "run" ]
         [ mk_fun ~arg_name:"env" (fun _env -> promise) ]
+
+    method input_io_of_fd fd =
+      Exp.constraint_
+        (mk_apply_simple [ "Eio_unix"; "Net"; "import_socket_stream" ] [ fd ])
+        (mk_typ_constr
+           ~params:
+             [ mk_poly_variant [ ("R", []); ("Flow", []); ("Close", []) ] ]
+           [ "Std"; "r" ])
+
+    method output_io_of_fd fd =
+      Exp.constraint_
+        (mk_apply_simple [ "Eio_unix"; "Net"; "import_socket_stream" ] [ fd ])
+        (mk_typ_constr
+           ~params:
+             [ mk_poly_variant [ ("W", []); ("Flow", []); ("Close", []) ] ]
+           [ "Std"; "r" ])
   end
