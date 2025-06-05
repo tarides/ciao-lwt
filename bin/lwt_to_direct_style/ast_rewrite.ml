@@ -360,6 +360,9 @@ let rewrite_apply ~backend ~state full_ident args =
       @@ take_lbl "mode"
       @@ fun mode ->
       take @@ fun fd -> return (lwt_io_of_fd ~backend ~state ~mode fd)
+  | "Lwt_io", "write" ->
+      take @@ fun chan ->
+      take @@ fun str -> return (Some (backend#io_write_str chan str))
   | "Lwt_main", "run" ->
       take @@ fun promise -> return (Some (backend#main_run promise))
   | _ -> return None

@@ -223,7 +223,7 @@ Make a writable directory tree:
     Lwt_mutex.lock (line 136 column 9)
     Lwt_mutex.unlock (line 137 column 9)
     Lwt_mutex.with_lock (line 138 column 9)
-  lib/test_lwt_unix.ml: (21 occurrences)
+  lib/test_lwt_unix.ml: (22 occurrences)
     Lwt_io (line 7 column 8)
     Lwt.return (line 11 column 3)
     Lwt.let* (line 10 column 3)
@@ -237,6 +237,7 @@ Make a writable directory tree:
     Lwt_io.of_fd (line 22 column 13)
     Lwt_io.of_fd (line 23 column 13)
     Lwt_io.read_into (line 10 column 19)
+    Lwt_io.write (line 24 column 19)
     Lwt_unix.Timeout (line 13 column 9)
     Lwt_unix.of_unix_file_descr (line 6 column 8)
     Lwt_unix.sockaddr (line 14 column 9)
@@ -677,10 +678,20 @@ Make a writable directory tree:
     Unix.getaddrinfo
   
   let _f fd =
-    (Eio_unix.Net.import_socket_stream fd : [ `W | `Flow | `Close ] Std.r)
+    (Eio_unix.Net.import_socket_stream
+       (* TODO: lwt-to-direct-style: This creates a closeable [Flow.sink] resource but write operations are rewritten to calls to [Buf_write].
+          You might want to use [Buf_write.with_flow sink (fun buf_write -> ...)]. *)
+       fd
+      : [ `W | `Flow | `Close ] Std.r)
   
   let _f fd =
     (Eio_unix.Net.import_socket_stream fd : [ `R | `Flow | `Close ] Std.r)
   
   let _f fd =
-    (Eio_unix.Net.import_socket_stream fd : [ `W | `Flow | `Close ] Std.r)
+    (Eio_unix.Net.import_socket_stream
+       (* TODO: lwt-to-direct-style: This creates a closeable [Flow.sink] resource but write operations are rewritten to calls to [Buf_write].
+          You might want to use [Buf_write.with_flow sink (fun buf_write -> ...)]. *)
+       fd
+      : [ `W | `Flow | `Close ] Std.r)
+  
+  let _f out_chan = Eio.Buf_write.string out_chan "str"
