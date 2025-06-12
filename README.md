@@ -13,6 +13,8 @@ The tools in the collection are:
 
 - [lwt-log-to-logs](#migrate-from-Lwt_log-to-Logs): Migrate from `Lwt_log` to `Logs`.
 
+- [lwt-to-direct-style](#migrate-from-Lwt-to-direct-style-concurrency): Migrate from `Lwt` to direct-style concurrency.
+
 ## Remove usages of `lwt_ppx`
 
 Usage:
@@ -89,7 +91,7 @@ Usage:
 $ lwt-lint .
 ```
 
-Ignoring a Lwt thread makes it implicitly fork in the background, which requires an explicit call with other concurrency libraries.
+To fix the warnings, add type annotations on `let _` and `ignore` expressions and wrap implicit forks with `Lwt.async (fun () -> ...)`.
 
 ## Migrate from `Lwt_log` to `Logs`
 
@@ -102,9 +104,8 @@ $ dune fmt # Remove formatting changes created by the tool
 ```
 
 This will rewrite files containing occurrences of `Lwt_log` and `Lwt_log_js`.
-It must be run from the directory containing Dune's `_build`.
-The migration is done on the AST level but uses Merlin's indexes to type-safely
-detect what to rewrite.
+It must be run from the directory containing Dune's `_build`. This works like
+`lwt-to-direct-style`.
 
 An example of use can be found here:
 https://github.com/ocsigen/ocsigenserver/pull/256
@@ -145,3 +146,160 @@ https://github.com/ocsigen/ocsigenserver/pull/256
 
 - There is no equivalent to `Lwt_log.close`. Closing must be handled in the
   application code, if necessary.
+
+## Migrate from `Lwt` to direct-style concurrency
+
+Usage:
+```
+$ dune fmt # Make sure the project is formatted to avoid unrelated diffs
+$ dune build @ocaml-index # Build the index (required)
+$ lwt-to-direct-style --migrate .
+$ dune fmt # Remove formatting changes created by the tool
+```
+
+This will rewrite any files containing occurrences of `Lwt` or other lwt
+modules. It must be run from the directory containing Dune's `_build`.
+
+Usages of `Lwt` are rewritten to use `Eio` instead. The tool can be adapted to
+support other concurrency libraries, see
+[`Concurrency_backend`](bin/lwt_to_direct_style/concurrency_backend.ml).
+
+This works on both the syntax and type levels:
+- OCamlformat is used to parse and print the code. Transformations are done on the AST.
+  See [`Ocamlformat_utils`](lib/ocamlformat_utils/ocamlformat_utils.mli)
+- Merlin is used to detect occurrences of the indentifiers that we want to rewrite using indexes.
+  See [`Migrate_utils`](lib/migrate_utils/migrate_utils.mli)
+
+### Transformation to Direct-style
+
+Translating code from Lwt to direct-style means transforming binds
+(`Lwt.bind`, `let*`, etc.) into simple `let` and removing uses of
+`Lwt.return`. Concurrency is assured by libraries like Eio, which no longer
+require the bind and return operations.
+
+This code:
+```ocaml
+let _ =
+  let* x = f 1 in
+  let+ y = f 2 in
+  Lwt.bind (f 3) (fun z ->
+    Lwt.return (x + y + z))
+```
+is changed to:
+```ocaml
+let _ =
+  let x = f 1 in
+  let y = f 2 in
+  let z = f 3 in
+  x + y + z
+```
+
+Other expressions are also simplified, like `Lwt.catch` and `Lwt.fail`,
+`Lwt_list.iter_s`, binding operators, and more.
+
+### Concurrency
+
+Concurrency must now be created by defining explicit fork points (using
+`Eio.Fiber`) but code written for Lwt doesn't define them.
+With Lwt, forks can happen everywhere and every `_ Lwt.t` value is a potential
+promise.
+
+This is the part of the process that requires the most manual intervention to
+make the transition successful.
+
+#### Forks
+
+For example, this is a fork:
+```ocaml
+let _ =
+  let a = operation_1 () in
+  let* b = operation_2 () in
+  let* a = a in
+  Lwt.return (a + b)
+```
+`operation_1 ()` and `operation_2 ()` run concurrently but if we naively remove
+binds and returns we generate code where the two operations run sequentially:
+```ocaml
+let _ =
+  let a = operation_1 () in
+  let b = operation_2 () in
+  let a = a in
+  a + b
+```
+
+The correct transformation is:
+```ocaml
+let _ =
+  let a, b = Eio.Fiber.pair operation_1 operation_2 in
+  a + b
+```
+Unfortunately, the tool is not able to generate the correct code in this case.
+
+Explicit forks are handled correctly, like `Lwt.pick`, `Lwt.both` and `Lwt.async`.
+
+#### Promises
+
+Every `_ Lwt.t` value is a promise but transforming all of them to a
+`Eio.Promise.t` would be extremely impractical and against the goal of doing
+direct-style concurrency.
+Instead, only `_ Lwt.t` values that are not directly `bind` to are considered
+promises. This includes `_ Lwt.t` values that are part of a bigger value (eg.
+in a tuple, record or hashtbl).
+
+For example, this is a promise:
+```ocaml
+type t = { p : int Lwt.t }
+let x = { p = operation_1 () }
+```
+The tool is not able to generate the right code:
+```ocaml
+open Eio.Std
+type t = { p : int Promise.t }
+let x = { p = operation_1 () }
+```
+You'll have to rely on the types to catch the missing fork. The correct code is:
+```ocaml
+open Eio.Std
+type t = { p : (int, exn) result Promise.t }
+let x = { p = Fiber.fork_promise ~sw (fun () -> operation_1 ()) }
+```
+
+This can be harder to debug when combined with implicit forks. For example, the
+tool will completely change the meaning of the function `f` without modifying
+its code:
+```ocaml
+(* before: start a concurrent thread and return a [int Lwt.t option]. *)
+let f () = Some (operation_1 ())
+(* after: wait for the operation to complete and return a [int option]. *)
+let f () = Some (operation_1 ())
+```
+
+#### Other caveats
+
+- Arguments to `Lwt.pick` and `Lwt.both` must now be suspended in a
+  `(fun () -> ...)` expression, which was not needed before.
+  Code like this:
+  ```ocaml
+  let _ =
+    let thread_1 = ... in
+    let thread_2 = Lwt.bind thread_1 (fun _ -> ...) in
+    let thread_3 = ... in
+    Lwt.both
+  ```
+  is transformed to:
+  ```ocaml
+  let _ =
+    let thread_1 = Format.printf "1" in
+    let thread_2 =
+      let _ = thread_1 in
+      Format.printf "2"
+    in
+    let thread_3 = Format.printf "3" in
+    Fiber.pair
+      (fun () ->
+        thread_2
+        (* TODO: lwt-to-direct-style: This computation might not be suspended correctly. *))
+      (fun () ->
+        thread_3
+        (* TODO: lwt-to-direct-style: This computation might not be suspended correctly. *))
+  ```
