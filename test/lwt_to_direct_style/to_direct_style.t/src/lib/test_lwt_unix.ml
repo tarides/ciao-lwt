@@ -22,3 +22,5 @@ let _f fd = Lwt_io.of_fd ~mode:Lwt_io.output fd
 let _f fd = Lwt_io.of_fd ~mode:Lwt_io.Input fd
 let _f fd = Lwt_io.of_fd ~mode:Lwt_io.Output fd
 let _f out_chan = Lwt_io.write out_chan "str"
+
+let _ : Lwt_io.output_channel = Lwt_io.stdout

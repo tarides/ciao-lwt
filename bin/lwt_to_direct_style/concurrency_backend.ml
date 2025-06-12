@@ -183,4 +183,6 @@ let eio add_comment =
 
     method io_write_str chan str =
       mk_apply_simple [ "Eio"; "Buf_write"; "string" ] [ chan; str ]
+
+    method type_out_channel = mk_typ_constr [ "Eio"; "Buf_write"; "t" ]
   end

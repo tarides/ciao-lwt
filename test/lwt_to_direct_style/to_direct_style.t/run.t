@@ -223,7 +223,7 @@ Make a writable directory tree:
     Lwt_mutex.lock (line 136 column 9)
     Lwt_mutex.unlock (line 137 column 9)
     Lwt_mutex.with_lock (line 138 column 9)
-  lib/test_lwt_unix.ml: (22 occurrences)
+  lib/test_lwt_unix.ml: (24 occurrences)
     Lwt_io (line 7 column 8)
     Lwt.return (line 11 column 3)
     Lwt.let* (line 10 column 3)
@@ -232,12 +232,14 @@ Make a writable directory tree:
     Lwt_io.Output (line 23 column 32)
     Lwt_io.input (line 7 column 28)
     Lwt_io.output (line 21 column 32)
+    Lwt_io.output_channel (line 26 column 9)
     Lwt_io.of_fd (line 7 column 16)
     Lwt_io.of_fd (line 21 column 13)
     Lwt_io.of_fd (line 22 column 13)
     Lwt_io.of_fd (line 23 column 13)
     Lwt_io.read_into (line 10 column 19)
     Lwt_io.write (line 24 column 19)
+    Lwt_io.stdout (line 26 column 33)
     Lwt_unix.Timeout (line 13 column 9)
     Lwt_unix.of_unix_file_descr (line 6 column 8)
     Lwt_unix.sockaddr (line 14 column 9)
@@ -276,6 +278,8 @@ Make a writable directory tree:
     Lwt.Fail (line 147 column 5)
     Lwt.let* (line 163 column 21)
     Lwt.Fail (line 179 column 9)
+  Warning: lib/test_lwt_unix.ml: 1 occurrences have not been rewritten.
+    Lwt_io.stdout (line 26 column 33)
   Warning: lib/test.mli: 2 occurrences have not been rewritten.
     Lwt_mutex.t (line 2 column 10)
     Lwt_mutex.t (line 3 column 10)
@@ -695,3 +699,4 @@ Make a writable directory tree:
       : [ `W | `Flow | `Close ] Std.r)
   
   let _f out_chan = Eio.Buf_write.string out_chan "str"
+  let _ : Eio.Buf_write.t = Lwt_io.stdout

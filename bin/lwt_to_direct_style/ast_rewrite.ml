@@ -528,6 +528,7 @@ let rewrite_type ~backend ~state typ =
                  | "group_entry" ) as tname) ),
               params ) ->
               Some (mk_typ_constr ~params [ "Unix"; tname ])
+          | ("Lwt_io", "output_channel"), [] -> Some backend#type_out_channel
           | _ -> None)
   | _ -> None
 
