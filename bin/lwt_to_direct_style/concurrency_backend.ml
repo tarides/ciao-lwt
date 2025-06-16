@@ -4,7 +4,7 @@ open Parsetree
 open Ast_helper
 open Ocamlformat_utils.Ast_utils
 
-let eio add_comment =
+let eio ~eio_sw_as_fiber_var add_comment =
   let used_eio_std = ref false in
   let fiber_ident i =
     used_eio_std := true;
@@ -19,6 +19,18 @@ let eio add_comment =
     add_comment "Dropped expression (%s): [%s]." label
       (Ocamlformat_utils.format_expression exp)
   in
+  (* If [--eio-sw-as-fiber-var] is passed on the command line, this will query
+     the current switch. Otherwise, this will generate a comment.
+     Return an expression that can be passed to a [~sw] argument. *)
+  let get_current_switch () =
+    match eio_sw_as_fiber_var with
+    | Some ident ->
+        mk_apply_simple [ "Option"; "get" ]
+          [ mk_apply_simple [ "Fiber"; "get" ] [ Exp.ident (mk_loc ident) ] ]
+    | None ->
+        add_comment "[sw] (of type Switch.t) must be propagated here.";
+        mk_exp_ident [ "sw" ]
+  in
   object
     method both ~left ~right =
       mk_apply_simple (fiber_ident "pair") [ left; right ]
@@ -26,11 +38,10 @@ let eio add_comment =
     method pick lst = mk_apply_simple (fiber_ident "any") [ lst ]
 
     method async process_f =
-      add_comment "[sw] must be propagated here.";
       Exp.apply
         (mk_exp_ident (fiber_ident "fork"))
         [
-          (Labelled (mk_loc "sw"), mk_exp_ident [ "sw" ]); (Nolabel, process_f);
+          (Labelled (mk_loc "sw"), get_current_switch ()); (Nolabel, process_f);
         ]
 
     method wait () =
@@ -126,7 +137,6 @@ let eio add_comment =
     method direct_style_type param = param
 
     method of_unix_file_descr ?blocking fd =
-      add_comment "[sw] must be propagated here.";
       let blocking_arg =
         let lbl = mk_loc "blocking" in
         match blocking with
@@ -136,7 +146,7 @@ let eio add_comment =
       in
       mk_apply_ident
         [ "Eio_unix"; "Fd"; "of_unix" ]
-        ([ (Labelled (mk_loc "sw"), mk_exp_ident [ "sw" ]) ]
+        ([ (Labelled (mk_loc "sw"), get_current_switch ()) ]
         @ blocking_arg
         @ [
             (Labelled (mk_loc "close_unix"), mk_constr_exp [ "true" ]);
@@ -157,6 +167,13 @@ let eio add_comment =
         "[Eio_main.run] argument used to be a [Lwt] promise and is now a \
          [fun]. Make sure no asynchronous or IO calls are done outside of this \
          [fun].";
+      (match eio_sw_as_fiber_var with
+      | Some ident ->
+          add_comment
+            "Make sure to create a [Switch.t] and store it in fiber variable \
+             [%a]."
+            Ocamlformat_utils.Parsing.Printast.fmt_longident ident
+      | None -> ());
       mk_apply_simple [ "Eio_main"; "run" ]
         [ mk_fun ~arg_name:"env" (fun _env -> promise) ]
 

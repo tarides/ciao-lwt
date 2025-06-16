@@ -521,7 +521,7 @@ Make a writable directory tree:
   
   let _ =
     Fiber.fork ~sw
-      (* TODO: lwt-to-direct-style: [sw] must be propagated here. *)
+      (* TODO: lwt-to-direct-style: [sw] (of type Switch.t) must be propagated here. *)
       (fun () -> x)
   
   let _ =
@@ -531,7 +531,8 @@ Make a writable directory tree:
       Promise.create ()
     in
     Fiber.fork ~sw
-      (* TODO: lwt-to-direct-style: [sw] must be propagated here. *) (fun () -> t);
+      (* TODO: lwt-to-direct-style: [sw] (of type Switch.t) must be propagated here. *)
+      (fun () -> t);
     Promise.resolve u ();
     Promise.resolve u ()
   
@@ -565,12 +566,14 @@ Make a writable directory tree:
   let _ = Eio.Mutex.unlock m
   let _ = Eio.Mutex.use_rw ~protect:false m (fun () -> x)
   
-  let _ (* TODO: lwt-to-direct-style: [sw] must be propagated here. *) =
+  let _
+      (* TODO: lwt-to-direct-style: [sw] (of type Switch.t) must be propagated here. *)
+      =
     Fiber.fork ~sw (fun x1 -> x1)
   
   let _ =
     Fiber.fork ~sw (fun () ->
-        (* TODO: lwt-to-direct-style: [sw] must be propagated here. *)
+        (* TODO: lwt-to-direct-style: [sw] (of type Switch.t) must be propagated here. *)
         x
         (* TODO: lwt-to-direct-style: This computation might not be suspended correctly. *))
   
@@ -606,7 +609,7 @@ Make a writable directory tree:
   let g : unit Promise.t -> unit =
    fun y ->
     Fiber.fork ~sw
-      (* TODO: lwt-to-direct-style: [sw] must be propagated here. *)
+      (* TODO: lwt-to-direct-style: [sw] (of type Switch.t) must be propagated here. *)
       (fun () -> y)
   
   let h : (unit -> unit) -> unit =
@@ -664,7 +667,7 @@ Make a writable directory tree:
       (fun ?blocking:x1 ?set_flags:x2 ->
         Eio_unix.Fd.of_unix ~sw ?blocking:x1 ~close_unix:true
           (Unix
-           (* TODO: lwt-to-direct-style: [sw] must be propagated here. *)
+           (* TODO: lwt-to-direct-style: [sw] (of type Switch.t) must be propagated here. *)
            (* TODO: lwt-to-direct-style: Labelled argument ?set_flags was dropped. *).(
              openfile fname [ O_RDWR; O_NONBLOCK; O_APPEND ])
              0o660))
