@@ -371,6 +371,7 @@ let rewrite_apply ~backend ~state full_ident args =
   | "Lwt_io", "write" ->
       take @@ fun chan ->
       take @@ fun str -> return (Some (backend#io_write_str chan str))
+  | "Lwt_io", "length" -> take @@ fun fd -> return (Some (backend#io_length fd))
   | "Lwt_main", "run" ->
       take @@ fun promise -> return (Some (backend#main_run promise))
   | _ -> return None

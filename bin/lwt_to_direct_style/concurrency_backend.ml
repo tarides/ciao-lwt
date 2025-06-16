@@ -266,6 +266,9 @@ let eio ~eio_sw_as_fiber_var ~eio_env_as_fiber_var add_comment =
          source].";
       mk_apply_simple [ "Eio"; "Buf_read"; "line" ] [ chan ]
 
+    (* This is of type [Optint.Int63.t] instead of [int] with Lwt. *)
+    method io_length fd = mk_apply_simple [ "Eio"; "File"; "size" ] [ fd ]
+
     method io_write_str chan str =
       mk_apply_simple [ "Eio"; "Buf_write"; "string" ] [ chan; str ]
 
