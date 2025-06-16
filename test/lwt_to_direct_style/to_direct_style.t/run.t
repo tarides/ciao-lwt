@@ -228,19 +228,21 @@ Make a writable directory tree:
     Lwt_mutex.lock (line 136 column 9)
     Lwt_mutex.unlock (line 137 column 9)
     Lwt_mutex.with_lock (line 138 column 9)
-  lib/test_lwt_unix.ml: (31 occurrences)
+  lib/test_lwt_unix.ml: (33 occurrences)
     Lwt_io (line 7 column 8)
     Lwt.return (line 11 column 3)
     Lwt.let* (line 10 column 3)
-    Lwt.let* (line 33 column 3)
+    Lwt.let* (line 31 column 3)
+    Lwt.let* (line 35 column 3)
     Lwt.Syntax (line 1 column 6)
     Lwt_io.Input (line 22 column 32)
     Lwt_io.Output (line 23 column 32)
     Lwt_io.input (line 7 column 28)
-    Lwt_io.input (line 30 column 39)
+    Lwt_io.input (line 31 column 36)
     Lwt_io.output (line 21 column 32)
-    Lwt_io.output (line 33 column 36)
+    Lwt_io.output (line 35 column 36)
     Lwt_io.output_channel (line 26 column 9)
+    Lwt_io.close (line 32 column 3)
     Lwt_io.of_fd (line 7 column 16)
     Lwt_io.of_fd (line 21 column 13)
     Lwt_io.of_fd (line 22 column 13)
@@ -248,10 +250,10 @@ Make a writable directory tree:
     Lwt_io.read_line (line 28 column 15)
     Lwt_io.read_into (line 10 column 19)
     Lwt_io.write (line 24 column 19)
-    Lwt_io.length (line 34 column 3)
+    Lwt_io.length (line 36 column 3)
     Lwt_io.stdout (line 26 column 33)
-    Lwt_io.open_file (line 30 column 16)
-    Lwt_io.open_file (line 33 column 13)
+    Lwt_io.open_file (line 31 column 13)
+    Lwt_io.open_file (line 35 column 13)
     Lwt_unix.Timeout (line 13 column 9)
     Lwt_unix.of_unix_file_descr (line 6 column 8)
     Lwt_unix.sockaddr (line 14 column 9)
@@ -726,11 +728,14 @@ Make a writable directory tree:
       chan
   
   let _f fname =
-    Eio.Path.open_in ~sw
-      (Eio.Path.( / ) env#cwd
-         (* TODO: lwt-to-direct-style: [sw] (of type Switch.t) must be propagated here. *)
-         (* TODO: lwt-to-direct-style: [env] must be propagated from the main loop *)
-         fname)
+    let fd =
+      Eio.Path.open_in ~sw
+        (Eio.Path.( / ) env#cwd
+           (* TODO: lwt-to-direct-style: [sw] (of type Switch.t) must be propagated here. *)
+           (* TODO: lwt-to-direct-style: [env] must be propagated from the main loop *)
+           fname)
+    in
+    Eio.Resource.close fd
   
   let _f fname =
     let fd =

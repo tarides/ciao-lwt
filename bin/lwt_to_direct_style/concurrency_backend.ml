@@ -272,5 +272,6 @@ let eio ~eio_sw_as_fiber_var ~eio_env_as_fiber_var add_comment =
     method io_write_str chan str =
       mk_apply_simple [ "Eio"; "Buf_write"; "string" ] [ chan; str ]
 
+    method io_close fd = mk_apply_simple [ "Eio"; "Resource"; "close" ] [ fd ]
     method type_out_channel = mk_typ_constr [ "Eio"; "Buf_write"; "t" ]
   end
