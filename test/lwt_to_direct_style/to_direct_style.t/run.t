@@ -50,7 +50,7 @@ Make a writable directory tree:
     Lwt_unix.sleep (line 31 column 9)
     Lwt_unix.Timeout (line 37 column 15)
     Lwt_unix.with_timeout (line 35 column 16)
-  lib/test.ml: (172 occurrences)
+  lib/test.ml: (177 occurrences)
     Lwt (line 36 column 12)
     Lwt (line 55 column 18)
     Lwt (line 64 column 13)
@@ -66,6 +66,9 @@ Make a writable directory tree:
     Lwt.t (line 158 column 23)
     Lwt.t (line 158 column 38)
     Lwt.t (line 159 column 15)
+    Lwt.t (line 182 column 16)
+    Lwt.t (line 183 column 20)
+    Lwt.t (line 184 column 20)
     Lwt.new_key (line 150 column 11)
     Lwt.get (line 151 column 9)
     Lwt.with_value (line 152 column 9)
@@ -92,6 +95,8 @@ Make a writable directory tree:
     Lwt.return (line 140 column 28)
     Lwt.return (line 161 column 14)
     Lwt.fail (line 109 column 9)
+    Lwt.return_unit (line 182 column 24)
+    Lwt.return_unit (line 183 column 28)
     Lwt.fail_with (line 110 column 9)
     Lwt.fail_invalid_arg (line 118 column 33)
     Lwt.wait (line 122 column 14)
@@ -627,6 +632,12 @@ Make a writable directory tree:
     Lwt.Fail
       (* TODO: lwt-to-direct-style: [Lwt.Fail] shouldn't be used *)
       Not_found
+  
+  let _ =
+    let _ : unit Promise.t = () in
+    let _f () : unit = () in
+    let _f (x : unit Promise.t) = x in
+    ()
 
   $ cat lib/test.mli
   open Eio.Std
