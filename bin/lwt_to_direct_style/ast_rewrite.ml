@@ -412,21 +412,22 @@ let rewrite_pattern ~backend ~state pat =
 
 (** The return type of a function is transformed into the direct-style type
     instead of the promise type. *)
-let rewrite_type_rhs ~backend ~state typ =
+let rec rewrite_type_function_rhs ?(nested = false) ~backend ~state typ =
   match typ.ptyp_desc with
   | Ptyp_constr (lid, params) ->
       Occ.may_rewrite state lid (fun ident ->
           match (ident, params) with
           | ("Lwt", "t"), [ param ] -> Some (backend#direct_style_type param)
           | _ -> None)
+  | Ptyp_arrow (params, ret) when not nested -> (
+      match rewrite_type_function_rhs ~nested:true ~backend ~state ret with
+      | Some ret -> Some (Typ.arrow params ret)
+      | None -> None)
   | _ -> None
 
 let rewrite_type ~backend ~state typ =
   match typ.ptyp_desc with
-  | Ptyp_arrow (params, ret) -> (
-      match rewrite_type_rhs ~backend ~state ret with
-      | Some ret -> Some (Typ.arrow params ret)
-      | None -> None)
+  | Ptyp_arrow _ -> rewrite_type_function_rhs ~backend ~state typ
   | Ptyp_constr (lid, params) ->
       Occ.may_rewrite state lid (fun ident ->
           match (ident, params) with
@@ -434,6 +435,24 @@ let rewrite_type ~backend ~state typ =
           | ("Lwt_condition", "t"), [ param ] ->
               Some (backend#condition_type param)
           | _ -> None)
+  | _ -> None
+
+let rewrite_value_binding ~backend ~state = function
+  (* Apply [rewrite_type_function_rhs] to *)
+  | {
+      pvb_args = _ :: _;
+      pvb_constraint = Some (Pvc_constraint { typ; locally_abstract_univars });
+      _;
+    } as vb -> (
+      match rewrite_type_function_rhs ~backend ~state typ with
+      | Some typ ->
+          Some
+            {
+              vb with
+              pvb_constraint =
+                Some (Pvc_constraint { typ; locally_abstract_univars });
+            }
+      | None -> None)
   | _ -> None
 
 (** Remove [open] and [include] items. *)
@@ -511,6 +530,10 @@ let mapper ~backend ~state =
     call_rewrite ~default:default.typ ~loc:x.ptyp_loc
       (rewrite_type ~backend ~state)
       m x
+  and value_binding m x =
+    call_rewrite ~default:default.value_binding ~loc:x.pvb_loc
+      (rewrite_value_binding ~backend ~state)
+      m x
   in
   let structure m str =
     default.structure m (List.filter (remove_lwt_opens ~state) str)
@@ -518,7 +541,7 @@ let mapper ~backend ~state =
   let signature m sg =
     default.signature m (List.filter (remove_lwt_opens_sg ~state) sg)
   in
-  { default with expr; pat; typ; structure; signature }
+  { default with expr; pat; typ; structure; signature; value_binding }
 
 let rewrite_lwt_uses ~fname:_ ~(backend : (string -> unit) -> _) =
   let structure state str =
