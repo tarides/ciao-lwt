@@ -65,6 +65,8 @@ let mk_poly_variant ?(open_ = false) ?labels ?(inherit_ = []) vars =
   let constrs = List.map mk_rtag vars @ List.map mk_inherit inherit_ in
   Typ.variant constrs flag labels
 
+let mk_constr_of_bool b = mk_constr_exp [ (if b then "true" else "false") ]
+
 (* Exp *)
 
 let mk_const_string s = Exp.constant (Const.string s)

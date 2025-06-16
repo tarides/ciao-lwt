@@ -274,4 +274,11 @@ let eio ~eio_sw_as_fiber_var ~eio_env_as_fiber_var add_comment =
 
     method io_close fd = mk_apply_simple [ "Eio"; "Resource"; "close" ] [ fd ]
     method type_out_channel = mk_typ_constr [ "Eio"; "Buf_write"; "t" ]
+
+    method path_stat ~follow path =
+      mk_apply_ident [ "Eio"; "Path"; "stat" ]
+        [
+          (Labelled (mk_loc "follow"), mk_constr_of_bool follow);
+          (Nolabel, mk_apply_simple [ "Eio"; "Path"; "/" ] [ env "cwd"; path ]);
+        ]
   end

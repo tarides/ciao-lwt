@@ -228,7 +228,7 @@ Make a writable directory tree:
     Lwt_mutex.lock (line 136 column 9)
     Lwt_mutex.unlock (line 137 column 9)
     Lwt_mutex.with_lock (line 138 column 9)
-  lib/test_lwt_unix.ml: (33 occurrences)
+  lib/test_lwt_unix.ml: (35 occurrences)
     Lwt_io (line 7 column 8)
     Lwt.return (line 11 column 3)
     Lwt.let* (line 10 column 3)
@@ -256,6 +256,8 @@ Make a writable directory tree:
     Lwt_io.open_file (line 35 column 13)
     Lwt_unix.Timeout (line 13 column 9)
     Lwt_unix.of_unix_file_descr (line 6 column 8)
+    Lwt_unix.stat (line 38 column 16)
+    Lwt_unix.lstat (line 39 column 16)
     Lwt_unix.sockaddr (line 14 column 9)
     Lwt_unix.ADDR_UNIX (line 14 column 29)
     Lwt_unix.ADDR_UNIX (line 16 column 6)
@@ -747,3 +749,15 @@ Make a writable directory tree:
            fname)
     in
     Eio.File.size fd
+  
+  let _f fname =
+    Eio.Path.stat ~follow:true
+      (Eio.Path.( / ) env#cwd
+         (* TODO: lwt-to-direct-style: [env] must be propagated from the main loop *)
+         fname)
+  
+  let _f fname =
+    Eio.Path.stat ~follow:false
+      (Eio.Path.( / ) env#cwd
+         (* TODO: lwt-to-direct-style: [env] must be propagated from the main loop *)
+         fname)

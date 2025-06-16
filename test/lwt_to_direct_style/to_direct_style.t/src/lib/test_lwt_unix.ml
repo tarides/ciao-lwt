@@ -34,3 +34,6 @@ let _f fname =
 let _f fname =
   let* fd = Lwt_io.open_file ~mode:Lwt_io.output fname in
   Lwt_io.length fd
+
+let _f fname = Lwt_unix.stat fname
+let _f fname = Lwt_unix.lstat fname

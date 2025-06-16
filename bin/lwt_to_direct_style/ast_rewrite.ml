@@ -334,6 +334,10 @@ let rewrite_apply ~backend ~state full_ident args =
         "This call to [Unix.%s] was [Lwt_unix.%s] before the rewrite." fname
         fname;
       transparent [ "Unix"; fname ]
+  | "Lwt_unix", "stat" ->
+      take @@ fun path -> return (Some (backend#path_stat ~follow:true path))
+  | "Lwt_unix", "lstat" ->
+      take @@ fun path -> return (Some (backend#path_stat ~follow:false path))
   | "Lwt_condition", "create" ->
       take @@ fun _unit -> return (Some (backend#condition_create ()))
   | "Lwt_condition", "wait" ->
