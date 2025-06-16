@@ -50,7 +50,7 @@ Make a writable directory tree:
     Lwt_unix.sleep (line 31 column 9)
     Lwt_unix.Timeout (line 37 column 15)
     Lwt_unix.with_timeout (line 35 column 16)
-  lib/test.ml: (174 occurrences)
+  lib/test.ml: (177 occurrences)
     Lwt (line 36 column 12)
     Lwt (line 55 column 18)
     Lwt (line 64 column 13)
@@ -66,9 +66,9 @@ Make a writable directory tree:
     Lwt.t (line 158 column 23)
     Lwt.t (line 158 column 38)
     Lwt.t (line 159 column 15)
-    Lwt.t (line 178 column 16)
-    Lwt.t (line 179 column 20)
-    Lwt.t (line 180 column 20)
+    Lwt.t (line 182 column 16)
+    Lwt.t (line 183 column 20)
+    Lwt.t (line 184 column 20)
     Lwt.new_key (line 150 column 11)
     Lwt.get (line 151 column 9)
     Lwt.with_value (line 152 column 9)
@@ -95,8 +95,8 @@ Make a writable directory tree:
     Lwt.return (line 140 column 28)
     Lwt.return (line 161 column 14)
     Lwt.fail (line 109 column 9)
-    Lwt.return_unit (line 178 column 24)
-    Lwt.return_unit (line 179 column 28)
+    Lwt.return_unit (line 182 column 24)
+    Lwt.return_unit (line 183 column 28)
     Lwt.fail_with (line 110 column 9)
     Lwt.fail_invalid_arg (line 118 column 33)
     Lwt.wait (line 122 column 14)
@@ -139,8 +139,11 @@ Make a writable directory tree:
     Lwt.pick (line 95 column 12)
     Lwt.pick (line 96 column 12)
     Lwt.Return (line 146 column 5)
+    Lwt.Return (line 177 column 9)
     Lwt.Fail (line 147 column 5)
+    Lwt.Fail (line 179 column 9)
     Lwt.Sleep (line 148 column 5)
+    Lwt.Sleep (line 178 column 9)
     Lwt.state (line 145 column 9)
     Lwt.pause (line 114 column 9)
     Lwt.(>>=) (line 32 column 3)
@@ -225,6 +228,31 @@ Make a writable directory tree:
     Lwt_mutex.lock (line 136 column 9)
     Lwt_mutex.unlock (line 137 column 9)
     Lwt_mutex.with_lock (line 138 column 9)
+  lib/test_lwt_unix.ml: (24 occurrences)
+    Lwt_io (line 7 column 8)
+    Lwt.return (line 11 column 3)
+    Lwt.let* (line 10 column 3)
+    Lwt.Syntax (line 1 column 6)
+    Lwt_io.Input (line 22 column 32)
+    Lwt_io.Output (line 23 column 32)
+    Lwt_io.input (line 7 column 28)
+    Lwt_io.output (line 21 column 32)
+    Lwt_io.output_channel (line 26 column 9)
+    Lwt_io.of_fd (line 7 column 16)
+    Lwt_io.of_fd (line 21 column 13)
+    Lwt_io.of_fd (line 22 column 13)
+    Lwt_io.of_fd (line 23 column 13)
+    Lwt_io.read_into (line 10 column 19)
+    Lwt_io.write (line 24 column 19)
+    Lwt_io.stdout (line 26 column 33)
+    Lwt_unix.Timeout (line 13 column 9)
+    Lwt_unix.of_unix_file_descr (line 6 column 8)
+    Lwt_unix.sockaddr (line 14 column 9)
+    Lwt_unix.ADDR_UNIX (line 14 column 29)
+    Lwt_unix.ADDR_UNIX (line 16 column 6)
+    Lwt_unix.ADDR_INET (line 16 column 29)
+    Lwt_unix.ADDR_INET (line 17 column 3)
+    Lwt_unix.getaddrinfo (line 19 column 9)
   lib/test.mli: (17 occurrences)
     Lwt (line 12 column 26)
     Lwt.t (line 1 column 35)
@@ -245,10 +273,8 @@ Make a writable directory tree:
     Lwt_mutex.t (line 3 column 10)
 
   $ lwt-to-direct-style --migrate
-  Formatted 3 files
-  Warning: bin/main.ml: 1 occurrences have not been rewritten.
-    Lwt_main.run (line 22 column 10)
-  Warning: lib/test.ml: 7 occurrences have not been rewritten.
+  Formatted 4 files
+  Warning: lib/test.ml: 8 occurrences have not been rewritten.
     Lwt (line 55 column 18)
     Lwt_fmt (line 56 column 18)
     Lwt.(<?>) (line 113 column 11)
@@ -256,6 +282,9 @@ Make a writable directory tree:
     Lwt_list.iteri_p (line 129 column 9)
     Lwt.Fail (line 147 column 5)
     Lwt.let* (line 163 column 21)
+    Lwt.Fail (line 179 column 9)
+  Warning: lib/test_lwt_unix.ml: 1 occurrences have not been rewritten.
+    Lwt_io.stdout (line 26 column 33)
   Warning: lib/test.mli: 2 occurrences have not been rewritten.
     Lwt_mutex.t (line 2 column 10)
     Lwt_mutex.t (line 3 column 10)
@@ -274,7 +303,11 @@ Make a writable directory tree:
     let main () = match None with v -> v in
     match main () with Some _ -> () | None -> () | exception _ -> ()
   
-  let () = Lwt_main.run (main ())
+  let () =
+    Eio_main.run (fun env ->
+        (* TODO: lwt-to-direct-style: [Eio_main.run] argument used to be a [Lwt] promise and is now a [fun]. Make sure no asynchronous or IO calls are done outside of this [fun]. *)
+        main ())
+  
   let _ = None
   let _ = []
   let _ = true
@@ -592,6 +625,14 @@ Make a writable directory tree:
   
   module M = struct end
   
+  let _ = Some ()
+  let _ = None
+  
+  let _ =
+    Lwt.Fail
+      (* TODO: lwt-to-direct-style: [Lwt.Fail] shouldn't be used *)
+      Not_found
+  
   let _ =
     let _ : unit Promise.t = () in
     let _f () : unit = () in
@@ -616,3 +657,57 @@ Make a writable directory tree:
   val test : unit -> unit
   
   module M : sig end
+
+  $ cat lib/test_lwt_unix.ml
+  let _f fname =
+    let inp =
+      (fun ?blocking:x1 ?set_flags:x2 ->
+        Eio_unix.Fd.of_unix ~sw ?blocking:x1 ~close_unix:true
+          (Unix
+           (* TODO: lwt-to-direct-style: [sw] must be propagated here. *)
+           (* TODO: lwt-to-direct-style: Labelled argument ?set_flags was dropped. *).(
+             openfile fname [ O_RDWR; O_NONBLOCK; O_APPEND ])
+             0o660))
+      |> fun x1 ->
+      (Eio_unix.Net.import_socket_stream x1 : [ `R | `Flow | `Close ] Std.r)
+    in
+    let buf = Bytes.create 1024 in
+    let _n : int =
+      Eio.Flow.single_read
+        (* TODO: lwt-to-direct-style: [buf] should be a [Cstruct.t]. *)
+        (* TODO: lwt-to-direct-style: Dropped expression (buffer offset): [0]. *)
+        (* TODO: lwt-to-direct-style: Dropped expression (buffer length): [1024]. *)
+        inp buf
+    in
+    ()
+  
+  let _ = Eio.Time.Timeout
+  let _ : Unix.sockaddr = Unix.ADDR_UNIX ""
+  
+  let (Unix.ADDR_UNIX _ | Unix.ADDR_INET _) =
+    Unix.ADDR_INET (Unix.inet_addr_any, 0)
+  
+  let _
+      (* TODO: lwt-to-direct-style: This call to [Unix.getaddrinfo] was [Lwt_unix.getaddrinfo] before the rewrite. *)
+      =
+    Unix.getaddrinfo
+  
+  let _f fd =
+    (Eio_unix.Net.import_socket_stream
+       (* TODO: lwt-to-direct-style: This creates a closeable [Flow.sink] resource but write operations are rewritten to calls to [Buf_write].
+          You might want to use [Buf_write.with_flow sink (fun buf_write -> ...)]. *)
+       fd
+      : [ `W | `Flow | `Close ] Std.r)
+  
+  let _f fd =
+    (Eio_unix.Net.import_socket_stream fd : [ `R | `Flow | `Close ] Std.r)
+  
+  let _f fd =
+    (Eio_unix.Net.import_socket_stream
+       (* TODO: lwt-to-direct-style: This creates a closeable [Flow.sink] resource but write operations are rewritten to calls to [Buf_write].
+          You might want to use [Buf_write.with_flow sink (fun buf_write -> ...)]. *)
+       fd
+      : [ `W | `Flow | `Close ] Std.r)
+  
+  let _f out_chan = Eio.Buf_write.string out_chan "str"
+  let _ : Eio.Buf_write.t = Lwt_io.stdout

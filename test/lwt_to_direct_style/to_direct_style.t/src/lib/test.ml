@@ -174,6 +174,10 @@ module M = struct
   include Lwt.Syntax
 end
 
+let _ = Lwt.Return ()
+let _ = Lwt.Sleep
+let _ = Lwt.Fail Not_found
+
 let _ =
   let _ : unit Lwt.t = Lwt.return_unit in
   let _f () : unit Lwt.t = Lwt.return_unit in
