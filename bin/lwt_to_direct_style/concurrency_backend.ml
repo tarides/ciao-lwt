@@ -220,15 +220,21 @@ let eio ~eio_sw_as_fiber_var ~eio_env_as_fiber_var add_comment =
     method output_io_of_fd fd =
       add_comment
         "This creates a closeable [Flow.sink] resource but write operations \
-         are rewritten to calls to [Buf_write].\n\
-        \        You might want to use [Buf_write.with_flow sink (fun \
-         buf_write -> ...)].";
+         are rewritten to calls to [Buf_write]. You might want to use \
+         [Buf_write.with_flow sink (fun buf_write -> ...)].";
       Exp.constraint_
         (mk_apply_simple [ "Eio_unix"; "Net"; "import_socket_stream" ] [ fd ])
         (mk_typ_constr
            ~params:
              [ mk_poly_variant [ ("W", []); ("Flow", []); ("Close", []) ] ]
            [ "Std"; "r" ])
+
+    method io_read_line chan =
+      add_comment
+        "Argument to [Eio.Buf_read.line] is a [Flow.source] but it should be a \
+         [Eio.Buf_read.t]. Use [Eio.Buf_read.of_flow ~max_size:1_000_000 \
+         source].";
+      mk_apply_simple [ "Eio"; "Buf_read"; "line" ] [ chan ]
 
     method io_write_str chan str =
       mk_apply_simple [ "Eio"; "Buf_write"; "string" ] [ chan; str ]

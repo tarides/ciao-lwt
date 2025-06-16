@@ -360,6 +360,8 @@ let rewrite_apply ~backend ~state full_ident args =
       @@ take_lbl "mode"
       @@ fun mode ->
       take @@ fun fd -> return (lwt_io_of_fd ~backend ~state ~mode fd)
+  | "Lwt_io", "read_line" ->
+      take @@ fun in_chan -> return (Some (backend#io_read_line in_chan))
   | "Lwt_io", "write" ->
       take @@ fun chan ->
       take @@ fun str -> return (Some (backend#io_write_str chan str))
