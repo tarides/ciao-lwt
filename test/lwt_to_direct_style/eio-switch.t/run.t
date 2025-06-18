@@ -30,11 +30,7 @@ Make a writable directory tree:
     Fiber.fork
       ~sw:(Stdlib.Option.get (Fiber.get Fiber_var.sw))
       (fun () -> async_process 1);
-    let fd =
-      Eio_unix.Fd.of_unix
-        ~sw:(Stdlib.Option.get (Fiber.get Fiber_var.sw))
-        ~close_unix:true Unix.stdin
-    in
+    let fd = Unix.stdin in
     let in_chan =
       (Eio_unix.Net.import_socket_stream
          ~sw:(Stdlib.Option.get (Fiber.get Fiber_var.sw))

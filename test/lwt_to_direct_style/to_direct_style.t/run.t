@@ -677,11 +677,7 @@ Make a writable directory tree:
   
   let _f fname =
     let inp =
-      Eio_unix.Fd.of_unix ~sw ~close_unix:true
-        (Unix
-         (* TODO: lwt-to-direct-style: [sw] (of type Switch.t) must be propagated here. *).(
-           openfile fname [ O_RDWR; O_NONBLOCK; O_APPEND ])
-           0o660)
+      Unix.(openfile fname [ O_RDWR; O_NONBLOCK; O_APPEND ]) 0o660
       |>
       (* TODO: lwt-to-direct-style: [sw] (of type Switch.t) must be propagated here. *)
       (* TODO: lwt-to-direct-style: This creates a closeable [Flow.source] resource but read operations are rewritten to calls to [Buf_read]. *)

@@ -169,22 +169,24 @@ let eio ~eio_sw_as_fiber_var ~eio_env_as_fiber_var add_comment =
 
     method direct_style_type param = param
 
-    method of_unix_file_descr ?blocking fd =
-      let blocking_arg =
-        let lbl = mk_loc "blocking" in
-        match blocking with
-        | Some (expr, `Lbl) -> [ (Labelled lbl, expr) ]
-        | Some (expr, `Opt) -> [ (Optional lbl, expr) ]
-        | None -> []
-      in
-      mk_apply_ident
-        [ "Eio_unix"; "Fd"; "of_unix" ]
-        ([ get_current_switch_arg () ]
-        @ blocking_arg
-        @ [
-            (Labelled (mk_loc "close_unix"), mk_constr_exp [ "true" ]);
-            (Nolabel, fd);
-          ])
+    method of_unix_file_descr ?blocking:_ fd =
+      (* TODO: We don't use [Eio_unix.Fd.t] because there is no conversion to [Flow.sink]. *)
+      (* let blocking_arg = *)
+      (*   let lbl = mk_loc "blocking" in *)
+      (*   match blocking with *)
+      (*   | Some (expr, `Lbl) -> [ (Labelled lbl, expr) ] *)
+      (*   | Some (expr, `Opt) -> [ (Optional lbl, expr) ] *)
+      (*   | None -> [] *)
+      (* in *)
+      (* mk_apply_ident *)
+      (*   [ "Eio_unix"; "Fd"; "of_unix" ] *)
+      (*   ([ get_current_switch_arg () ] *)
+      (*   @ blocking_arg *)
+      (*   @ [ *)
+      (*       (Labelled (mk_loc "close_unix"), mk_constr_exp [ "true" ]); *)
+      (*       (Nolabel, fd); *)
+      (*     ]) *)
+      fd
 
     method io_read input buffer buf_offset buf_len =
       add_comment "[%s] should be a [Cstruct.t]."
@@ -193,7 +195,9 @@ let eio ~eio_sw_as_fiber_var ~eio_env_as_fiber_var add_comment =
       add_comment_dropped_exp ~label:"buffer length" buf_len;
       mk_apply_simple [ "Eio"; "Flow"; "single_read" ] [ input; buffer ]
 
-    method fd_close fd = mk_apply_simple [ "Eio_unix"; "Fd" ] [ fd ]
+    method fd_close fd =
+      (* TODO: See [of_unix_file_descr]. mk_apply_simple [ "Eio_unix"; "Fd" ] [ fd ] *)
+      mk_apply_simple [ "Unix"; "close" ] [ fd ]
 
     method main_run promise =
       let with_binding var_ident x body =
