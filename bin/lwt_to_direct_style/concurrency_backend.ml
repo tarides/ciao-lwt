@@ -6,14 +6,13 @@ open Ocamlformat_utils.Ast_utils
 
 let eio ~eio_sw_as_fiber_var ~eio_env_as_fiber_var add_comment =
   let used_eio_std = ref false in
-  let fiber_ident i =
+  let eio_std_ident mod_ i =
     used_eio_std := true;
-    [ "Fiber"; i ]
+    [ mod_; i ]
   in
-  let promise_ident i =
-    used_eio_std := true;
-    [ "Promise"; i ]
-  in
+  let fiber_ident = eio_std_ident "Fiber"
+  and promise_ident = eio_std_ident "Promise"
+  and switch_ident = eio_std_ident "Switch" in
   let add_comment fmt = Format.kasprintf add_comment fmt in
   let add_comment_dropped_exp ~label exp =
     add_comment "Dropped expression (%s): [%s]." label
@@ -27,7 +26,7 @@ let eio ~eio_sw_as_fiber_var ~eio_env_as_fiber_var add_comment =
     | Some ident ->
         mk_apply_simple
           [ "Stdlib"; "Option"; "get" ]
-          [ mk_apply_simple [ "Fiber"; "get" ] [ Exp.ident (mk_loc ident) ] ]
+          [ mk_apply_simple (fiber_ident "get") [ Exp.ident (mk_loc ident) ] ]
     | None ->
         add_comment "[sw] (of type Switch.t) must be propagated here.";
         mk_exp_ident [ "sw" ]
@@ -41,7 +40,7 @@ let eio ~eio_sw_as_fiber_var ~eio_env_as_fiber_var add_comment =
       | Some ident ->
           mk_apply_simple
             [ "Stdlib"; "Option"; "get" ]
-            [ mk_apply_simple [ "Fiber"; "get" ] [ Exp.ident (mk_loc ident) ] ]
+            [ mk_apply_simple (fiber_ident "get") [ Exp.ident (mk_loc ident) ] ]
       | None ->
           add_comment "[env] must be propagated from the main loop";
           mk_exp_ident [ "env" ]
@@ -180,7 +179,7 @@ let eio ~eio_sw_as_fiber_var ~eio_env_as_fiber_var add_comment =
     method main_run promise =
       let with_binding var_ident x body =
         let var = Exp.ident (mk_loc var_ident) in
-        mk_apply_simple [ "Fiber"; "with_binding" ] [ var; x; mk_thunk body ]
+        mk_apply_simple (fiber_ident "with_binding") [ var; x; mk_thunk body ]
       in
       add_comment
         "[Eio_main.run] argument used to be a [Lwt] promise and is now a \
@@ -192,7 +191,7 @@ let eio ~eio_sw_as_fiber_var ~eio_env_as_fiber_var add_comment =
             let fun_sw =
               mk_fun ~arg_name:"sw" (fun sw -> with_binding var_ident sw k)
             in
-            mk_apply_ident [ "Switch"; "run" ]
+            mk_apply_ident (switch_ident "run")
               [
                 (Labelled (mk_loc "name"), mk_const_string "main");
                 (Nolabel, fun_sw);
