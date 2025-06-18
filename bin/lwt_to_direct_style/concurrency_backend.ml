@@ -25,7 +25,8 @@ let eio ~eio_sw_as_fiber_var ~eio_env_as_fiber_var add_comment =
   let get_current_switch () =
     match eio_sw_as_fiber_var with
     | Some ident ->
-        mk_apply_simple [ "Option"; "get" ]
+        mk_apply_simple
+          [ "Stdlib"; "Option"; "get" ]
           [ mk_apply_simple [ "Fiber"; "get" ] [ Exp.ident (mk_loc ident) ] ]
     | None ->
         add_comment "[sw] (of type Switch.t) must be propagated here.";
@@ -38,7 +39,8 @@ let eio ~eio_sw_as_fiber_var ~eio_env_as_fiber_var add_comment =
     let env_exp =
       match eio_env_as_fiber_var with
       | Some ident ->
-          mk_apply_simple [ "Option"; "get" ]
+          mk_apply_simple
+            [ "Stdlib"; "Option"; "get" ]
             [ mk_apply_simple [ "Fiber"; "get" ] [ Exp.ident (mk_loc ident) ] ]
       | None ->
           add_comment "[env] must be propagated from the main loop";

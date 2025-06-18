@@ -18,8 +18,8 @@ Make a writable directory tree:
   let async_process _ = ()
   
   let _f _ =
-    Eio.Time.with_timeout_exn (Option.get (Fiber.get Fiber_var.env))#mono_clock
-      1.0 (fun () -> 42)
+    Eio.Time.with_timeout_exn
+      (Stdlib.Option.get (Fiber.get Fiber_var.env))#mono_clock 1.0 (fun () -> 42)
   
   let _f fname =
     let fd = Lwt_io.open_file ~mode:Lwt_io.input fname in
@@ -27,12 +27,12 @@ Make a writable directory tree:
   
   let main () =
     Fiber.fork
-      ~sw:(Option.get (Fiber.get Fiber_var.sw))
+      ~sw:(Stdlib.Option.get (Fiber.get Fiber_var.sw))
       (fun () -> async_process 1);
     let fd =
      fun ?blocking:x1 ?set_flags:x2 ->
       Eio_unix.Fd.of_unix
-        ~sw:(Option.get (Fiber.get Fiber_var.sw))
+        ~sw:(Stdlib.Option.get (Fiber.get Fiber_var.sw))
         ?blocking:x1 ~close_unix:true
         (* TODO: lwt-to-direct-style: Labelled argument ?set_flags was dropped. *)
         Unix.stdin
