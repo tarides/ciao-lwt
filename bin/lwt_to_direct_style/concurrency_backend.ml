@@ -176,27 +176,37 @@ let eio ~eio_sw_as_fiber_var ~eio_env_as_fiber_var add_comment =
     method fd_close fd = mk_apply_simple [ "Eio_unix"; "Fd" ] [ fd ]
 
     method main_run promise =
+      let with_binding var_ident x body =
+        let var = Exp.ident (mk_loc var_ident) in
+        mk_apply_simple [ "Fiber"; "with_binding" ] [ var; x; mk_thunk body ]
+      in
       add_comment
         "[Eio_main.run] argument used to be a [Lwt] promise and is now a \
          [fun]. Make sure no asynchronous or IO calls are done outside of this \
          [fun].";
-      (match eio_sw_as_fiber_var with
-      | Some ident ->
-          add_comment
-            "Make sure to create a [Switch.t] and store it in fiber variable \
-             [%a]."
-            Ocamlformat_utils.Parsing.Printast.fmt_longident ident
-      | None -> ());
-      let wrap_env_fiber_var env x =
-        match eio_env_as_fiber_var with
+      let wrap_sw_fiber_var k =
+        match eio_sw_as_fiber_var with
         | Some var_ident ->
-            mk_apply_simple
-              [ "Fiber"; "with_binding" ]
-              [ Exp.ident (mk_loc var_ident); env; mk_thunk x ]
-        | None -> x
+            let fun_sw =
+              mk_fun ~arg_name:"sw" (fun sw -> with_binding var_ident sw k)
+            in
+            mk_apply_ident [ "Switch"; "run" ]
+              [
+                (Labelled (mk_loc "name"), mk_const_string "main");
+                (Nolabel, fun_sw);
+              ]
+        | None -> k
+      in
+      let wrap_env_fiber_var env k =
+        match eio_env_as_fiber_var with
+        | Some var_ident -> with_binding var_ident env k
+        | None -> k
       in
       mk_apply_simple [ "Eio_main"; "run" ]
-        [ mk_fun ~arg_name:"env" (fun env -> wrap_env_fiber_var env promise) ]
+        [
+          mk_fun ~arg_name:"env" (fun env ->
+              wrap_env_fiber_var env (wrap_sw_fiber_var promise));
+        ]
 
     method input_io_of_fd fd =
       Exp.constraint_
