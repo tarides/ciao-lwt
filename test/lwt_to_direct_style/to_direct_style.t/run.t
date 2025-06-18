@@ -673,6 +673,8 @@ Make a writable directory tree:
   module M : sig end
 
   $ cat lib/test_lwt_unix.ml
+  open Eio.Std
+  
   let _f fname =
     let inp =
       (fun ?blocking:x1 ?set_flags:x2 ->
@@ -683,7 +685,7 @@ Make a writable directory tree:
              openfile fname [ O_RDWR; O_NONBLOCK; O_APPEND ])
              0o660))
       |> fun x1 ->
-      (Eio_unix.Net.import_socket_stream x1 : [ `R | `Flow | `Close ] Std.r)
+      (Eio_unix.Net.import_socket_stream x1 : [ `R | `Flow | `Close ] r)
     in
     let buf = Bytes.create 1024 in
     let _n : int =
@@ -710,16 +712,15 @@ Make a writable directory tree:
     (Eio_unix.Net.import_socket_stream
        (* TODO: lwt-to-direct-style: This creates a closeable [Flow.sink] resource but write operations are rewritten to calls to [Buf_write]. You might want to use [Buf_write.with_flow sink (fun buf_write -> ...)]. *)
        fd
-      : [ `W | `Flow | `Close ] Std.r)
+      : [ `W | `Flow | `Close ] r)
   
-  let _f fd =
-    (Eio_unix.Net.import_socket_stream fd : [ `R | `Flow | `Close ] Std.r)
+  let _f fd = (Eio_unix.Net.import_socket_stream fd : [ `R | `Flow | `Close ] r)
   
   let _f fd =
     (Eio_unix.Net.import_socket_stream
        (* TODO: lwt-to-direct-style: This creates a closeable [Flow.sink] resource but write operations are rewritten to calls to [Buf_write]. You might want to use [Buf_write.with_flow sink (fun buf_write -> ...)]. *)
        fd
-      : [ `W | `Flow | `Close ] Std.r)
+      : [ `W | `Flow | `Close ] r)
   
   let _f out_chan = Eio.Buf_write.string out_chan "str"
   let _ : Eio.Buf_write.t = Lwt_io.stdout

@@ -39,7 +39,7 @@ Make a writable directory tree:
         Unix.stdin
     in
     let in_chan =
-      (Eio_unix.Net.import_socket_stream fd : [ `R | `Flow | `Close ] Std.r)
+      (Eio_unix.Net.import_socket_stream fd : [ `R | `Flow | `Close ] r)
     in
     let s = Lwt_io.read in_chan in
     Lwt_io.printf "%s" s

@@ -12,7 +12,11 @@ let eio ~eio_sw_as_fiber_var ~eio_env_as_fiber_var add_comment =
   in
   let fiber_ident = eio_std_ident "Fiber"
   and promise_ident = eio_std_ident "Promise"
-  and switch_ident = eio_std_ident "Switch" in
+  and switch_ident = eio_std_ident "Switch"
+  and std_ident i =
+    used_eio_std := true;
+    [ i ]
+  in
   let add_comment fmt = Format.kasprintf add_comment fmt in
   let add_comment_dropped_exp ~label exp =
     add_comment "Dropped expression (%s): [%s]." label
@@ -219,7 +223,7 @@ let eio ~eio_sw_as_fiber_var ~eio_env_as_fiber_var add_comment =
             (mk_typ_constr
                ~params:
                  [ mk_poly_variant [ ("R", []); ("Flow", []); ("Close", []) ] ]
-               [ "Std"; "r" ])
+               (std_ident "r"))
       | `Fname fname ->
           mk_apply_ident
             [ "Eio"; "Path"; "open_in" ]
@@ -243,7 +247,7 @@ let eio ~eio_sw_as_fiber_var ~eio_env_as_fiber_var add_comment =
             (mk_typ_constr
                ~params:
                  [ mk_poly_variant [ ("W", []); ("Flow", []); ("Close", []) ] ]
-               [ "Std"; "r" ])
+               (std_ident "r"))
       | `Fname fname ->
           add_comment
             "[flags] and [perm] arguments were dropped. The [~create] was \
