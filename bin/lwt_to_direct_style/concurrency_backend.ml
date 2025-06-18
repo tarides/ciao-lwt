@@ -209,25 +209,55 @@ let eio ~eio_sw_as_fiber_var ~eio_env_as_fiber_var add_comment =
               wrap_env_fiber_var env (wrap_sw_fiber_var promise));
         ]
 
-    method input_io_of_fd fd =
-      Exp.constraint_
-        (mk_apply_simple [ "Eio_unix"; "Net"; "import_socket_stream" ] [ fd ])
-        (mk_typ_constr
-           ~params:
-             [ mk_poly_variant [ ("R", []); ("Flow", []); ("Close", []) ] ]
-           [ "Std"; "r" ])
+    method input_io =
+      function
+      | `Of_fd fd ->
+          Exp.constraint_
+            (mk_apply_simple
+               [ "Eio_unix"; "Net"; "import_socket_stream" ]
+               [ fd ])
+            (mk_typ_constr
+               ~params:
+                 [ mk_poly_variant [ ("R", []); ("Flow", []); ("Close", []) ] ]
+               [ "Std"; "r" ])
+      | `Fname fname ->
+          mk_apply_ident
+            [ "Eio"; "Path"; "open_in" ]
+            [
+              get_current_switch_arg ();
+              ( Nolabel,
+                mk_apply_simple [ "Eio"; "Path"; "/" ] [ env "cwd"; fname ] );
+            ]
 
-    method output_io_of_fd fd =
-      add_comment
-        "This creates a closeable [Flow.sink] resource but write operations \
-         are rewritten to calls to [Buf_write]. You might want to use \
-         [Buf_write.with_flow sink (fun buf_write -> ...)].";
-      Exp.constraint_
-        (mk_apply_simple [ "Eio_unix"; "Net"; "import_socket_stream" ] [ fd ])
-        (mk_typ_constr
-           ~params:
-             [ mk_poly_variant [ ("W", []); ("Flow", []); ("Close", []) ] ]
-           [ "Std"; "r" ])
+    method output_io =
+      function
+      | `Of_fd fd ->
+          add_comment
+            "This creates a closeable [Flow.sink] resource but write \
+             operations are rewritten to calls to [Buf_write]. You might want \
+             to use [Buf_write.with_flow sink (fun buf_write -> ...)].";
+          Exp.constraint_
+            (mk_apply_simple
+               [ "Eio_unix"; "Net"; "import_socket_stream" ]
+               [ fd ])
+            (mk_typ_constr
+               ~params:
+                 [ mk_poly_variant [ ("W", []); ("Flow", []); ("Close", []) ] ]
+               [ "Std"; "r" ])
+      | `Fname fname ->
+          add_comment
+            "[flags] and [perm] arguments were dropped. The [~create] was \
+             added by default and might not match the previous flags. Use \
+             [~append:true] for [O_APPEND].";
+          mk_apply_ident
+            [ "Eio"; "Path"; "open_out" ]
+            [
+              get_current_switch_arg ();
+              ( Labelled (mk_loc "create"),
+                mk_variant_exp ~arg:(mk_const_int "0o666") "If_missing" );
+              ( Nolabel,
+                mk_apply_simple [ "Eio"; "Path"; "/" ] [ env "cwd"; fname ] );
+            ]
 
     method io_read_line chan =
       add_comment

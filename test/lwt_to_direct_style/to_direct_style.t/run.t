@@ -228,7 +228,7 @@ Make a writable directory tree:
     Lwt_mutex.lock (line 136 column 9)
     Lwt_mutex.unlock (line 137 column 9)
     Lwt_mutex.with_lock (line 138 column 9)
-  lib/test_lwt_unix.ml: (25 occurrences)
+  lib/test_lwt_unix.ml: (29 occurrences)
     Lwt_io (line 7 column 8)
     Lwt.return (line 11 column 3)
     Lwt.let* (line 10 column 3)
@@ -236,7 +236,9 @@ Make a writable directory tree:
     Lwt_io.Input (line 22 column 32)
     Lwt_io.Output (line 23 column 32)
     Lwt_io.input (line 7 column 28)
+    Lwt_io.input (line 30 column 39)
     Lwt_io.output (line 21 column 32)
+    Lwt_io.output (line 31 column 39)
     Lwt_io.output_channel (line 26 column 9)
     Lwt_io.of_fd (line 7 column 16)
     Lwt_io.of_fd (line 21 column 13)
@@ -246,6 +248,8 @@ Make a writable directory tree:
     Lwt_io.read_into (line 10 column 19)
     Lwt_io.write (line 24 column 19)
     Lwt_io.stdout (line 26 column 33)
+    Lwt_io.open_file (line 30 column 16)
+    Lwt_io.open_file (line 31 column 16)
     Lwt_unix.Timeout (line 13 column 9)
     Lwt_unix.of_unix_file_descr (line 6 column 8)
     Lwt_unix.sockaddr (line 14 column 9)
@@ -718,3 +722,18 @@ Make a writable directory tree:
     Eio.Buf_read.line
       (* TODO: lwt-to-direct-style: Argument to [Eio.Buf_read.line] is a [Flow.source] but it should be a [Eio.Buf_read.t]. Use [Eio.Buf_read.of_flow ~max_size:1_000_000 source]. *)
       chan
+  
+  let _f fname =
+    Eio.Path.open_in ~sw
+      (Eio.Path.( / ) env#cwd
+         (* TODO: lwt-to-direct-style: [sw] (of type Switch.t) must be propagated here. *)
+         (* TODO: lwt-to-direct-style: [env] must be propagated from the main loop *)
+         fname)
+  
+  let _f fname =
+    Eio.Path.open_out ~sw ~create:(`If_missing 0o666)
+      (Eio.Path.( / ) env#cwd
+         (* TODO: lwt-to-direct-style: [sw] (of type Switch.t) must be propagated here. *)
+         (* TODO: lwt-to-direct-style: [flags] and [perm] arguments were dropped. The [~create] was added by default and might not match the previous flags. Use [~append:true] for [O_APPEND]. *)
+         (* TODO: lwt-to-direct-style: [env] must be propagated from the main loop *)
+         fname)

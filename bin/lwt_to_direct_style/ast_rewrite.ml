@@ -149,10 +149,10 @@ let lwt_io_mode_of_ast ~state mode =
         | _ -> None)
   | _ -> None
 
-let lwt_io_of_fd ~backend ~state ~mode fd =
+let lwt_io_open ~backend ~state ~mode src =
   match lwt_io_mode_of_ast ~state mode with
-  | Some `Input -> Some (backend#input_io_of_fd fd)
-  | Some `Output -> Some (backend#output_io_of_fd fd)
+  | Some `Input -> Some (backend#input_io src)
+  | Some `Output -> Some (backend#output_io src)
   | None ->
       add_comment state
         "Couldn't translate this call to [Lwt_io.of_fd] because the [~mode] \
@@ -359,7 +359,13 @@ let rewrite_apply ~backend ~state full_ident args =
       @@ ignore_lblarg ~cmt:"Will behave as if it was [true]." "close"
       @@ take_lbl "mode"
       @@ fun mode ->
-      take @@ fun fd -> return (lwt_io_of_fd ~backend ~state ~mode fd)
+      take @@ fun fd -> return (lwt_io_open ~backend ~state ~mode (`Of_fd fd))
+  | "Lwt_io", "open_file" ->
+      ignore_lblarg "buffer" @@ ignore_lblarg "flags" @@ ignore_lblarg "perm"
+      @@ take_lbl "mode"
+      @@ fun mode ->
+      take @@ fun fname ->
+      return (lwt_io_open ~backend ~state ~mode (`Fname fname))
   | "Lwt_io", "read_line" ->
       take @@ fun in_chan -> return (Some (backend#io_read_line in_chan))
   | "Lwt_io", "write" ->

@@ -26,3 +26,6 @@ let _f out_chan = Lwt_io.write out_chan "str"
 let _ : Lwt_io.output_channel = Lwt_io.stdout
 
 let _f chan = Lwt_io.read_line chan
+
+let _f fname = Lwt_io.open_file ~mode:Lwt_io.input fname
+let _f fname = Lwt_io.open_file ~mode:Lwt_io.output fname
