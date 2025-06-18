@@ -31,12 +31,9 @@ Make a writable directory tree:
       ~sw:(Stdlib.Option.get (Fiber.get Fiber_var.sw))
       (fun () -> async_process 1);
     let fd =
-     fun ?blocking:x1 ?set_flags:x2 ->
       Eio_unix.Fd.of_unix
         ~sw:(Stdlib.Option.get (Fiber.get Fiber_var.sw))
-        ?blocking:x1 ~close_unix:true
-        (* TODO: lwt-to-direct-style: Labelled argument ?set_flags was dropped. *)
-        Unix.stdin
+        ~close_unix:true Unix.stdin
     in
     let in_chan =
       (Eio_unix.Net.import_socket_stream

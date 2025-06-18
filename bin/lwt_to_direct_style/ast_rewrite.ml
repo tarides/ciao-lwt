@@ -322,10 +322,9 @@ let rewrite_apply ~backend ~state full_ident args =
       take @@ fun d ->
       take @@ fun f -> return (Some (backend#with_timeout d f))
   | "Lwt_unix", "of_unix_file_descr" ->
-      take @@ fun fd ->
       take_lblopt "blocking" @@ fun blocking ->
-      ignore_lblarg "set_flags"
-      @@ return (Some (backend#of_unix_file_descr ?blocking fd))
+      ignore_lblarg "set_flags" @@ take
+      @@ fun fd -> return (Some (backend#of_unix_file_descr ?blocking fd))
   | "Lwt_unix", "close" -> take @@ fun fd -> return (Some (backend#fd_close fd))
   (* [Lwt_unix] contains functions exactly equivalent to functions of the same
      name in [Unix]. *)
