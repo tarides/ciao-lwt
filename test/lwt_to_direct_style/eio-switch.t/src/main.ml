@@ -2,6 +2,12 @@ open Lwt.Syntax
 
 let async_process _ = Lwt.return ()
 
+let _f _ = Lwt_unix.with_timeout 1.0 (fun () -> Lwt.return 42)
+
+let _f fname =
+  let* fd = Lwt_io.open_file ~mode:Lwt_io.input fname in
+  Lwt_io.close fd
+
 let main () =
   Lwt.async (fun () -> async_process 1);
   let fd = Lwt_unix.of_unix_file_descr Unix.stdin in

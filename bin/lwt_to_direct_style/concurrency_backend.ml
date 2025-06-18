@@ -4,16 +4,15 @@ open Parsetree
 open Ast_helper
 open Ocamlformat_utils.Ast_utils
 
-let eio ~eio_sw_as_fiber_var add_comment =
+let eio ~eio_sw_as_fiber_var ~eio_env_as_fiber_var add_comment =
   let used_eio_std = ref false in
-  let fiber_ident i =
+  let eio_std_ident mod_ i =
     used_eio_std := true;
-    [ "Fiber"; i ]
+    [ mod_; i ]
   in
-  let promise_ident i =
-    used_eio_std := true;
-    [ "Promise"; i ]
-  in
+  let fiber_ident = eio_std_ident "Fiber"
+  and promise_ident = eio_std_ident "Promise"
+  and switch_ident = eio_std_ident "Switch" in
   let add_comment fmt = Format.kasprintf add_comment fmt in
   let add_comment_dropped_exp ~label exp =
     add_comment "Dropped expression (%s): [%s]." label
@@ -25,11 +24,28 @@ let eio ~eio_sw_as_fiber_var add_comment =
   let get_current_switch () =
     match eio_sw_as_fiber_var with
     | Some ident ->
-        mk_apply_simple [ "Option"; "get" ]
-          [ mk_apply_simple [ "Fiber"; "get" ] [ Exp.ident (mk_loc ident) ] ]
+        mk_apply_simple
+          [ "Stdlib"; "Option"; "get" ]
+          [ mk_apply_simple (fiber_ident "get") [ Exp.ident (mk_loc ident) ] ]
     | None ->
         add_comment "[sw] (of type Switch.t) must be propagated here.";
         mk_exp_ident [ "sw" ]
+  in
+  let get_current_switch_arg () =
+    (Labelled (mk_loc "sw"), get_current_switch ())
+  in
+  let env field =
+    let env_exp =
+      match eio_env_as_fiber_var with
+      | Some ident ->
+          mk_apply_simple
+            [ "Stdlib"; "Option"; "get" ]
+            [ mk_apply_simple (fiber_ident "get") [ Exp.ident (mk_loc ident) ] ]
+      | None ->
+          add_comment "[env] must be propagated from the main loop";
+          mk_exp_ident [ "env" ]
+    in
+    Exp.send env_exp (mk_loc field)
   in
   object
     method both ~left ~right =
@@ -40,9 +56,7 @@ let eio ~eio_sw_as_fiber_var add_comment =
     method async process_f =
       Exp.apply
         (mk_exp_ident (fiber_ident "fork"))
-        [
-          (Labelled (mk_loc "sw"), get_current_switch ()); (Nolabel, process_f);
-        ]
+        [ get_current_switch_arg (); (Nolabel, process_f) ]
 
     method wait () =
       add_comment
@@ -73,9 +87,9 @@ let eio ~eio_sw_as_fiber_var add_comment =
     method sleep d = mk_apply_simple [ "Eio_unix"; "sleep" ] [ d ]
 
     method with_timeout d f =
-      add_comment "[env] must be propagated from the main loop";
-      let clock = Exp.send (mk_exp_ident [ "env" ]) (mk_loc "mono_clock") in
-      mk_apply_simple [ "Eio"; "Time"; "with_timeout_exn" ] [ clock; d; f ]
+      mk_apply_simple
+        [ "Eio"; "Time"; "with_timeout_exn" ]
+        [ env "mono_clock"; d; f ]
 
     method timeout_exn = mk_longident [ "Eio"; "Time"; "Timeout" ]
 
@@ -146,7 +160,7 @@ let eio ~eio_sw_as_fiber_var add_comment =
       in
       mk_apply_ident
         [ "Eio_unix"; "Fd"; "of_unix" ]
-        ([ (Labelled (mk_loc "sw"), get_current_switch ()) ]
+        ([ get_current_switch_arg () ]
         @ blocking_arg
         @ [
             (Labelled (mk_loc "close_unix"), mk_constr_exp [ "true" ]);
@@ -163,19 +177,37 @@ let eio ~eio_sw_as_fiber_var add_comment =
     method fd_close fd = mk_apply_simple [ "Eio_unix"; "Fd" ] [ fd ]
 
     method main_run promise =
+      let with_binding var_ident x body =
+        let var = Exp.ident (mk_loc var_ident) in
+        mk_apply_simple (fiber_ident "with_binding") [ var; x; mk_thunk body ]
+      in
       add_comment
         "[Eio_main.run] argument used to be a [Lwt] promise and is now a \
          [fun]. Make sure no asynchronous or IO calls are done outside of this \
          [fun].";
-      (match eio_sw_as_fiber_var with
-      | Some ident ->
-          add_comment
-            "Make sure to create a [Switch.t] and store it in fiber variable \
-             [%a]."
-            Ocamlformat_utils.Parsing.Printast.fmt_longident ident
-      | None -> ());
+      let wrap_sw_fiber_var k =
+        match eio_sw_as_fiber_var with
+        | Some var_ident ->
+            let fun_sw =
+              mk_fun ~arg_name:"sw" (fun sw -> with_binding var_ident sw k)
+            in
+            mk_apply_ident (switch_ident "run")
+              [
+                (Labelled (mk_loc "name"), mk_const_string "main");
+                (Nolabel, fun_sw);
+              ]
+        | None -> k
+      in
+      let wrap_env_fiber_var env k =
+        match eio_env_as_fiber_var with
+        | Some var_ident -> with_binding var_ident env k
+        | None -> k
+      in
       mk_apply_simple [ "Eio_main"; "run" ]
-        [ mk_fun ~arg_name:"env" (fun _env -> promise) ]
+        [
+          mk_fun ~arg_name:"env" (fun env ->
+              wrap_env_fiber_var env (wrap_sw_fiber_var promise));
+        ]
 
     method input_io_of_fd fd =
       Exp.constraint_

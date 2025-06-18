@@ -3,25 +3,36 @@ Make a writable directory tree:
   $ cd out
 
   $ dune build @ocaml-index
-  $ lwt-to-direct-style --migrate --eio-sw-as-fiber-var Fiber_var.sw
+  $ lwt-to-direct-style --migrate --eio-sw-as-fiber-var Fiber_var.sw --eio-env-as-fiber-var Fiber_var.env
   Formatted 1 files
-  Warning: main.ml: 2 occurrences have not been rewritten.
-    Lwt_io.read (line 9 column 12)
-    Lwt_io.printf (line 10 column 3)
+  Warning: main.ml: 5 occurrences have not been rewritten.
+    Lwt_io.open_file (line 8 column 13)
+    Lwt_io.input (line 8 column 36)
+    Lwt_io.close (line 9 column 3)
+    Lwt_io.read (line 15 column 12)
+    Lwt_io.printf (line 16 column 3)
 
   $ cat main.ml
   open Eio.Std
   
   let async_process _ = ()
   
+  let _f _ =
+    Eio.Time.with_timeout_exn
+      (Stdlib.Option.get (Fiber.get Fiber_var.env))#mono_clock 1.0 (fun () -> 42)
+  
+  let _f fname =
+    let fd = Lwt_io.open_file ~mode:Lwt_io.input fname in
+    Lwt_io.close fd
+  
   let main () =
     Fiber.fork
-      ~sw:(Option.get (Fiber.get Fiber_var.sw))
+      ~sw:(Stdlib.Option.get (Fiber.get Fiber_var.sw))
       (fun () -> async_process 1);
     let fd =
      fun ?blocking:x1 ?set_flags:x2 ->
       Eio_unix.Fd.of_unix
-        ~sw:(Option.get (Fiber.get Fiber_var.sw))
+        ~sw:(Stdlib.Option.get (Fiber.get Fiber_var.sw))
         ?blocking:x1 ~close_unix:true
         (* TODO: lwt-to-direct-style: Labelled argument ?set_flags was dropped. *)
         Unix.stdin
@@ -34,6 +45,8 @@ Make a writable directory tree:
   
   let () =
     Eio_main.run (fun env ->
-        (* TODO: lwt-to-direct-style: [Eio_main.run] argument used to be a [Lwt] promise and is now a [fun]. Make sure no asynchronous or IO calls are done outside of this [fun]. *)
-        (* TODO: lwt-to-direct-style: Make sure to create a [Switch.t] and store it in fiber variable ["Fiber_var.sw"]. *)
-        main ())
+        Fiber.with_binding Fiber_var.env env (fun () ->
+            Switch.run ~name:"main" (fun sw ->
+                Fiber.with_binding Fiber_var.sw sw (fun () ->
+                    (* TODO: lwt-to-direct-style: [Eio_main.run] argument used to be a [Lwt] promise and is now a [fun]. Make sure no asynchronous or IO calls are done outside of this [fun]. *)
+                    main ()))))
