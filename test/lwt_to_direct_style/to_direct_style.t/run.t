@@ -684,8 +684,12 @@ Make a writable directory tree:
            (* TODO: lwt-to-direct-style: Labelled argument ?set_flags was dropped. *).(
              openfile fname [ O_RDWR; O_NONBLOCK; O_APPEND ])
              0o660))
-      |> fun x1 ->
-      (Eio_unix.Net.import_socket_stream x1 : [ `R | `Flow | `Close ] r)
+      |>
+      (* TODO: lwt-to-direct-style: [sw] (of type Switch.t) must be propagated here. *)
+      (* TODO: lwt-to-direct-style: This creates a closeable [Flow.source] resource but read operations are rewritten to calls to [Buf_read]. *)
+      fun x1 ->
+      (Eio_unix.Net.import_socket_stream ~sw ~close_unix:true x1
+        : [ `R | `Flow | `Close ] r)
     in
     let buf = Bytes.create 1024 in
     let _n : int =
@@ -709,15 +713,22 @@ Make a writable directory tree:
     Unix.getaddrinfo
   
   let _f fd =
-    (Eio_unix.Net.import_socket_stream
+    (Eio_unix.Net.import_socket_stream ~sw ~close_unix:true
+       (* TODO: lwt-to-direct-style: [sw] (of type Switch.t) must be propagated here. *)
        (* TODO: lwt-to-direct-style: This creates a closeable [Flow.sink] resource but write operations are rewritten to calls to [Buf_write]. You might want to use [Buf_write.with_flow sink (fun buf_write -> ...)]. *)
        fd
       : [ `W | `Flow | `Close ] r)
   
-  let _f fd = (Eio_unix.Net.import_socket_stream fd : [ `R | `Flow | `Close ] r)
+  let _f fd =
+    (Eio_unix.Net.import_socket_stream ~sw ~close_unix:true
+       (* TODO: lwt-to-direct-style: [sw] (of type Switch.t) must be propagated here. *)
+       (* TODO: lwt-to-direct-style: This creates a closeable [Flow.source] resource but read operations are rewritten to calls to [Buf_read]. *)
+       fd
+      : [ `R | `Flow | `Close ] r)
   
   let _f fd =
-    (Eio_unix.Net.import_socket_stream
+    (Eio_unix.Net.import_socket_stream ~sw ~close_unix:true
+       (* TODO: lwt-to-direct-style: [sw] (of type Switch.t) must be propagated here. *)
        (* TODO: lwt-to-direct-style: This creates a closeable [Flow.sink] resource but write operations are rewritten to calls to [Buf_write]. You might want to use [Buf_write.with_flow sink (fun buf_write -> ...)]. *)
        fd
       : [ `W | `Flow | `Close ] r)

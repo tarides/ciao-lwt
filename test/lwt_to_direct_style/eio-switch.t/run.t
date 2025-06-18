@@ -39,7 +39,12 @@ Make a writable directory tree:
         Unix.stdin
     in
     let in_chan =
-      (Eio_unix.Net.import_socket_stream fd : [ `R | `Flow | `Close ] r)
+      (Eio_unix.Net.import_socket_stream
+         ~sw:(Stdlib.Option.get (Fiber.get Fiber_var.sw))
+         ~close_unix:true
+         (* TODO: lwt-to-direct-style: This creates a closeable [Flow.source] resource but read operations are rewritten to calls to [Buf_read]. *)
+         fd
+        : [ `R | `Flow | `Close ] r)
     in
     let s = Lwt_io.read in_chan in
     Lwt_io.printf "%s" s

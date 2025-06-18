@@ -51,6 +51,21 @@ let eio ~eio_sw_as_fiber_var ~eio_env_as_fiber_var add_comment =
     in
     Exp.send env_exp (mk_loc field)
   in
+  let import_socket_stream ~r_or_w fd =
+    (* Used by [input_io] and [output_io]. *)
+    Exp.constraint_
+      (mk_apply_ident
+         [ "Eio_unix"; "Net"; "import_socket_stream" ]
+         [
+           get_current_switch_arg ();
+           (Labelled (mk_loc "close_unix"), mk_constr_exp [ "true" ]);
+           (Nolabel, fd);
+         ])
+      (mk_typ_constr
+         ~params:
+           [ mk_poly_variant [ (r_or_w, []); ("Flow", []); ("Close", []) ] ]
+         (std_ident "r"))
+  in
   object
     method both ~left ~right =
       mk_apply_simple (fiber_ident "pair") [ left; right ]
@@ -216,14 +231,10 @@ let eio ~eio_sw_as_fiber_var ~eio_env_as_fiber_var add_comment =
     method input_io =
       function
       | `Of_fd fd ->
-          Exp.constraint_
-            (mk_apply_simple
-               [ "Eio_unix"; "Net"; "import_socket_stream" ]
-               [ fd ])
-            (mk_typ_constr
-               ~params:
-                 [ mk_poly_variant [ ("R", []); ("Flow", []); ("Close", []) ] ]
-               (std_ident "r"))
+          add_comment
+            "This creates a closeable [Flow.source] resource but read \
+             operations are rewritten to calls to [Buf_read].";
+          import_socket_stream ~r_or_w:"R" fd
       | `Fname fname ->
           mk_apply_ident
             [ "Eio"; "Path"; "open_in" ]
@@ -240,14 +251,7 @@ let eio ~eio_sw_as_fiber_var ~eio_env_as_fiber_var add_comment =
             "This creates a closeable [Flow.sink] resource but write \
              operations are rewritten to calls to [Buf_write]. You might want \
              to use [Buf_write.with_flow sink (fun buf_write -> ...)].";
-          Exp.constraint_
-            (mk_apply_simple
-               [ "Eio_unix"; "Net"; "import_socket_stream" ]
-               [ fd ])
-            (mk_typ_constr
-               ~params:
-                 [ mk_poly_variant [ ("W", []); ("Flow", []); ("Close", []) ] ]
-               (std_ident "r"))
+          import_socket_stream ~r_or_w:"W" fd
       | `Fname fname ->
           add_comment
             "[flags] and [perm] arguments were dropped. The [~create] was \
