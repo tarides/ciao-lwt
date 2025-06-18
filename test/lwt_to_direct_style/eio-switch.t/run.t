@@ -45,6 +45,7 @@ Make a writable directory tree:
   
   let () =
     Eio_main.run (fun env ->
-        (* TODO: lwt-to-direct-style: [Eio_main.run] argument used to be a [Lwt] promise and is now a [fun]. Make sure no asynchronous or IO calls are done outside of this [fun]. *)
-        (* TODO: lwt-to-direct-style: Make sure to create a [Switch.t] and store it in fiber variable ["Fiber_var.sw"]. *)
-        main ())
+        Fiber.with_binding Fiber_var.env env (fun () ->
+            (* TODO: lwt-to-direct-style: [Eio_main.run] argument used to be a [Lwt] promise and is now a [fun]. Make sure no asynchronous or IO calls are done outside of this [fun]. *)
+            (* TODO: lwt-to-direct-style: Make sure to create a [Switch.t] and store it in fiber variable ["Fiber_var.sw"]. *)
+            main ()))

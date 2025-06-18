@@ -187,8 +187,16 @@ let eio ~eio_sw_as_fiber_var ~eio_env_as_fiber_var add_comment =
              [%a]."
             Ocamlformat_utils.Parsing.Printast.fmt_longident ident
       | None -> ());
+      let wrap_env_fiber_var env x =
+        match eio_env_as_fiber_var with
+        | Some var_ident ->
+            mk_apply_simple
+              [ "Fiber"; "with_binding" ]
+              [ Exp.ident (mk_loc var_ident); env; mk_thunk x ]
+        | None -> x
+      in
       mk_apply_simple [ "Eio_main"; "run" ]
-        [ mk_fun ~arg_name:"env" (fun _env -> promise) ]
+        [ mk_fun ~arg_name:"env" (fun env -> wrap_env_fiber_var env promise) ]
 
     method input_io_of_fd fd =
       Exp.constraint_
