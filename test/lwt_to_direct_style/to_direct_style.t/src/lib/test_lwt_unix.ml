@@ -37,3 +37,7 @@ let _f fname =
 
 let _f fname = Lwt_unix.stat fname
 let _f fname = Lwt_unix.lstat fname
+
+let _f chan = Lwt_io.read chan
+let _f chan = Lwt_io.read ~count:42 chan
+let _f chan = Lwt_io.read ?count:(Some 42) chan

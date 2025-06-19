@@ -5,8 +5,7 @@ Make a writable directory tree:
   $ dune build @ocaml-index
   $ lwt-to-direct-style --migrate --eio-sw-as-fiber-var Fiber_var.sw --eio-env-as-fiber-var Fiber_var.env
   Formatted 1 files
-  Warning: main.ml: 2 occurrences have not been rewritten.
-    Lwt_io.read (line 15 column 12)
+  Warning: main.ml: 1 occurrences have not been rewritten.
     Lwt_io.printf (line 16 column 3)
 
   $ cat main.ml
@@ -39,7 +38,7 @@ Make a writable directory tree:
            ~close_unix:true fd
           : [ `R | `Flow | `Close ] r)
     in
-    let s = Lwt_io.read in_chan in
+    let s = Eio.Buf_read.take_all in_chan in
     Lwt_io.printf "%s" s
   
   let () =

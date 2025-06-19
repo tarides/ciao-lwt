@@ -219,6 +219,16 @@ let eio ~eio_sw_as_fiber_var ~eio_env_as_fiber_var add_comment =
       add_comment_dropped_exp ~label:"buffer length" buf_len;
       mk_apply_simple [ "Eio"; "Flow"; "single_read" ] [ input; buffer ]
 
+    method io_read_all input =
+      mk_apply_simple [ "Eio"; "Buf_read"; "take_all" ] [ input ]
+
+    method io_read_string_count _input _count_arg =
+      add_comment
+        "Eio doesn't have a direct equivalent of [Lwt_io.read ~count]. Rewrite \
+         the code using [Eio.Buf_read]'s lower level API or switch to \
+         unbuffered IO.";
+      None
+
     method fd_close fd =
       (* TODO: See [of_unix_file_descr]. mk_apply_simple [ "Eio_unix"; "Fd" ] [ fd ] *)
       mk_apply_simple [ "Unix"; "close" ] [ fd ]

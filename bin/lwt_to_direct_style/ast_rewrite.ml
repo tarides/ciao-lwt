@@ -160,6 +160,11 @@ let lwt_io_open ~backend ~state ~mode src =
          [Lwt_io.output].";
       None
 
+let lwt_io_read ~backend ~state:_ count in_chan =
+  match count with
+  | Some count_arg -> backend#io_read_string_count in_chan count_arg
+  | None -> Some (backend#io_read_all in_chan)
+
 let mk_cstr c = Some (mk_constr_exp [ c ])
 
 (* Rewrite calls to functions from the [Lwt] module. See [rewrite_apply] for
@@ -371,6 +376,9 @@ let rewrite_apply ~backend ~state full_ident args =
       return (lwt_io_open ~backend ~state ~mode (`Fname fname))
   | "Lwt_io", "read_line" ->
       take @@ fun in_chan -> return (Some (backend#io_read_line in_chan))
+  | "Lwt_io", "read" ->
+      take_lblopt "count" @@ fun count ->
+      take @@ fun in_chan -> return (lwt_io_read ~backend ~state count in_chan)
   | "Lwt_io", "write" ->
       take @@ fun chan ->
       take @@ fun str -> return (Some (backend#io_write_str chan str))

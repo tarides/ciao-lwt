@@ -228,7 +228,7 @@ Make a writable directory tree:
     Lwt_mutex.lock (line 136 column 9)
     Lwt_mutex.unlock (line 137 column 9)
     Lwt_mutex.with_lock (line 138 column 9)
-  lib/test_lwt_unix.ml: (35 occurrences)
+  lib/test_lwt_unix.ml: (38 occurrences)
     Lwt_io (line 7 column 8)
     Lwt.return (line 11 column 3)
     Lwt.let* (line 10 column 3)
@@ -248,6 +248,9 @@ Make a writable directory tree:
     Lwt_io.of_fd (line 22 column 13)
     Lwt_io.of_fd (line 23 column 13)
     Lwt_io.read_line (line 28 column 15)
+    Lwt_io.read (line 41 column 15)
+    Lwt_io.read (line 42 column 15)
+    Lwt_io.read (line 43 column 15)
     Lwt_io.read_into (line 10 column 19)
     Lwt_io.write (line 24 column 19)
     Lwt_io.length (line 36 column 3)
@@ -294,8 +297,10 @@ Make a writable directory tree:
     Lwt.Fail (line 147 column 5)
     Lwt.let* (line 163 column 21)
     Lwt.Fail (line 179 column 9)
-  Warning: lib/test_lwt_unix.ml: 1 occurrences have not been rewritten.
+  Warning: lib/test_lwt_unix.ml: 3 occurrences have not been rewritten.
     Lwt_io.stdout (line 26 column 33)
+    Lwt_io.read (line 42 column 15)
+    Lwt_io.read (line 43 column 15)
   Warning: lib/test.mli: 2 occurrences have not been rewritten.
     Lwt_mutex.t (line 2 column 10)
     Lwt_mutex.t (line 3 column 10)
@@ -772,3 +777,17 @@ Make a writable directory tree:
       (Eio.Path.( / ) env#cwd
          (* TODO: lwt-to-direct-style: [env] must be propagated from the main loop *)
          fname)
+  
+  let _f chan = Eio.Buf_read.take_all chan
+  
+  let _f chan =
+    Lwt_io.read
+    (* TODO: lwt-to-direct-style: Eio doesn't have a direct equivalent of [Lwt_io.read ~count]. Rewrite the code using [Eio.Buf_read]'s lower level API or switch to unbuffered IO. *)
+    (* TODO: lwt-to-direct-style: Eio doesn't have a direct equivalent of [Lwt_io.read ~count]. Rewrite the code using [Eio.Buf_read]'s lower level API or switch to unbuffered IO. *)
+      ~count:42 chan
+  
+  let _f chan =
+    Lwt_io.read
+    (* TODO: lwt-to-direct-style: Eio doesn't have a direct equivalent of [Lwt_io.read ~count]. Rewrite the code using [Eio.Buf_read]'s lower level API or switch to unbuffered IO. *)
+    (* TODO: lwt-to-direct-style: Eio doesn't have a direct equivalent of [Lwt_io.read ~count]. Rewrite the code using [Eio.Buf_read]'s lower level API or switch to unbuffered IO. *)
+      ?count:(Some 42) chan
