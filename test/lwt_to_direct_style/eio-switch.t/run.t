@@ -20,9 +20,10 @@ Make a writable directory tree:
   
   let _f fname =
     let fd =
-      Eio.Path.open_in
-        ~sw:(Stdlib.Option.get (Fiber.get Fiber_var.sw))
-        (Eio.Path.( / ) (Stdlib.Option.get (Fiber.get Fiber_var.env))#cwd fname)
+      Eio.Buf_read.of_flow ~max_size:1_000_000
+        (Eio.Path.open_in
+           ~sw:(Stdlib.Option.get (Fiber.get Fiber_var.sw))
+           (Eio.Path.( / ) (Stdlib.Option.get (Fiber.get Fiber_var.env))#cwd fname))
     in
     Eio.Resource.close fd
   
@@ -32,12 +33,11 @@ Make a writable directory tree:
       (fun () -> async_process 1);
     let fd = Unix.stdin in
     let in_chan =
-      (Eio_unix.Net.import_socket_stream
-         ~sw:(Stdlib.Option.get (Fiber.get Fiber_var.sw))
-         ~close_unix:true
-         (* TODO: lwt-to-direct-style: This creates a closeable [Flow.source] resource but read operations are rewritten to calls to [Buf_read]. *)
-         fd
-        : [ `R | `Flow | `Close ] r)
+      Eio.Buf_read.of_flow ~max_size:1_000_000
+        (Eio_unix.Net.import_socket_stream
+           ~sw:(Stdlib.Option.get (Fiber.get Fiber_var.sw))
+           ~close_unix:true fd
+          : [ `R | `Flow | `Close ] r)
     in
     let s = Lwt_io.read in_chan in
     Lwt_io.printf "%s" s

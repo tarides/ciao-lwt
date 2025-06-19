@@ -680,15 +680,16 @@ Make a writable directory tree:
       Unix.(openfile fname [ O_RDWR; O_NONBLOCK; O_APPEND ]) 0o660
       |>
       (* TODO: lwt-to-direct-style: [sw] (of type Switch.t) must be propagated here. *)
-      (* TODO: lwt-to-direct-style: This creates a closeable [Flow.source] resource but read operations are rewritten to calls to [Buf_read]. *)
       fun x1 ->
-      (Eio_unix.Net.import_socket_stream ~sw ~close_unix:true x1
-        : [ `R | `Flow | `Close ] r)
+      Eio.Buf_read.of_flow ~max_size:1_000_000
+        (Eio_unix.Net.import_socket_stream ~sw ~close_unix:true x1
+          : [ `R | `Flow | `Close ] r)
     in
     let buf = Bytes.create 1024 in
     let _n : int =
       Eio.Flow.single_read
         (* TODO: lwt-to-direct-style: [buf] should be a [Cstruct.t]. *)
+        (* TODO: lwt-to-direct-style: [Eio.Flow.single_read] operates on a [Flow.source] but [inp] is likely of type [Eio.Buf_read.t]. Rewrite this code to use [Buf_read] (which contains an internal buffer) or change the call to [Eio.Buf_read.of_flow] used to create the buffer. *)
         (* TODO: lwt-to-direct-style: Dropped expression (buffer offset): [0]. *)
         (* TODO: lwt-to-direct-style: Dropped expression (buffer length): [1024]. *)
         inp buf
@@ -707,52 +708,56 @@ Make a writable directory tree:
     Unix.getaddrinfo
   
   let _f fd =
-    (Eio_unix.Net.import_socket_stream ~sw ~close_unix:true
-       (* TODO: lwt-to-direct-style: [sw] (of type Switch.t) must be propagated here. *)
-       (* TODO: lwt-to-direct-style: This creates a closeable [Flow.sink] resource but write operations are rewritten to calls to [Buf_write]. You might want to use [Buf_write.with_flow sink (fun buf_write -> ...)]. *)
-       fd
-      : [ `W | `Flow | `Close ] r)
+    Eio.Buf_write.with_flow
+      (Eio_unix.Net.import_socket_stream ~sw ~close_unix:true
+         (* TODO: lwt-to-direct-style: [sw] (of type Switch.t) must be propagated here. *)
+         (* TODO: lwt-to-direct-style: Write operations to buffered IO should be moved inside [with_flow]. *)
+         fd
+        : [ `W | `Flow | `Close ] r)
+      (fun outbuf -> `Move_writing_code_here)
   
   let _f fd =
-    (Eio_unix.Net.import_socket_stream ~sw ~close_unix:true
-       (* TODO: lwt-to-direct-style: [sw] (of type Switch.t) must be propagated here. *)
-       (* TODO: lwt-to-direct-style: This creates a closeable [Flow.source] resource but read operations are rewritten to calls to [Buf_read]. *)
-       fd
-      : [ `R | `Flow | `Close ] r)
+    Eio.Buf_read.of_flow ~max_size:1_000_000
+      (Eio_unix.Net.import_socket_stream ~sw ~close_unix:true
+         (* TODO: lwt-to-direct-style: [sw] (of type Switch.t) must be propagated here. *)
+         fd
+        : [ `R | `Flow | `Close ] r)
   
   let _f fd =
-    (Eio_unix.Net.import_socket_stream ~sw ~close_unix:true
-       (* TODO: lwt-to-direct-style: [sw] (of type Switch.t) must be propagated here. *)
-       (* TODO: lwt-to-direct-style: This creates a closeable [Flow.sink] resource but write operations are rewritten to calls to [Buf_write]. You might want to use [Buf_write.with_flow sink (fun buf_write -> ...)]. *)
-       fd
-      : [ `W | `Flow | `Close ] r)
+    Eio.Buf_write.with_flow
+      (Eio_unix.Net.import_socket_stream ~sw ~close_unix:true
+         (* TODO: lwt-to-direct-style: [sw] (of type Switch.t) must be propagated here. *)
+         (* TODO: lwt-to-direct-style: Write operations to buffered IO should be moved inside [with_flow]. *)
+         fd
+        : [ `W | `Flow | `Close ] r)
+      (fun outbuf -> `Move_writing_code_here)
   
   let _f out_chan = Eio.Buf_write.string out_chan "str"
   let _ : Eio.Buf_write.t = Lwt_io.stdout
-  
-  let _f chan =
-    Eio.Buf_read.line
-      (* TODO: lwt-to-direct-style: Argument to [Eio.Buf_read.line] is a [Flow.source] but it should be a [Eio.Buf_read.t]. Use [Eio.Buf_read.of_flow ~max_size:1_000_000 source]. *)
-      chan
+  let _f chan = Eio.Buf_read.line chan
   
   let _f fname =
     let fd =
-      Eio.Path.open_in ~sw
-        (Eio.Path.( / ) env#cwd
-           (* TODO: lwt-to-direct-style: [sw] (of type Switch.t) must be propagated here. *)
-           (* TODO: lwt-to-direct-style: [env] must be propagated from the main loop *)
-           fname)
+      Eio.Buf_read.of_flow ~max_size:1_000_000
+        (Eio.Path.open_in ~sw
+           (Eio.Path.( / ) env#cwd
+              (* TODO: lwt-to-direct-style: [sw] (of type Switch.t) must be propagated here. *)
+              (* TODO: lwt-to-direct-style: [env] must be propagated from the main loop *)
+              fname))
     in
     Eio.Resource.close fd
   
   let _f fname =
     let fd =
-      Eio.Path.open_out ~sw ~create:(`If_missing 0o666)
-        (Eio.Path.( / ) env#cwd
-           (* TODO: lwt-to-direct-style: [sw] (of type Switch.t) must be propagated here. *)
-           (* TODO: lwt-to-direct-style: [flags] and [perm] arguments were dropped. The [~create] was added by default and might not match the previous flags. Use [~append:true] for [O_APPEND]. *)
-           (* TODO: lwt-to-direct-style: [env] must be propagated from the main loop *)
-           fname)
+      Eio.Buf_write.with_flow
+        (Eio.Path.open_out ~sw ~create:(`If_missing 0o666)
+           (Eio.Path.( / ) env#cwd
+              (* TODO: lwt-to-direct-style: [sw] (of type Switch.t) must be propagated here. *)
+              (* TODO: lwt-to-direct-style: [flags] and [perm] arguments were dropped. The [~create] was added by default and might not match the previous flags. Use [~append:true] for [O_APPEND]. *)
+              (* TODO: lwt-to-direct-style: [env] must be propagated from the main loop *)
+              (* TODO: lwt-to-direct-style: Write operations to buffered IO should be moved inside [with_flow]. *)
+              fname))
+        (fun outbuf -> `Move_writing_code_here)
     in
     Eio.File.size fd
   

@@ -51,6 +51,24 @@ let eio ~eio_sw_as_fiber_var ~eio_env_as_fiber_var add_comment =
     in
     Exp.send env_exp (mk_loc field)
   in
+  let buf_read_of_flow flow =
+    mk_apply_ident
+      [ "Eio"; "Buf_read"; "of_flow" ]
+      [
+        (Labelled (mk_loc "max_size"), mk_const_int "1_000_000"); (Nolabel, flow);
+      ]
+  in
+  let buf_write_of_flow flow =
+    add_comment
+      "Write operations to buffered IO should be moved inside [with_flow].";
+    mk_apply_simple
+      [ "Eio"; "Buf_write"; "with_flow" ]
+      [
+        flow;
+        mk_fun ~arg_name:"outbuf" (fun _outbuf ->
+            mk_variant_exp "Move_writing_code_here");
+      ]
+  in
   let import_socket_stream ~r_or_w fd =
     (* Used by [input_io] and [output_io]. *)
     Exp.constraint_
@@ -191,6 +209,12 @@ let eio ~eio_sw_as_fiber_var ~eio_env_as_fiber_var add_comment =
     method io_read input buffer buf_offset buf_len =
       add_comment "[%s] should be a [Cstruct.t]."
         (Ocamlformat_utils.format_expression buffer);
+      add_comment
+        "[Eio.Flow.single_read] operates on a [Flow.source] but [%s] is likely \
+         of type [Eio.Buf_read.t]. Rewrite this code to use [Buf_read] (which \
+         contains an internal buffer) or change the call to \
+         [Eio.Buf_read.of_flow] used to create the buffer."
+        (Ocamlformat_utils.format_expression input);
       add_comment_dropped_exp ~label:"buffer offset" buf_offset;
       add_comment_dropped_exp ~label:"buffer length" buf_len;
       mk_apply_simple [ "Eio"; "Flow"; "single_read" ] [ input; buffer ]
@@ -234,48 +258,39 @@ let eio ~eio_sw_as_fiber_var ~eio_env_as_fiber_var add_comment =
 
     method input_io =
       function
-      | `Of_fd fd ->
-          add_comment
-            "This creates a closeable [Flow.source] resource but read \
-             operations are rewritten to calls to [Buf_read].";
-          import_socket_stream ~r_or_w:"R" fd
+      | `Of_fd fd -> buf_read_of_flow (import_socket_stream ~r_or_w:"R" fd)
       | `Fname fname ->
-          mk_apply_ident
-            [ "Eio"; "Path"; "open_in" ]
-            [
-              get_current_switch_arg ();
-              ( Nolabel,
-                mk_apply_simple [ "Eio"; "Path"; "/" ] [ env "cwd"; fname ] );
-            ]
+          buf_read_of_flow
+          @@ mk_apply_ident
+               [ "Eio"; "Path"; "open_in" ]
+               [
+                 get_current_switch_arg ();
+                 ( Nolabel,
+                   mk_apply_simple [ "Eio"; "Path"; "/" ] [ env "cwd"; fname ]
+                 );
+               ]
 
     method output_io =
       function
-      | `Of_fd fd ->
-          add_comment
-            "This creates a closeable [Flow.sink] resource but write \
-             operations are rewritten to calls to [Buf_write]. You might want \
-             to use [Buf_write.with_flow sink (fun buf_write -> ...)].";
-          import_socket_stream ~r_or_w:"W" fd
+      | `Of_fd fd -> buf_write_of_flow (import_socket_stream ~r_or_w:"W" fd)
       | `Fname fname ->
           add_comment
             "[flags] and [perm] arguments were dropped. The [~create] was \
              added by default and might not match the previous flags. Use \
              [~append:true] for [O_APPEND].";
-          mk_apply_ident
-            [ "Eio"; "Path"; "open_out" ]
-            [
-              get_current_switch_arg ();
-              ( Labelled (mk_loc "create"),
-                mk_variant_exp ~arg:(mk_const_int "0o666") "If_missing" );
-              ( Nolabel,
-                mk_apply_simple [ "Eio"; "Path"; "/" ] [ env "cwd"; fname ] );
-            ]
+          buf_write_of_flow
+          @@ mk_apply_ident
+               [ "Eio"; "Path"; "open_out" ]
+               [
+                 get_current_switch_arg ();
+                 ( Labelled (mk_loc "create"),
+                   mk_variant_exp ~arg:(mk_const_int "0o666") "If_missing" );
+                 ( Nolabel,
+                   mk_apply_simple [ "Eio"; "Path"; "/" ] [ env "cwd"; fname ]
+                 );
+               ]
 
     method io_read_line chan =
-      add_comment
-        "Argument to [Eio.Buf_read.line] is a [Flow.source] but it should be a \
-         [Eio.Buf_read.t]. Use [Eio.Buf_read.of_flow ~max_size:1_000_000 \
-         source].";
       mk_apply_simple [ "Eio"; "Buf_read"; "line" ] [ chan ]
 
     (* This is of type [Optint.Int63.t] instead of [int] with Lwt. *)
