@@ -5,11 +5,7 @@ Make a writable directory tree:
   $ dune build @ocaml-index
   $ lwt-to-direct-style --migrate --eio-sw-as-fiber-var Fiber_var.sw --eio-env-as-fiber-var Fiber_var.env
   Formatted 1 files
-  Warning: main.ml: 5 occurrences have not been rewritten.
-    Lwt_io.open_file (line 8 column 13)
-    Lwt_io.input (line 8 column 36)
-    Lwt_io.close (line 9 column 3)
-    Lwt_io.read (line 15 column 12)
+  Warning: main.ml: 1 occurrences have not been rewritten.
     Lwt_io.printf (line 16 column 3)
 
   $ cat main.ml
@@ -22,25 +18,27 @@ Make a writable directory tree:
       (Stdlib.Option.get (Fiber.get Fiber_var.env))#mono_clock 1.0 (fun () -> 42)
   
   let _f fname =
-    let fd = Lwt_io.open_file ~mode:Lwt_io.input fname in
-    Lwt_io.close fd
+    let fd =
+      Eio.Buf_read.of_flow ~max_size:1_000_000
+        (Eio.Path.open_in
+           ~sw:(Stdlib.Option.get (Fiber.get Fiber_var.sw))
+           (Eio.Path.( / ) (Stdlib.Option.get (Fiber.get Fiber_var.env))#cwd fname))
+    in
+    Eio.Resource.close fd
   
   let main () =
     Fiber.fork
       ~sw:(Stdlib.Option.get (Fiber.get Fiber_var.sw))
       (fun () -> async_process 1);
-    let fd =
-     fun ?blocking:x1 ?set_flags:x2 ->
-      Eio_unix.Fd.of_unix
-        ~sw:(Stdlib.Option.get (Fiber.get Fiber_var.sw))
-        ?blocking:x1 ~close_unix:true
-        (* TODO: lwt-to-direct-style: Labelled argument ?set_flags was dropped. *)
-        Unix.stdin
-    in
+    let fd = Unix.stdin in
     let in_chan =
-      (Eio_unix.Net.import_socket_stream fd : [ `R | `Flow | `Close ] Std.r)
+      Eio.Buf_read.of_flow ~max_size:1_000_000
+        (Eio_unix.Net.import_socket_stream
+           ~sw:(Stdlib.Option.get (Fiber.get Fiber_var.sw))
+           ~close_unix:true fd
+          : [ `R | `Flow | `Close ] r)
     in
-    let s = Lwt_io.read in_chan in
+    let s = Eio.Buf_read.take_all in_chan in
     Lwt_io.printf "%s" s
   
   let () =

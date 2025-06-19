@@ -149,16 +149,21 @@ let lwt_io_mode_of_ast ~state mode =
         | _ -> None)
   | _ -> None
 
-let lwt_io_of_fd ~backend ~state ~mode fd =
+let lwt_io_open ~backend ~state ~mode src =
   match lwt_io_mode_of_ast ~state mode with
-  | Some `Input -> Some (backend#input_io_of_fd fd)
-  | Some `Output -> Some (backend#output_io_of_fd fd)
+  | Some `Input -> Some (backend#input_io src)
+  | Some `Output -> Some (backend#output_io src)
   | None ->
       add_comment state
         "Couldn't translate this call to [Lwt_io.of_fd] because the [~mode] \
          argument couldn't be decoded. Directly use [Lwt_io.input] or \
          [Lwt_io.output].";
       None
+
+let lwt_io_read ~backend ~state:_ count in_chan =
+  match count with
+  | Some count_arg -> backend#io_read_string_count in_chan count_arg
+  | None -> Some (backend#io_read_all in_chan)
 
 let mk_cstr c = Some (mk_constr_exp [ c ])
 
@@ -322,10 +327,9 @@ let rewrite_apply ~backend ~state full_ident args =
       take @@ fun d ->
       take @@ fun f -> return (Some (backend#with_timeout d f))
   | "Lwt_unix", "of_unix_file_descr" ->
-      take @@ fun fd ->
       take_lblopt "blocking" @@ fun blocking ->
-      ignore_lblarg "set_flags"
-      @@ return (Some (backend#of_unix_file_descr ?blocking fd))
+      ignore_lblarg "set_flags" @@ take
+      @@ fun fd -> return (Some (backend#of_unix_file_descr ?blocking fd))
   | "Lwt_unix", "close" -> take @@ fun fd -> return (Some (backend#fd_close fd))
   (* [Lwt_unix] contains functions exactly equivalent to functions of the same
      name in [Unix]. *)
@@ -334,6 +338,10 @@ let rewrite_apply ~backend ~state full_ident args =
         "This call to [Unix.%s] was [Lwt_unix.%s] before the rewrite." fname
         fname;
       transparent [ "Unix"; fname ]
+  | "Lwt_unix", "stat" ->
+      take @@ fun path -> return (Some (backend#path_stat ~follow:true path))
+  | "Lwt_unix", "lstat" ->
+      take @@ fun path -> return (Some (backend#path_stat ~follow:false path))
   | "Lwt_condition", "create" ->
       take @@ fun _unit -> return (Some (backend#condition_create ()))
   | "Lwt_condition", "wait" ->
@@ -359,10 +367,23 @@ let rewrite_apply ~backend ~state full_ident args =
       @@ ignore_lblarg ~cmt:"Will behave as if it was [true]." "close"
       @@ take_lbl "mode"
       @@ fun mode ->
-      take @@ fun fd -> return (lwt_io_of_fd ~backend ~state ~mode fd)
+      take @@ fun fd -> return (lwt_io_open ~backend ~state ~mode (`Of_fd fd))
+  | "Lwt_io", "open_file" ->
+      ignore_lblarg "buffer" @@ ignore_lblarg "flags" @@ ignore_lblarg "perm"
+      @@ take_lbl "mode"
+      @@ fun mode ->
+      take @@ fun fname ->
+      return (lwt_io_open ~backend ~state ~mode (`Fname fname))
+  | "Lwt_io", "read_line" ->
+      take @@ fun in_chan -> return (Some (backend#io_read_line in_chan))
+  | "Lwt_io", "read" ->
+      take_lblopt "count" @@ fun count ->
+      take @@ fun in_chan -> return (lwt_io_read ~backend ~state count in_chan)
   | "Lwt_io", "write" ->
       take @@ fun chan ->
       take @@ fun str -> return (Some (backend#io_write_str chan str))
+  | "Lwt_io", "length" -> take @@ fun fd -> return (Some (backend#io_length fd))
+  | "Lwt_io", "close" -> take @@ fun fd -> return (Some (backend#io_close fd))
   | "Lwt_main", "run" ->
       take @@ fun promise -> return (Some (backend#main_run promise))
   | _ -> return None

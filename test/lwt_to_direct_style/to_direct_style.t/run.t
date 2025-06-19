@@ -228,25 +228,39 @@ Make a writable directory tree:
     Lwt_mutex.lock (line 136 column 9)
     Lwt_mutex.unlock (line 137 column 9)
     Lwt_mutex.with_lock (line 138 column 9)
-  lib/test_lwt_unix.ml: (24 occurrences)
+  lib/test_lwt_unix.ml: (38 occurrences)
     Lwt_io (line 7 column 8)
     Lwt.return (line 11 column 3)
     Lwt.let* (line 10 column 3)
+    Lwt.let* (line 31 column 3)
+    Lwt.let* (line 35 column 3)
     Lwt.Syntax (line 1 column 6)
     Lwt_io.Input (line 22 column 32)
     Lwt_io.Output (line 23 column 32)
     Lwt_io.input (line 7 column 28)
+    Lwt_io.input (line 31 column 36)
     Lwt_io.output (line 21 column 32)
+    Lwt_io.output (line 35 column 36)
     Lwt_io.output_channel (line 26 column 9)
+    Lwt_io.close (line 32 column 3)
     Lwt_io.of_fd (line 7 column 16)
     Lwt_io.of_fd (line 21 column 13)
     Lwt_io.of_fd (line 22 column 13)
     Lwt_io.of_fd (line 23 column 13)
+    Lwt_io.read_line (line 28 column 15)
+    Lwt_io.read (line 41 column 15)
+    Lwt_io.read (line 42 column 15)
+    Lwt_io.read (line 43 column 15)
     Lwt_io.read_into (line 10 column 19)
     Lwt_io.write (line 24 column 19)
+    Lwt_io.length (line 36 column 3)
     Lwt_io.stdout (line 26 column 33)
+    Lwt_io.open_file (line 31 column 13)
+    Lwt_io.open_file (line 35 column 13)
     Lwt_unix.Timeout (line 13 column 9)
     Lwt_unix.of_unix_file_descr (line 6 column 8)
+    Lwt_unix.stat (line 38 column 16)
+    Lwt_unix.lstat (line 39 column 16)
     Lwt_unix.sockaddr (line 14 column 9)
     Lwt_unix.ADDR_UNIX (line 14 column 29)
     Lwt_unix.ADDR_UNIX (line 16 column 6)
@@ -283,8 +297,10 @@ Make a writable directory tree:
     Lwt.Fail (line 147 column 5)
     Lwt.let* (line 163 column 21)
     Lwt.Fail (line 179 column 9)
-  Warning: lib/test_lwt_unix.ml: 1 occurrences have not been rewritten.
+  Warning: lib/test_lwt_unix.ml: 3 occurrences have not been rewritten.
     Lwt_io.stdout (line 26 column 33)
+    Lwt_io.read (line 42 column 15)
+    Lwt_io.read (line 43 column 15)
   Warning: lib/test.mli: 2 occurrences have not been rewritten.
     Lwt_mutex.t (line 2 column 10)
     Lwt_mutex.t (line 3 column 10)
@@ -662,22 +678,23 @@ Make a writable directory tree:
   module M : sig end
 
   $ cat lib/test_lwt_unix.ml
+  open Eio.Std
+  
   let _f fname =
     let inp =
-      (fun ?blocking:x1 ?set_flags:x2 ->
-        Eio_unix.Fd.of_unix ~sw ?blocking:x1 ~close_unix:true
-          (Unix
-           (* TODO: lwt-to-direct-style: [sw] (of type Switch.t) must be propagated here. *)
-           (* TODO: lwt-to-direct-style: Labelled argument ?set_flags was dropped. *).(
-             openfile fname [ O_RDWR; O_NONBLOCK; O_APPEND ])
-             0o660))
-      |> fun x1 ->
-      (Eio_unix.Net.import_socket_stream x1 : [ `R | `Flow | `Close ] Std.r)
+      Unix.(openfile fname [ O_RDWR; O_NONBLOCK; O_APPEND ]) 0o660
+      |>
+      (* TODO: lwt-to-direct-style: [sw] (of type Switch.t) must be propagated here. *)
+      fun x1 ->
+      Eio.Buf_read.of_flow ~max_size:1_000_000
+        (Eio_unix.Net.import_socket_stream ~sw ~close_unix:true x1
+          : [ `R | `Flow | `Close ] r)
     in
     let buf = Bytes.create 1024 in
     let _n : int =
       Eio.Flow.single_read
         (* TODO: lwt-to-direct-style: [buf] should be a [Cstruct.t]. *)
+        (* TODO: lwt-to-direct-style: [Eio.Flow.single_read] operates on a [Flow.source] but [inp] is likely of type [Eio.Buf_read.t]. Rewrite this code to use [Buf_read] (which contains an internal buffer) or change the call to [Eio.Buf_read.of_flow] used to create the buffer. *)
         (* TODO: lwt-to-direct-style: Dropped expression (buffer offset): [0]. *)
         (* TODO: lwt-to-direct-style: Dropped expression (buffer length): [1024]. *)
         inp buf
@@ -696,21 +713,81 @@ Make a writable directory tree:
     Unix.getaddrinfo
   
   let _f fd =
-    (Eio_unix.Net.import_socket_stream
-       (* TODO: lwt-to-direct-style: This creates a closeable [Flow.sink] resource but write operations are rewritten to calls to [Buf_write].
-          You might want to use [Buf_write.with_flow sink (fun buf_write -> ...)]. *)
-       fd
-      : [ `W | `Flow | `Close ] Std.r)
+    Eio.Buf_write.with_flow
+      (Eio_unix.Net.import_socket_stream ~sw ~close_unix:true
+         (* TODO: lwt-to-direct-style: [sw] (of type Switch.t) must be propagated here. *)
+         (* TODO: lwt-to-direct-style: Write operations to buffered IO should be moved inside [with_flow]. *)
+         fd
+        : [ `W | `Flow | `Close ] r)
+      (fun outbuf -> `Move_writing_code_here)
   
   let _f fd =
-    (Eio_unix.Net.import_socket_stream fd : [ `R | `Flow | `Close ] Std.r)
+    Eio.Buf_read.of_flow ~max_size:1_000_000
+      (Eio_unix.Net.import_socket_stream ~sw ~close_unix:true
+         (* TODO: lwt-to-direct-style: [sw] (of type Switch.t) must be propagated here. *)
+         fd
+        : [ `R | `Flow | `Close ] r)
   
   let _f fd =
-    (Eio_unix.Net.import_socket_stream
-       (* TODO: lwt-to-direct-style: This creates a closeable [Flow.sink] resource but write operations are rewritten to calls to [Buf_write].
-          You might want to use [Buf_write.with_flow sink (fun buf_write -> ...)]. *)
-       fd
-      : [ `W | `Flow | `Close ] Std.r)
+    Eio.Buf_write.with_flow
+      (Eio_unix.Net.import_socket_stream ~sw ~close_unix:true
+         (* TODO: lwt-to-direct-style: [sw] (of type Switch.t) must be propagated here. *)
+         (* TODO: lwt-to-direct-style: Write operations to buffered IO should be moved inside [with_flow]. *)
+         fd
+        : [ `W | `Flow | `Close ] r)
+      (fun outbuf -> `Move_writing_code_here)
   
   let _f out_chan = Eio.Buf_write.string out_chan "str"
   let _ : Eio.Buf_write.t = Lwt_io.stdout
+  let _f chan = Eio.Buf_read.line chan
+  
+  let _f fname =
+    let fd =
+      Eio.Buf_read.of_flow ~max_size:1_000_000
+        (Eio.Path.open_in ~sw
+           (Eio.Path.( / ) env#cwd
+              (* TODO: lwt-to-direct-style: [sw] (of type Switch.t) must be propagated here. *)
+              (* TODO: lwt-to-direct-style: [env] must be propagated from the main loop *)
+              fname))
+    in
+    Eio.Resource.close fd
+  
+  let _f fname =
+    let fd =
+      Eio.Buf_write.with_flow
+        (Eio.Path.open_out ~sw ~create:(`If_missing 0o666)
+           (Eio.Path.( / ) env#cwd
+              (* TODO: lwt-to-direct-style: [sw] (of type Switch.t) must be propagated here. *)
+              (* TODO: lwt-to-direct-style: [flags] and [perm] arguments were dropped. The [~create] was added by default and might not match the previous flags. Use [~append:true] for [O_APPEND]. *)
+              (* TODO: lwt-to-direct-style: [env] must be propagated from the main loop *)
+              (* TODO: lwt-to-direct-style: Write operations to buffered IO should be moved inside [with_flow]. *)
+              fname))
+        (fun outbuf -> `Move_writing_code_here)
+    in
+    Eio.File.size fd
+  
+  let _f fname =
+    Eio.Path.stat ~follow:true
+      (Eio.Path.( / ) env#cwd
+         (* TODO: lwt-to-direct-style: [env] must be propagated from the main loop *)
+         fname)
+  
+  let _f fname =
+    Eio.Path.stat ~follow:false
+      (Eio.Path.( / ) env#cwd
+         (* TODO: lwt-to-direct-style: [env] must be propagated from the main loop *)
+         fname)
+  
+  let _f chan = Eio.Buf_read.take_all chan
+  
+  let _f chan =
+    Lwt_io.read
+    (* TODO: lwt-to-direct-style: Eio doesn't have a direct equivalent of [Lwt_io.read ~count]. Rewrite the code using [Eio.Buf_read]'s lower level API or switch to unbuffered IO. *)
+    (* TODO: lwt-to-direct-style: Eio doesn't have a direct equivalent of [Lwt_io.read ~count]. Rewrite the code using [Eio.Buf_read]'s lower level API or switch to unbuffered IO. *)
+      ~count:42 chan
+  
+  let _f chan =
+    Lwt_io.read
+    (* TODO: lwt-to-direct-style: Eio doesn't have a direct equivalent of [Lwt_io.read ~count]. Rewrite the code using [Eio.Buf_read]'s lower level API or switch to unbuffered IO. *)
+    (* TODO: lwt-to-direct-style: Eio doesn't have a direct equivalent of [Lwt_io.read ~count]. Rewrite the code using [Eio.Buf_read]'s lower level API or switch to unbuffered IO. *)
+      ?count:(Some 42) chan

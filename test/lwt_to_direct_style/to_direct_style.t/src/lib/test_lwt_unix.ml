@@ -24,3 +24,20 @@ let _f fd = Lwt_io.of_fd ~mode:Lwt_io.Output fd
 let _f out_chan = Lwt_io.write out_chan "str"
 
 let _ : Lwt_io.output_channel = Lwt_io.stdout
+
+let _f chan = Lwt_io.read_line chan
+
+let _f fname =
+  let* fd = Lwt_io.open_file ~mode:Lwt_io.input fname in
+  Lwt_io.close fd
+
+let _f fname =
+  let* fd = Lwt_io.open_file ~mode:Lwt_io.output fname in
+  Lwt_io.length fd
+
+let _f fname = Lwt_unix.stat fname
+let _f fname = Lwt_unix.lstat fname
+
+let _f chan = Lwt_io.read chan
+let _f chan = Lwt_io.read ~count:42 chan
+let _f chan = Lwt_io.read ?count:(Some 42) chan

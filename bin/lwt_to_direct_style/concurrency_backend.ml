@@ -12,7 +12,11 @@ let eio ~eio_sw_as_fiber_var ~eio_env_as_fiber_var add_comment =
   in
   let fiber_ident = eio_std_ident "Fiber"
   and promise_ident = eio_std_ident "Promise"
-  and switch_ident = eio_std_ident "Switch" in
+  and switch_ident = eio_std_ident "Switch"
+  and std_ident i =
+    used_eio_std := true;
+    [ i ]
+  in
   let add_comment fmt = Format.kasprintf add_comment fmt in
   let add_comment_dropped_exp ~label exp =
     add_comment "Dropped expression (%s): [%s]." label
@@ -46,6 +50,39 @@ let eio ~eio_sw_as_fiber_var ~eio_env_as_fiber_var add_comment =
           mk_exp_ident [ "env" ]
     in
     Exp.send env_exp (mk_loc field)
+  in
+  let buf_read_of_flow flow =
+    mk_apply_ident
+      [ "Eio"; "Buf_read"; "of_flow" ]
+      [
+        (Labelled (mk_loc "max_size"), mk_const_int "1_000_000"); (Nolabel, flow);
+      ]
+  in
+  let buf_write_of_flow flow =
+    add_comment
+      "Write operations to buffered IO should be moved inside [with_flow].";
+    mk_apply_simple
+      [ "Eio"; "Buf_write"; "with_flow" ]
+      [
+        flow;
+        mk_fun ~arg_name:"outbuf" (fun _outbuf ->
+            mk_variant_exp "Move_writing_code_here");
+      ]
+  in
+  let import_socket_stream ~r_or_w fd =
+    (* Used by [input_io] and [output_io]. *)
+    Exp.constraint_
+      (mk_apply_ident
+         [ "Eio_unix"; "Net"; "import_socket_stream" ]
+         [
+           get_current_switch_arg ();
+           (Labelled (mk_loc "close_unix"), mk_constr_exp [ "true" ]);
+           (Nolabel, fd);
+         ])
+      (mk_typ_constr
+         ~params:
+           [ mk_poly_variant [ (r_or_w, []); ("Flow", []); ("Close", []) ] ]
+         (std_ident "r"))
   in
   object
     method both ~left ~right =
@@ -150,31 +187,51 @@ let eio ~eio_sw_as_fiber_var ~eio_env_as_fiber_var add_comment =
 
     method direct_style_type param = param
 
-    method of_unix_file_descr ?blocking fd =
-      let blocking_arg =
-        let lbl = mk_loc "blocking" in
-        match blocking with
-        | Some (expr, `Lbl) -> [ (Labelled lbl, expr) ]
-        | Some (expr, `Opt) -> [ (Optional lbl, expr) ]
-        | None -> []
-      in
-      mk_apply_ident
-        [ "Eio_unix"; "Fd"; "of_unix" ]
-        ([ get_current_switch_arg () ]
-        @ blocking_arg
-        @ [
-            (Labelled (mk_loc "close_unix"), mk_constr_exp [ "true" ]);
-            (Nolabel, fd);
-          ])
+    method of_unix_file_descr ?blocking:_ fd =
+      (* TODO: We don't use [Eio_unix.Fd.t] because there is no conversion to [Flow.sink]. *)
+      (* let blocking_arg = *)
+      (*   let lbl = mk_loc "blocking" in *)
+      (*   match blocking with *)
+      (*   | Some (expr, `Lbl) -> [ (Labelled lbl, expr) ] *)
+      (*   | Some (expr, `Opt) -> [ (Optional lbl, expr) ] *)
+      (*   | None -> [] *)
+      (* in *)
+      (* mk_apply_ident *)
+      (*   [ "Eio_unix"; "Fd"; "of_unix" ] *)
+      (*   ([ get_current_switch_arg () ] *)
+      (*   @ blocking_arg *)
+      (*   @ [ *)
+      (*       (Labelled (mk_loc "close_unix"), mk_constr_exp [ "true" ]); *)
+      (*       (Nolabel, fd); *)
+      (*     ]) *)
+      fd
 
     method io_read input buffer buf_offset buf_len =
       add_comment "[%s] should be a [Cstruct.t]."
         (Ocamlformat_utils.format_expression buffer);
+      add_comment
+        "[Eio.Flow.single_read] operates on a [Flow.source] but [%s] is likely \
+         of type [Eio.Buf_read.t]. Rewrite this code to use [Buf_read] (which \
+         contains an internal buffer) or change the call to \
+         [Eio.Buf_read.of_flow] used to create the buffer."
+        (Ocamlformat_utils.format_expression input);
       add_comment_dropped_exp ~label:"buffer offset" buf_offset;
       add_comment_dropped_exp ~label:"buffer length" buf_len;
       mk_apply_simple [ "Eio"; "Flow"; "single_read" ] [ input; buffer ]
 
-    method fd_close fd = mk_apply_simple [ "Eio_unix"; "Fd" ] [ fd ]
+    method io_read_all input =
+      mk_apply_simple [ "Eio"; "Buf_read"; "take_all" ] [ input ]
+
+    method io_read_string_count _input _count_arg =
+      add_comment
+        "Eio doesn't have a direct equivalent of [Lwt_io.read ~count]. Rewrite \
+         the code using [Eio.Buf_read]'s lower level API or switch to \
+         unbuffered IO.";
+      None
+
+    method fd_close fd =
+      (* TODO: See [of_unix_file_descr]. mk_apply_simple [ "Eio_unix"; "Fd" ] [ fd ] *)
+      mk_apply_simple [ "Unix"; "close" ] [ fd ]
 
     method main_run promise =
       let with_binding var_ident x body =
@@ -209,29 +266,56 @@ let eio ~eio_sw_as_fiber_var ~eio_env_as_fiber_var add_comment =
               wrap_env_fiber_var env (wrap_sw_fiber_var promise));
         ]
 
-    method input_io_of_fd fd =
-      Exp.constraint_
-        (mk_apply_simple [ "Eio_unix"; "Net"; "import_socket_stream" ] [ fd ])
-        (mk_typ_constr
-           ~params:
-             [ mk_poly_variant [ ("R", []); ("Flow", []); ("Close", []) ] ]
-           [ "Std"; "r" ])
+    method input_io =
+      function
+      | `Of_fd fd -> buf_read_of_flow (import_socket_stream ~r_or_w:"R" fd)
+      | `Fname fname ->
+          buf_read_of_flow
+          @@ mk_apply_ident
+               [ "Eio"; "Path"; "open_in" ]
+               [
+                 get_current_switch_arg ();
+                 ( Nolabel,
+                   mk_apply_simple [ "Eio"; "Path"; "/" ] [ env "cwd"; fname ]
+                 );
+               ]
 
-    method output_io_of_fd fd =
-      add_comment
-        "This creates a closeable [Flow.sink] resource but write operations \
-         are rewritten to calls to [Buf_write].\n\
-        \        You might want to use [Buf_write.with_flow sink (fun \
-         buf_write -> ...)].";
-      Exp.constraint_
-        (mk_apply_simple [ "Eio_unix"; "Net"; "import_socket_stream" ] [ fd ])
-        (mk_typ_constr
-           ~params:
-             [ mk_poly_variant [ ("W", []); ("Flow", []); ("Close", []) ] ]
-           [ "Std"; "r" ])
+    method output_io =
+      function
+      | `Of_fd fd -> buf_write_of_flow (import_socket_stream ~r_or_w:"W" fd)
+      | `Fname fname ->
+          add_comment
+            "[flags] and [perm] arguments were dropped. The [~create] was \
+             added by default and might not match the previous flags. Use \
+             [~append:true] for [O_APPEND].";
+          buf_write_of_flow
+          @@ mk_apply_ident
+               [ "Eio"; "Path"; "open_out" ]
+               [
+                 get_current_switch_arg ();
+                 ( Labelled (mk_loc "create"),
+                   mk_variant_exp ~arg:(mk_const_int "0o666") "If_missing" );
+                 ( Nolabel,
+                   mk_apply_simple [ "Eio"; "Path"; "/" ] [ env "cwd"; fname ]
+                 );
+               ]
+
+    method io_read_line chan =
+      mk_apply_simple [ "Eio"; "Buf_read"; "line" ] [ chan ]
+
+    (* This is of type [Optint.Int63.t] instead of [int] with Lwt. *)
+    method io_length fd = mk_apply_simple [ "Eio"; "File"; "size" ] [ fd ]
 
     method io_write_str chan str =
       mk_apply_simple [ "Eio"; "Buf_write"; "string" ] [ chan; str ]
 
+    method io_close fd = mk_apply_simple [ "Eio"; "Resource"; "close" ] [ fd ]
     method type_out_channel = mk_typ_constr [ "Eio"; "Buf_write"; "t" ]
+
+    method path_stat ~follow path =
+      mk_apply_ident [ "Eio"; "Path"; "stat" ]
+        [
+          (Labelled (mk_loc "follow"), mk_constr_of_bool follow);
+          (Nolabel, mk_apply_simple [ "Eio"; "Path"; "/" ] [ env "cwd"; path ]);
+        ]
   end
