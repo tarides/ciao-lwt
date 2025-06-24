@@ -356,12 +356,13 @@ let rewrite_apply ~backend ~state full_ident args =
   | "Lwt_mutex", "with_lock" ->
       take @@ fun t ->
       take @@ fun f -> return (Some (backend#mutex_with_lock t f))
-  | "Lwt_io", "read_into" ->
+  | "Lwt_io", (("read_into" | "read_into_exactly") as ident) ->
+      let exactly = ident = "read_into_exactly" in
       take @@ fun input ->
       take @@ fun buffer ->
       take @@ fun buf_off ->
       take @@ fun buf_len ->
-      return (Some (backend#io_read input buffer buf_off buf_len))
+      return (Some (backend#io_read ~exactly input buffer buf_off buf_len))
   | "Lwt_io", "of_fd" ->
       ignore_lblarg "buffer"
       @@ ignore_lblarg ~cmt:"Will behave as if it was [true]." "close"

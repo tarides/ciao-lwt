@@ -18,9 +18,10 @@ let eio ~eio_sw_as_fiber_var ~eio_env_as_fiber_var add_comment =
     [ i ]
   in
   let add_comment fmt = Format.kasprintf add_comment fmt in
-  let add_comment_dropped_exp ~label exp =
-    add_comment "Dropped expression (%s): [%s]." label
+  let add_comment_dropped_exp ~label ?(cmt = "") exp =
+    add_comment "Dropped expression (%s): [%s].%s" label
       (Ocamlformat_utils.format_expression exp)
+      cmt
   in
   (* If [--eio-sw-as-fiber-var] is passed on the command line, this will query
      the current switch. Otherwise, this will generate a comment.
@@ -206,7 +207,7 @@ let eio ~eio_sw_as_fiber_var ~eio_env_as_fiber_var add_comment =
       (*     ]) *)
       fd
 
-    method io_read input buffer buf_offset buf_len =
+    method io_read ~exactly input buffer buf_offset buf_len =
       add_comment "[%s] should be a [Cstruct.t]."
         (Ocamlformat_utils.format_expression buffer);
       add_comment
@@ -215,9 +216,12 @@ let eio ~eio_sw_as_fiber_var ~eio_env_as_fiber_var add_comment =
          contains an internal buffer) or change the call to \
          [Eio.Buf_read.of_flow] used to create the buffer."
         (Ocamlformat_utils.format_expression input);
-      add_comment_dropped_exp ~label:"buffer offset" buf_offset;
-      add_comment_dropped_exp ~label:"buffer length" buf_len;
-      mk_apply_simple [ "Eio"; "Flow"; "single_read" ] [ input; buffer ]
+      add_comment_dropped_exp ~label:"buffer offset"
+        ~cmt:" This will behave as if it was [0]." buf_offset;
+      add_comment_dropped_exp ~label:"buffer length"
+        ~cmt:" This will behave as if it was [Cstruct.length buffer]." buf_len;
+      let fun_ = if exactly then "read_exact" else "single_read" in
+      mk_apply_simple [ "Eio"; "Flow"; fun_ ] [ input; buffer ]
 
     method io_read_all input =
       mk_apply_simple [ "Eio"; "Buf_read"; "take_all" ] [ input ]
