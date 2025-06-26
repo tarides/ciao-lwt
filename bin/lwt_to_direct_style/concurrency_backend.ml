@@ -317,6 +317,7 @@ let eio ~eio_sw_as_fiber_var ~eio_env_as_fiber_var add_comment =
       mk_apply_simple [ "Eio"; "Buf_write"; "string" ] [ chan; str ]
 
     method io_close fd = mk_apply_simple [ "Eio"; "Resource"; "close" ] [ fd ]
+    method type_in_channel = mk_typ_constr [ "Eio"; "Buf_read"; "t" ]
     method type_out_channel = mk_typ_constr [ "Eio"; "Buf_write"; "t" ]
 
     method path_stat ~follow path =
