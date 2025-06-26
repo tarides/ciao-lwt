@@ -40,3 +40,8 @@ let _f chan = Lwt_io.read chan
 let _f chan = Lwt_io.read ~count:42 chan
 let _f chan = Lwt_io.read ?count:(Some 42) chan
 let _f chan = Lwt_io.flush chan
+
+let _f = Lwt_preemptive.detach (fun () -> Lwt.return_unit) ()
+let _f =
+  let f = Lwt.return in
+  Lwt_preemptive.detach f 12

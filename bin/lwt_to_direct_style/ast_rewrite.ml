@@ -390,6 +390,12 @@ let rewrite_apply ~backend ~state full_ident args =
   | "Lwt_io", "flush" -> take @@ fun fd -> return (Some (backend#io_flush fd))
   | "Lwt_main", "run" ->
       take @@ fun promise -> return (Some (backend#main_run promise))
+  | "Lwt_preemptive", "detach" ->
+      take @@ fun f ->
+      take @@ fun arg ->
+      return
+        (Some
+           (backend#domain_detach (mk_thunk (Exp.apply f [ (Nolabel, arg) ]))))
   | _ -> return None
 
 (** Transform a [binding_op] into a [pattern] and an [expression] while

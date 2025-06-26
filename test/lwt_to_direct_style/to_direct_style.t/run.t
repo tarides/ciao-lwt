@@ -230,9 +230,11 @@ Make a writable directory tree:
     Lwt_mutex.lock (line 136 column 9)
     Lwt_mutex.unlock (line 137 column 9)
     Lwt_mutex.with_lock (line 138 column 9)
-  lib/test_lwt_unix.ml: (43 occurrences)
+  lib/test_lwt_unix.ml: (47 occurrences)
     Lwt_io (line 7 column 8)
     Lwt.return (line 12 column 3)
+    Lwt.return (line 46 column 11)
+    Lwt.return_unit (line 44 column 43)
     Lwt.let* (line 10 column 3)
     Lwt.let* (line 11 column 3)
     Lwt.let* (line 30 column 3)
@@ -264,6 +266,8 @@ Make a writable directory tree:
     Lwt_io.stdout (line 26 column 33)
     Lwt_io.open_file (line 30 column 13)
     Lwt_io.open_file (line 34 column 13)
+    Lwt_preemptive.detach (line 44 column 10)
+    Lwt_preemptive.detach (line 47 column 3)
     Lwt_unix.Timeout (line 14 column 9)
     Lwt_unix.of_unix_file_descr (line 6 column 8)
     Lwt_unix.stat (line 37 column 16)
@@ -816,3 +820,18 @@ Make a writable directory tree:
       ?count:(Some 42) chan
   
   let _f chan = Eio.Buf_write.flush chan
+  
+  let _f =
+    Fiber.fork_promise ~sw (fun () ->
+        Eio.Domain_manager.run env#domain_mgr (fun () ->
+            (* TODO: lwt-to-direct-style: [sw] (of type Switch.t) must be propagated here. *)
+            (* TODO: lwt-to-direct-style: [env] must be propagated from the main loop *)
+            (fun () -> ()) ()))
+  
+  let _f =
+    let f = fun x1 -> x1 in
+    Fiber.fork_promise ~sw (fun () ->
+        Eio.Domain_manager.run env#domain_mgr (fun () ->
+            (* TODO: lwt-to-direct-style: [env] must be propagated from the main loop *)
+            (* TODO: lwt-to-direct-style: [sw] (of type Switch.t) must be propagated here. *)
+            f 12))

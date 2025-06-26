@@ -326,4 +326,16 @@ let eio ~eio_sw_as_fiber_var ~eio_env_as_fiber_var add_comment =
           (Labelled (mk_loc "follow"), mk_constr_of_bool follow);
           (Nolabel, mk_apply_simple [ "Eio"; "Path"; "/" ] [ env "cwd"; path ]);
         ]
+
+    method domain_detach thunk =
+      mk_apply_ident
+        (fiber_ident "fork_promise")
+        [
+          get_current_switch_arg ();
+          ( Nolabel,
+            mk_thunk
+              (mk_apply_simple
+                 [ "Eio"; "Domain_manager"; "run" ]
+                 [ env "domain_mgr"; thunk ]) );
+        ]
   end
