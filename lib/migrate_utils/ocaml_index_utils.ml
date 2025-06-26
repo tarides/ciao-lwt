@@ -63,12 +63,9 @@ let uid_map_of_unit ~packages ~units =
            Fs_utils.list_dir lib_path |> Array.fold_left acc_matching_cmts acc)
          []
   in
-  let ident_of_decl ~unit_name = function
+  let ident_of_decl ~unit_name ~which = function
     | Typedtree.Value { val_id = ident; _ }
     | Type { typ_id = ident; _ }
-    | Value_binding { vb_pat = { pat_desc = Tpat_var (ident, _, _); _ }; _ }
-    | Value_binding
-        { vb_pat = { pat_desc = Tpat_alias (_, ident, _, _); _ }; _ }
     | Constructor { cd_id = ident; _ }
     | Extension_constructor { ext_id = ident; _ }
     | Module { md_id = Some ident; _ }
@@ -79,10 +76,15 @@ let uid_map_of_unit ~packages ~units =
     | Class_type { ci_id_class = ident; _ }
     | Label { ld_id = ident; _ } ->
         `Found (unit_name, Ident.name ident)
-    | Value_binding { vb_pat = { pat_desc = _; _ }; _ }
-    | Module { md_id = None; _ }
-    | Module_binding { mb_id = None; _ } ->
-        `Ignore
+    | Value_binding vb -> (
+        let idents = Typedtree.let_bound_idents_full [ vb ] in
+        match
+          List.filter (fun (_, _, _, uid) -> Shape.Uid.equal uid which) idents
+        with
+        | [] -> `Ignore
+        | [ (ident, _, _, _) ] -> `Found (unit_name, Ident.name ident)
+        | _ :: _ :: _ -> assert false)
+    | Module { md_id = None; _ } | Module_binding { mb_id = None; _ } -> `Ignore
   in
   if cmts = [] then
     failwith ("Found no [.cmt] in packages: " ^ String.concat ", " packages);
@@ -95,7 +97,8 @@ let uid_map_of_unit ~packages ~units =
         (Shape.Uid.of_compilation_unit_id (Ident.create_persistent unit_name))
         (`Found (unit_name, ""));
       Tbl.iter
-        (fun uid decl -> Tbl.replace tbl uid (ident_of_decl ~unit_name decl))
+        (fun uid decl ->
+          Tbl.replace tbl uid (ident_of_decl ~unit_name ~which:uid decl))
         cmt.cmt_uid_to_decl)
     cmts;
   fun uid ->

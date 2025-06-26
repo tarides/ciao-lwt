@@ -801,3 +801,10 @@ Make a writable directory tree:
     (* TODO: lwt-to-direct-style: Eio doesn't have a direct equivalent of [Lwt_io.read ~count]. Rewrite the code using [Eio.Buf_read]'s lower level API or switch to unbuffered IO. *)
     (* TODO: lwt-to-direct-style: Eio doesn't have a direct equivalent of [Lwt_io.read ~count]. Rewrite the code using [Eio.Buf_read]'s lower level API or switch to unbuffered IO. *)
       ?count:(Some 42) chan
+  
+  let _f chan = Lwt_io.read_int chan
+  let _f chan = Lwt_io.read_int16 chan
+  let _f chan = Lwt_io.read_int32 chan
+  let _f chan = Lwt_io.read_int64 chan
+  let _f chan = Lwt_io.read_float32 chan
+  let _f chan = Lwt_io.read_float64 chan

@@ -42,3 +42,10 @@ let _f fname = Lwt_unix.lstat fname
 let _f chan = Lwt_io.read chan
 let _f chan = Lwt_io.read ~count:42 chan
 let _f chan = Lwt_io.read ?count:(Some 42) chan
+
+let _f chan = Lwt_io.read_int chan
+let _f chan = Lwt_io.read_int16 chan
+let _f chan = Lwt_io.read_int32 chan
+let _f chan = Lwt_io.read_int64 chan
+let _f chan = Lwt_io.read_float32 chan
+let _f chan = Lwt_io.read_float64 chan

@@ -385,6 +385,18 @@ let rewrite_apply ~backend ~state full_ident args =
       take @@ fun str -> return (Some (backend#io_write_str chan str))
   | "Lwt_io", "length" -> take @@ fun fd -> return (Some (backend#io_length fd))
   | "Lwt_io", "close" -> take @@ fun fd -> return (Some (backend#io_close fd))
+  | "Lwt_io", "read_int" ->
+      take @@ fun inp -> return (Some (backend#io_read_int inp `Int))
+  | "Lwt_io", "read_int16" ->
+      take @@ fun inp -> return (Some (backend#io_read_int inp `Int16))
+  | "Lwt_io", "read_int32" ->
+      take @@ fun inp -> return (Some (backend#io_read_int inp `Int32))
+  | "Lwt_io", "read_int64" ->
+      take @@ fun inp -> return (Some (backend#io_read_int inp `Int64))
+  | "Lwt_io", "read_float32" ->
+      take @@ fun inp -> return (Some (backend#io_read_int inp `Float32))
+  | "Lwt_io", "read_float64" ->
+      take @@ fun inp -> return (Some (backend#io_read_int inp `Float64))
   | "Lwt_main", "run" ->
       take @@ fun promise -> return (Some (backend#main_run promise))
   | _ -> return None

@@ -233,6 +233,22 @@ let eio ~eio_sw_as_fiber_var ~eio_env_as_fiber_var add_comment =
          unbuffered IO.";
       None
 
+    method io_read_int inp kind =
+      let fun_ =
+        match kind with
+        | `Int ->
+            add_comment
+              "[Eio.Buf_read.BE.int] doesn't exist. Use [uint32] or [uint64] \
+               instead.";
+            "int"
+        | `Int16 -> "uint16"
+        | `Int32 -> "uint32"
+        | `Int64 -> "uint64"
+        | `Float32 -> "float"
+        | `Float64 -> "double"
+      in
+      mk_apply_simple [ "Eio"; "Buf_read"; "BE"; fun_ ] [ inp ]
+
     method fd_close fd =
       (* TODO: See [of_unix_file_descr]. mk_apply_simple [ "Eio_unix"; "Fd" ] [ fd ] *)
       mk_apply_simple [ "Unix"; "close" ] [ fd ]
