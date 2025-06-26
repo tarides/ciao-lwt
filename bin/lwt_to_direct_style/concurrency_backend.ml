@@ -338,4 +338,25 @@ let eio ~eio_sw_as_fiber_var ~eio_env_as_fiber_var add_comment =
                  [ "Eio"; "Domain_manager"; "run" ]
                  [ env "domain_mgr"; thunk ]) );
         ]
+
+    method net_with_connection sockaddr f =
+      add_comment
+        "[%s] is of type [Unix.sockaddr] but it should be a \
+         [Eio.Net.Sockaddr.stream]."
+        (Ocamlformat_utils.format_expression sockaddr);
+      mk_apply_simple (switch_ident "run")
+        [
+          mk_fun ~arg_name:"sw" (fun sw ->
+              Exp.apply f
+                [
+                  ( Nolabel,
+                    mk_apply_ident
+                      [ "Eio"; "Net"; "connect" ]
+                      [
+                        (Labelled (mk_loc "sw"), sw);
+                        (Nolabel, env "net");
+                        (Nolabel, sockaddr);
+                      ] );
+                ]);
+        ]
   end

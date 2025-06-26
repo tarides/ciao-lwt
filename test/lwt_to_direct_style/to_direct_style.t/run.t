@@ -230,10 +230,11 @@ Make a writable directory tree:
     Lwt_mutex.lock (line 136 column 9)
     Lwt_mutex.unlock (line 137 column 9)
     Lwt_mutex.with_lock (line 138 column 9)
-  lib/test_lwt_unix.ml: (55 occurrences)
+  lib/test_lwt_unix.ml: (57 occurrences)
     Lwt_io (line 7 column 8)
     Lwt.return (line 12 column 3)
     Lwt.return (line 46 column 11)
+    Lwt.return (line 61 column 65)
     Lwt.return_unit (line 44 column 43)
     Lwt.let* (line 10 column 3)
     Lwt.let* (line 11 column 3)
@@ -268,6 +269,7 @@ Make a writable directory tree:
     Lwt_io.stdout (line 26 column 33)
     Lwt_io.open_file (line 30 column 13)
     Lwt_io.open_file (line 34 column 13)
+    Lwt_io.with_connection (line 61 column 3)
     Lwt_preemptive.detach (line 44 column 10)
     Lwt_preemptive.detach (line 47 column 3)
     Lwt_unix.Timeout (line 14 column 9)
@@ -865,3 +867,11 @@ Make a writable directory tree:
   let _f a b = Unix.listen a b
   let _f a = Marshal.from_channel a
   let _f a b = Marshal.to_channel a b
+  
+  let _f sockaddr =
+    Switch.run (fun sw ->
+        (fun (_in_chan, _out_chan) -> ())
+          (Eio.Net.connect ~sw env#net
+             (* TODO: lwt-to-direct-style: [sockaddr] is of type [Unix.sockaddr] but it should be a [Eio.Net.Sockaddr.stream]. *)
+             (* TODO: lwt-to-direct-style: [env] must be propagated from the main loop *)
+             sockaddr))

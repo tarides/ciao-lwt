@@ -399,6 +399,11 @@ let rewrite_apply ~backend ~state full_ident args =
   | "Lwt_io", "length" -> take @@ fun fd -> return (Some (backend#io_length fd))
   | "Lwt_io", "close" -> take @@ fun fd -> return (Some (backend#io_close fd))
   | "Lwt_io", "flush" -> take @@ fun fd -> return (Some (backend#io_flush fd))
+  | "Lwt_io", "with_connection" ->
+      ignore_lblarg "fd" @@ ignore_lblarg "in_buffer"
+      @@ ignore_lblarg "out_buffer" @@ take
+      @@ fun sockaddr ->
+      take @@ fun f -> return (Some (backend#net_with_connection sockaddr f))
   | "Lwt_main", "run" ->
       take @@ fun promise -> return (Some (backend#main_run promise))
   | "Lwt_preemptive", "detach" ->
