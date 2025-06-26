@@ -233,6 +233,9 @@ let eio ~eio_sw_as_fiber_var ~eio_env_as_fiber_var add_comment =
          unbuffered IO.";
       None
 
+    method io_flush output =
+      mk_apply_simple [ "Eio"; "Buf_write"; "flush" ] [ output ]
+
     method fd_close fd =
       (* TODO: See [of_unix_file_descr]. mk_apply_simple [ "Eio_unix"; "Fd" ] [ fd ] *)
       mk_apply_simple [ "Unix"; "close" ] [ fd ]
