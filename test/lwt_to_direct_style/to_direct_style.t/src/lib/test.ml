@@ -183,3 +183,9 @@ let _ =
   let _f () : unit Lwt.t = Lwt.return_unit in
   let _f (x : unit Lwt.t) = x in
   ()
+
+let _ =
+  let f () = () in
+  Lwt.wrap f
+
+let _ = Lwt.wrap (fun () -> ())

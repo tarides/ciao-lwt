@@ -280,6 +280,8 @@ let rewrite_apply_lwt ~backend ~state ident args =
         ("[<?>] can't be automatically translated."
        ^ backend#choose_comment_hint);
       return None
+  | "wrap" ->
+      take @@ fun f -> return (Some (Exp.apply f [ (Nolabel, mk_unit_val) ]))
   | _ -> return None
 
 let string_drop_suffix ~suffix s =

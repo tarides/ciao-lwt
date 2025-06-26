@@ -50,7 +50,7 @@ Make a writable directory tree:
     Lwt_unix.sleep (line 31 column 9)
     Lwt_unix.Timeout (line 37 column 15)
     Lwt_unix.with_timeout (line 35 column 16)
-  lib/test.ml: (177 occurrences)
+  lib/test.ml: (179 occurrences)
     Lwt (line 36 column 12)
     Lwt (line 55 column 18)
     Lwt (line 64 column 13)
@@ -145,6 +145,8 @@ Make a writable directory tree:
     Lwt.Sleep (line 148 column 5)
     Lwt.Sleep (line 178 column 9)
     Lwt.state (line 145 column 9)
+    Lwt.wrap (line 189 column 3)
+    Lwt.wrap (line 191 column 9)
     Lwt.pause (line 114 column 9)
     Lwt.(>>=) (line 32 column 3)
     Lwt.(>>=) (line 33 column 27)
@@ -663,6 +665,12 @@ Make a writable directory tree:
     let _f () : unit = () in
     let _f (x : unit Promise.t) = x in
     ()
+  
+  let _ =
+    let f () = () in
+    f ()
+  
+  let _ = (fun () -> ()) ()
 
   $ cat lib/test.mli
   open Eio.Std
