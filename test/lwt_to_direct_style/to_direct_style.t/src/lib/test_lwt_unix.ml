@@ -45,3 +45,11 @@ let _f = Lwt_preemptive.detach (fun () -> Lwt.return_unit) ()
 let _f =
   let f = Lwt.return in
   Lwt_preemptive.detach f 12
+
+let _f a b c =
+  Lwt_unix.socket a b c
+let _f a b c = Lwt_unix.socketpair a b c
+let _f a b = Lwt_unix.connect a b
+let _f a = Lwt_unix.accept a
+let _f a b = Lwt_unix.bind a b
+let _f a b = Lwt_unix.listen a b

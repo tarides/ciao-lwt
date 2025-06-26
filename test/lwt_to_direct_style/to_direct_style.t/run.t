@@ -230,7 +230,7 @@ Make a writable directory tree:
     Lwt_mutex.lock (line 136 column 9)
     Lwt_mutex.unlock (line 137 column 9)
     Lwt_mutex.with_lock (line 138 column 9)
-  lib/test_lwt_unix.ml: (47 occurrences)
+  lib/test_lwt_unix.ml: (53 occurrences)
     Lwt_io (line 7 column 8)
     Lwt.return (line 12 column 3)
     Lwt.return (line 46 column 11)
@@ -277,6 +277,12 @@ Make a writable directory tree:
     Lwt_unix.ADDR_UNIX (line 17 column 6)
     Lwt_unix.ADDR_INET (line 17 column 29)
     Lwt_unix.ADDR_INET (line 18 column 3)
+    Lwt_unix.socket (line 50 column 3)
+    Lwt_unix.socketpair (line 51 column 16)
+    Lwt_unix.accept (line 53 column 12)
+    Lwt_unix.connect (line 52 column 14)
+    Lwt_unix.bind (line 54 column 14)
+    Lwt_unix.listen (line 55 column 14)
     Lwt_unix.getaddrinfo (line 20 column 9)
   lib/test.mli: (17 occurrences)
     Lwt (line 12 column 26)
@@ -835,3 +841,23 @@ Make a writable directory tree:
             (* TODO: lwt-to-direct-style: [env] must be propagated from the main loop *)
             (* TODO: lwt-to-direct-style: [sw] (of type Switch.t) must be propagated here. *)
             f 12))
+  
+  let _f a b c = Unix.socket a b c
+  let _f a b c = Unix.socketpair a b c
+  
+  let _f a b =
+    Unix.connect
+      (* TODO: lwt-to-direct-style: This call to [Unix.connect] was [Lwt_unix.connect] before. It's now blocking. *)
+      a b
+  
+  let _f a =
+    Unix.accept
+      (* TODO: lwt-to-direct-style: This call to [Unix.accept] was [Lwt_unix.accept] before. It's now blocking. *)
+      a
+  
+  let _f a b =
+    Unix.bind
+      (* TODO: lwt-to-direct-style: This call to [Unix.bind] was [Lwt_unix.bind] before. It's now blocking. *)
+      a b
+  
+  let _f a b = Unix.listen a b

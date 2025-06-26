@@ -314,6 +314,15 @@ let rewrite_apply ~backend ~state full_ident args =
       (( "printf" | "eprintf" | "stdout" | "stderr" | "fprintf" | "kfprintf"
        | "ifprintf" | "ikfprintf" ) as ident) ) ->
       transparent [ "Format"; ident ]
+  | ( "Lwt_unix",
+      (( "socket" | "socketpair" | "listen" | "shutdown" | "getsockname"
+       | "getpeername" | "waitpid" | "wait4" | "wait" ) as ident) ) ->
+      transparent [ "Unix"; ident ]
+  | "Lwt_unix", (("connect" | "accept" | "bind") as ident) ->
+      Printf.ksprintf (add_comment state)
+        "This call to [Unix.%s] was [Lwt_unix.%s] before. It's now blocking."
+        ident ident;
+      transparent [ "Unix"; ident ]
   | "Lwt_list", ident -> (
       match string_drop_suffix ~suffix:"_s" ident with
       | Some ident -> transparent [ "List"; ident ]
