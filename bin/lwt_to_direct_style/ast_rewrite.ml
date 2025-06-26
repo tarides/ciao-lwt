@@ -318,6 +318,8 @@ let rewrite_apply ~backend ~state full_ident args =
       (( "socket" | "socketpair" | "listen" | "shutdown" | "getsockname"
        | "getpeername" | "waitpid" | "wait4" | "wait" ) as ident) ) ->
       transparent [ "Unix"; ident ]
+  | "Lwt_io", "read_value" -> transparent [ "Marshal"; "from_channel" ]
+  | "Lwt_io", "write_value" -> transparent [ "Marshal"; "to_channel" ]
   | "Lwt_unix", (("connect" | "accept" | "bind") as ident) ->
       Printf.ksprintf (add_comment state)
         "This call to [Unix.%s] was [Lwt_unix.%s] before. It's now blocking."

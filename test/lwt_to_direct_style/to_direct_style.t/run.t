@@ -230,7 +230,7 @@ Make a writable directory tree:
     Lwt_mutex.lock (line 136 column 9)
     Lwt_mutex.unlock (line 137 column 9)
     Lwt_mutex.with_lock (line 138 column 9)
-  lib/test_lwt_unix.ml: (53 occurrences)
+  lib/test_lwt_unix.ml: (55 occurrences)
     Lwt_io (line 7 column 8)
     Lwt.return (line 12 column 3)
     Lwt.return (line 46 column 11)
@@ -259,8 +259,10 @@ Make a writable directory tree:
     Lwt_io.read (line 41 column 15)
     Lwt_io.read_into (line 10 column 21)
     Lwt_io.read_into_exactly (line 11 column 13)
+    Lwt_io.read_value (line 57 column 12)
     Lwt_io.flush (line 42 column 15)
     Lwt_io.write (line 24 column 19)
+    Lwt_io.write_value (line 58 column 14)
     Lwt_io.length (line 35 column 3)
     Lwt_io.stdin (line 25 column 32)
     Lwt_io.stdout (line 26 column 33)
@@ -861,3 +863,5 @@ Make a writable directory tree:
       a b
   
   let _f a b = Unix.listen a b
+  let _f a = Marshal.from_channel a
+  let _f a b = Marshal.to_channel a b

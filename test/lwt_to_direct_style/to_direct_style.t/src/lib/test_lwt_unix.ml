@@ -53,3 +53,6 @@ let _f a b = Lwt_unix.connect a b
 let _f a = Lwt_unix.accept a
 let _f a b = Lwt_unix.bind a b
 let _f a b = Lwt_unix.listen a b
+
+let _f a = Lwt_io.read_value a
+let _f a b = Lwt_io.write_value a b
