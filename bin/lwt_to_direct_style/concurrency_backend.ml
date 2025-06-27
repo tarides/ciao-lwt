@@ -257,7 +257,8 @@ let eio ~eio_sw_as_fiber_var ~eio_env_as_fiber_var add_comment =
             in
             mk_apply_ident (switch_ident "run")
               [
-                (Labelled (mk_loc "name"), mk_const_string "main");
+                (* TODO: Add the [~name] argument. Currently commented-out because added in a too recent version of eio.
+                   (Labelled (mk_loc "name"), mk_const_string "main"); *)
                 (Nolabel, fun_sw);
               ]
         | None -> k
