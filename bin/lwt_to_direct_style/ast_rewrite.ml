@@ -280,6 +280,8 @@ let rewrite_apply_lwt ~backend ~state ident args =
         ("[<?>] can't be automatically translated."
        ^ backend#choose_comment_hint);
       return None
+  | "wrap" ->
+      take @@ fun f -> return (Some (Exp.apply f [ (Nolabel, mk_unit_val) ]))
   | _ -> return None
 
 let string_drop_suffix ~suffix s =
@@ -312,6 +314,17 @@ let rewrite_apply ~backend ~state full_ident args =
       (( "printf" | "eprintf" | "stdout" | "stderr" | "fprintf" | "kfprintf"
        | "ifprintf" | "ikfprintf" ) as ident) ) ->
       transparent [ "Format"; ident ]
+  | ( "Lwt_unix",
+      (( "socket" | "socketpair" | "listen" | "shutdown" | "getsockname"
+       | "getpeername" | "waitpid" | "wait4" | "wait" ) as ident) ) ->
+      transparent [ "Unix"; ident ]
+  | "Lwt_io", "read_value" -> transparent [ "Marshal"; "from_channel" ]
+  | "Lwt_io", "write_value" -> transparent [ "Marshal"; "to_channel" ]
+  | "Lwt_unix", (("connect" | "accept" | "bind") as ident) ->
+      Printf.ksprintf (add_comment state)
+        "This call to [Unix.%s] was [Lwt_unix.%s] before. It's now blocking."
+        ident ident;
+      transparent [ "Unix"; ident ]
   | "Lwt_list", ident -> (
       match string_drop_suffix ~suffix:"_s" ident with
       | Some ident -> transparent [ "List"; ident ]
@@ -356,12 +369,13 @@ let rewrite_apply ~backend ~state full_ident args =
   | "Lwt_mutex", "with_lock" ->
       take @@ fun t ->
       take @@ fun f -> return (Some (backend#mutex_with_lock t f))
-  | "Lwt_io", "read_into" ->
+  | "Lwt_io", (("read_into" | "read_into_exactly") as ident) ->
+      let exactly = ident = "read_into_exactly" in
       take @@ fun input ->
       take @@ fun buffer ->
       take @@ fun buf_off ->
       take @@ fun buf_len ->
-      return (Some (backend#io_read input buffer buf_off buf_len))
+      return (Some (backend#io_read ~exactly input buffer buf_off buf_len))
   | "Lwt_io", "of_fd" ->
       ignore_lblarg "buffer"
       @@ ignore_lblarg ~cmt:"Will behave as if it was [true]." "close"
@@ -384,8 +398,20 @@ let rewrite_apply ~backend ~state full_ident args =
       take @@ fun str -> return (Some (backend#io_write_str chan str))
   | "Lwt_io", "length" -> take @@ fun fd -> return (Some (backend#io_length fd))
   | "Lwt_io", "close" -> take @@ fun fd -> return (Some (backend#io_close fd))
+  | "Lwt_io", "flush" -> take @@ fun fd -> return (Some (backend#io_flush fd))
+  | "Lwt_io", "with_connection" ->
+      ignore_lblarg "fd" @@ ignore_lblarg "in_buffer"
+      @@ ignore_lblarg "out_buffer" @@ take
+      @@ fun sockaddr ->
+      take @@ fun f -> return (Some (backend#net_with_connection sockaddr f))
   | "Lwt_main", "run" ->
       take @@ fun promise -> return (Some (backend#main_run promise))
+  | "Lwt_preemptive", "detach" ->
+      take @@ fun f ->
+      take @@ fun arg ->
+      return
+        (Some
+           (backend#domain_detach (mk_thunk (Exp.apply f [ (Nolabel, arg) ]))))
   | _ -> return None
 
 (** Transform a [binding_op] into a [pattern] and an [expression] while
@@ -550,6 +576,7 @@ let rewrite_type ~backend ~state typ =
                  | "group_entry" ) as tname) ),
               params ) ->
               Some (mk_typ_constr ~params [ "Unix"; tname ])
+          | ("Lwt_io", "input_channel"), [] -> Some backend#type_in_channel
           | ("Lwt_io", "output_channel"), [] -> Some backend#type_out_channel
           | _ -> None)
   | _ -> None

@@ -18,9 +18,10 @@ let eio ~eio_sw_as_fiber_var ~eio_env_as_fiber_var add_comment =
     [ i ]
   in
   let add_comment fmt = Format.kasprintf add_comment fmt in
-  let add_comment_dropped_exp ~label exp =
-    add_comment "Dropped expression (%s): [%s]." label
+  let add_comment_dropped_exp ~label ?(cmt = "") exp =
+    add_comment "Dropped expression (%s): [%s].%s" label
       (Ocamlformat_utils.format_expression exp)
+      cmt
   in
   (* If [--eio-sw-as-fiber-var] is passed on the command line, this will query
      the current switch. Otherwise, this will generate a comment.
@@ -206,7 +207,7 @@ let eio ~eio_sw_as_fiber_var ~eio_env_as_fiber_var add_comment =
       (*     ]) *)
       fd
 
-    method io_read input buffer buf_offset buf_len =
+    method io_read ~exactly input buffer buf_offset buf_len =
       add_comment "[%s] should be a [Cstruct.t]."
         (Ocamlformat_utils.format_expression buffer);
       add_comment
@@ -215,9 +216,12 @@ let eio ~eio_sw_as_fiber_var ~eio_env_as_fiber_var add_comment =
          contains an internal buffer) or change the call to \
          [Eio.Buf_read.of_flow] used to create the buffer."
         (Ocamlformat_utils.format_expression input);
-      add_comment_dropped_exp ~label:"buffer offset" buf_offset;
-      add_comment_dropped_exp ~label:"buffer length" buf_len;
-      mk_apply_simple [ "Eio"; "Flow"; "single_read" ] [ input; buffer ]
+      add_comment_dropped_exp ~label:"buffer offset"
+        ~cmt:" This will behave as if it was [0]." buf_offset;
+      add_comment_dropped_exp ~label:"buffer length"
+        ~cmt:" This will behave as if it was [Cstruct.length buffer]." buf_len;
+      let fun_ = if exactly then "read_exact" else "single_read" in
+      mk_apply_simple [ "Eio"; "Flow"; fun_ ] [ input; buffer ]
 
     method io_read_all input =
       mk_apply_simple [ "Eio"; "Buf_read"; "take_all" ] [ input ]
@@ -228,6 +232,9 @@ let eio ~eio_sw_as_fiber_var ~eio_env_as_fiber_var add_comment =
          the code using [Eio.Buf_read]'s lower level API or switch to \
          unbuffered IO.";
       None
+
+    method io_flush output =
+      mk_apply_simple [ "Eio"; "Buf_write"; "flush" ] [ output ]
 
     method fd_close fd =
       (* TODO: See [of_unix_file_descr]. mk_apply_simple [ "Eio_unix"; "Fd" ] [ fd ] *)
@@ -250,7 +257,8 @@ let eio ~eio_sw_as_fiber_var ~eio_env_as_fiber_var add_comment =
             in
             mk_apply_ident (switch_ident "run")
               [
-                (Labelled (mk_loc "name"), mk_const_string "main");
+                (* TODO: Add the [~name] argument. Currently commented-out because added in a too recent version of eio.
+                   (Labelled (mk_loc "name"), mk_const_string "main"); *)
                 (Nolabel, fun_sw);
               ]
         | None -> k
@@ -310,6 +318,7 @@ let eio ~eio_sw_as_fiber_var ~eio_env_as_fiber_var add_comment =
       mk_apply_simple [ "Eio"; "Buf_write"; "string" ] [ chan; str ]
 
     method io_close fd = mk_apply_simple [ "Eio"; "Resource"; "close" ] [ fd ]
+    method type_in_channel = mk_typ_constr [ "Eio"; "Buf_read"; "t" ]
     method type_out_channel = mk_typ_constr [ "Eio"; "Buf_write"; "t" ]
 
     method path_stat ~follow path =
@@ -317,5 +326,38 @@ let eio ~eio_sw_as_fiber_var ~eio_env_as_fiber_var add_comment =
         [
           (Labelled (mk_loc "follow"), mk_constr_of_bool follow);
           (Nolabel, mk_apply_simple [ "Eio"; "Path"; "/" ] [ env "cwd"; path ]);
+        ]
+
+    method domain_detach thunk =
+      mk_apply_ident
+        (fiber_ident "fork_promise")
+        [
+          get_current_switch_arg ();
+          ( Nolabel,
+            mk_thunk
+              (mk_apply_simple
+                 [ "Eio"; "Domain_manager"; "run" ]
+                 [ env "domain_mgr"; thunk ]) );
+        ]
+
+    method net_with_connection sockaddr f =
+      add_comment
+        "[%s] is of type [Unix.sockaddr] but it should be a \
+         [Eio.Net.Sockaddr.stream]."
+        (Ocamlformat_utils.format_expression sockaddr);
+      mk_apply_simple (switch_ident "run")
+        [
+          mk_fun ~arg_name:"sw" (fun sw ->
+              Exp.apply f
+                [
+                  ( Nolabel,
+                    mk_apply_ident
+                      [ "Eio"; "Net"; "connect" ]
+                      [
+                        (Labelled (mk_loc "sw"), sw);
+                        (Nolabel, env "net");
+                        (Nolabel, sockaddr);
+                      ] );
+                ]);
         ]
   end

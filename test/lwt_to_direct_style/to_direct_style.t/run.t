@@ -50,7 +50,7 @@ Make a writable directory tree:
     Lwt_unix.sleep (line 31 column 9)
     Lwt_unix.Timeout (line 37 column 15)
     Lwt_unix.with_timeout (line 35 column 16)
-  lib/test.ml: (177 occurrences)
+  lib/test.ml: (179 occurrences)
     Lwt (line 36 column 12)
     Lwt (line 55 column 18)
     Lwt (line 64 column 13)
@@ -145,6 +145,8 @@ Make a writable directory tree:
     Lwt.Sleep (line 148 column 5)
     Lwt.Sleep (line 178 column 9)
     Lwt.state (line 145 column 9)
+    Lwt.wrap (line 189 column 3)
+    Lwt.wrap (line 191 column 9)
     Lwt.pause (line 114 column 9)
     Lwt.(>>=) (line 32 column 3)
     Lwt.(>>=) (line 33 column 27)
@@ -228,45 +230,64 @@ Make a writable directory tree:
     Lwt_mutex.lock (line 136 column 9)
     Lwt_mutex.unlock (line 137 column 9)
     Lwt_mutex.with_lock (line 138 column 9)
-  lib/test_lwt_unix.ml: (38 occurrences)
+  lib/test_lwt_unix.ml: (57 occurrences)
     Lwt_io (line 7 column 8)
-    Lwt.return (line 11 column 3)
+    Lwt.return (line 12 column 3)
+    Lwt.return (line 46 column 11)
+    Lwt.return (line 61 column 65)
+    Lwt.return_unit (line 44 column 43)
     Lwt.let* (line 10 column 3)
-    Lwt.let* (line 31 column 3)
-    Lwt.let* (line 35 column 3)
+    Lwt.let* (line 11 column 3)
+    Lwt.let* (line 30 column 3)
+    Lwt.let* (line 34 column 3)
     Lwt.Syntax (line 1 column 6)
     Lwt_io.Input (line 22 column 32)
     Lwt_io.Output (line 23 column 32)
     Lwt_io.input (line 7 column 28)
-    Lwt_io.input (line 31 column 36)
+    Lwt_io.input (line 30 column 36)
     Lwt_io.output (line 21 column 32)
-    Lwt_io.output (line 35 column 36)
+    Lwt_io.output (line 34 column 36)
+    Lwt_io.input_channel (line 25 column 9)
     Lwt_io.output_channel (line 26 column 9)
-    Lwt_io.close (line 32 column 3)
+    Lwt_io.close (line 31 column 3)
     Lwt_io.of_fd (line 7 column 16)
     Lwt_io.of_fd (line 21 column 13)
     Lwt_io.of_fd (line 22 column 13)
     Lwt_io.of_fd (line 23 column 13)
-    Lwt_io.read_line (line 28 column 15)
+    Lwt_io.read_line (line 27 column 15)
+    Lwt_io.read (line 39 column 15)
+    Lwt_io.read (line 40 column 15)
     Lwt_io.read (line 41 column 15)
-    Lwt_io.read (line 42 column 15)
-    Lwt_io.read (line 43 column 15)
-    Lwt_io.read_into (line 10 column 19)
+    Lwt_io.read_into (line 10 column 21)
+    Lwt_io.read_into_exactly (line 11 column 13)
+    Lwt_io.read_value (line 57 column 12)
+    Lwt_io.flush (line 42 column 15)
     Lwt_io.write (line 24 column 19)
-    Lwt_io.length (line 36 column 3)
+    Lwt_io.write_value (line 58 column 14)
+    Lwt_io.length (line 35 column 3)
+    Lwt_io.stdin (line 25 column 32)
     Lwt_io.stdout (line 26 column 33)
-    Lwt_io.open_file (line 31 column 13)
-    Lwt_io.open_file (line 35 column 13)
-    Lwt_unix.Timeout (line 13 column 9)
+    Lwt_io.open_file (line 30 column 13)
+    Lwt_io.open_file (line 34 column 13)
+    Lwt_io.with_connection (line 61 column 3)
+    Lwt_preemptive.detach (line 44 column 10)
+    Lwt_preemptive.detach (line 47 column 3)
+    Lwt_unix.Timeout (line 14 column 9)
     Lwt_unix.of_unix_file_descr (line 6 column 8)
-    Lwt_unix.stat (line 38 column 16)
-    Lwt_unix.lstat (line 39 column 16)
-    Lwt_unix.sockaddr (line 14 column 9)
-    Lwt_unix.ADDR_UNIX (line 14 column 29)
-    Lwt_unix.ADDR_UNIX (line 16 column 6)
-    Lwt_unix.ADDR_INET (line 16 column 29)
-    Lwt_unix.ADDR_INET (line 17 column 3)
-    Lwt_unix.getaddrinfo (line 19 column 9)
+    Lwt_unix.stat (line 37 column 16)
+    Lwt_unix.lstat (line 38 column 16)
+    Lwt_unix.sockaddr (line 15 column 9)
+    Lwt_unix.ADDR_UNIX (line 15 column 29)
+    Lwt_unix.ADDR_UNIX (line 17 column 6)
+    Lwt_unix.ADDR_INET (line 17 column 29)
+    Lwt_unix.ADDR_INET (line 18 column 3)
+    Lwt_unix.socket (line 50 column 3)
+    Lwt_unix.socketpair (line 51 column 16)
+    Lwt_unix.accept (line 53 column 12)
+    Lwt_unix.connect (line 52 column 14)
+    Lwt_unix.bind (line 54 column 14)
+    Lwt_unix.listen (line 55 column 14)
+    Lwt_unix.getaddrinfo (line 20 column 9)
   lib/test.mli: (17 occurrences)
     Lwt (line 12 column 26)
     Lwt.t (line 1 column 35)
@@ -297,10 +318,11 @@ Make a writable directory tree:
     Lwt.Fail (line 147 column 5)
     Lwt.let* (line 163 column 21)
     Lwt.Fail (line 179 column 9)
-  Warning: lib/test_lwt_unix.ml: 3 occurrences have not been rewritten.
+  Warning: lib/test_lwt_unix.ml: 4 occurrences have not been rewritten.
+    Lwt_io.stdin (line 25 column 32)
     Lwt_io.stdout (line 26 column 33)
-    Lwt_io.read (line 42 column 15)
-    Lwt_io.read (line 43 column 15)
+    Lwt_io.read (line 40 column 15)
+    Lwt_io.read (line 41 column 15)
   Warning: lib/test.mli: 2 occurrences have not been rewritten.
     Lwt_mutex.t (line 2 column 10)
     Lwt_mutex.t (line 3 column 10)
@@ -657,6 +679,12 @@ Make a writable directory tree:
     let _f () : unit = () in
     let _f (x : unit Promise.t) = x in
     ()
+  
+  let _ =
+    let f () = () in
+    f ()
+  
+  let _ = (fun () -> ()) ()
 
   $ cat lib/test.mli
   open Eio.Std
@@ -691,12 +719,20 @@ Make a writable directory tree:
           : [ `R | `Flow | `Close ] r)
     in
     let buf = Bytes.create 1024 in
-    let _n : int =
+    let (_n : int) =
       Eio.Flow.single_read
         (* TODO: lwt-to-direct-style: [buf] should be a [Cstruct.t]. *)
         (* TODO: lwt-to-direct-style: [Eio.Flow.single_read] operates on a [Flow.source] but [inp] is likely of type [Eio.Buf_read.t]. Rewrite this code to use [Buf_read] (which contains an internal buffer) or change the call to [Eio.Buf_read.of_flow] used to create the buffer. *)
-        (* TODO: lwt-to-direct-style: Dropped expression (buffer offset): [0]. *)
-        (* TODO: lwt-to-direct-style: Dropped expression (buffer length): [1024]. *)
+        (* TODO: lwt-to-direct-style: Dropped expression (buffer offset): [0]. This will behave as if it was [0]. *)
+        (* TODO: lwt-to-direct-style: Dropped expression (buffer length): [1024]. This will behave as if it was [Cstruct.length buffer]. *)
+        inp buf
+    in
+    let () =
+      Eio.Flow.read_exact
+        (* TODO: lwt-to-direct-style: [buf] should be a [Cstruct.t]. *)
+        (* TODO: lwt-to-direct-style: [Eio.Flow.single_read] operates on a [Flow.source] but [inp] is likely of type [Eio.Buf_read.t]. Rewrite this code to use [Buf_read] (which contains an internal buffer) or change the call to [Eio.Buf_read.of_flow] used to create the buffer. *)
+        (* TODO: lwt-to-direct-style: Dropped expression (buffer offset): [0]. This will behave as if it was [0]. *)
+        (* TODO: lwt-to-direct-style: Dropped expression (buffer length): [1024]. This will behave as if it was [Cstruct.length buffer]. *)
         inp buf
     in
     ()
@@ -738,6 +774,7 @@ Make a writable directory tree:
       (fun outbuf -> `Move_writing_code_here)
   
   let _f out_chan = Eio.Buf_write.string out_chan "str"
+  let _ : Eio.Buf_read.t = Lwt_io.stdin
   let _ : Eio.Buf_write.t = Lwt_io.stdout
   let _f chan = Eio.Buf_read.line chan
   
@@ -791,3 +828,50 @@ Make a writable directory tree:
     (* TODO: lwt-to-direct-style: Eio doesn't have a direct equivalent of [Lwt_io.read ~count]. Rewrite the code using [Eio.Buf_read]'s lower level API or switch to unbuffered IO. *)
     (* TODO: lwt-to-direct-style: Eio doesn't have a direct equivalent of [Lwt_io.read ~count]. Rewrite the code using [Eio.Buf_read]'s lower level API or switch to unbuffered IO. *)
       ?count:(Some 42) chan
+  
+  let _f chan = Eio.Buf_write.flush chan
+  
+  let _f =
+    Fiber.fork_promise ~sw (fun () ->
+        Eio.Domain_manager.run env#domain_mgr (fun () ->
+            (* TODO: lwt-to-direct-style: [sw] (of type Switch.t) must be propagated here. *)
+            (* TODO: lwt-to-direct-style: [env] must be propagated from the main loop *)
+            (fun () -> ()) ()))
+  
+  let _f =
+    let f = fun x1 -> x1 in
+    Fiber.fork_promise ~sw (fun () ->
+        Eio.Domain_manager.run env#domain_mgr (fun () ->
+            (* TODO: lwt-to-direct-style: [env] must be propagated from the main loop *)
+            (* TODO: lwt-to-direct-style: [sw] (of type Switch.t) must be propagated here. *)
+            f 12))
+  
+  let _f a b c = Unix.socket a b c
+  let _f a b c = Unix.socketpair a b c
+  
+  let _f a b =
+    Unix.connect
+      (* TODO: lwt-to-direct-style: This call to [Unix.connect] was [Lwt_unix.connect] before. It's now blocking. *)
+      a b
+  
+  let _f a =
+    Unix.accept
+      (* TODO: lwt-to-direct-style: This call to [Unix.accept] was [Lwt_unix.accept] before. It's now blocking. *)
+      a
+  
+  let _f a b =
+    Unix.bind
+      (* TODO: lwt-to-direct-style: This call to [Unix.bind] was [Lwt_unix.bind] before. It's now blocking. *)
+      a b
+  
+  let _f a b = Unix.listen a b
+  let _f a = Marshal.from_channel a
+  let _f a b = Marshal.to_channel a b
+  
+  let _f sockaddr =
+    Switch.run (fun sw ->
+        (fun (_in_chan, _out_chan) -> ())
+          (Eio.Net.connect ~sw env#net
+             (* TODO: lwt-to-direct-style: [sockaddr] is of type [Unix.sockaddr] but it should be a [Eio.Net.Sockaddr.stream]. *)
+             (* TODO: lwt-to-direct-style: [env] must be propagated from the main loop *)
+             sockaddr))
