@@ -189,3 +189,9 @@ let _ =
   Lwt.wrap f
 
 let _ = Lwt.wrap (fun () -> ())
+
+let _f x =
+  (match x with
+   | Some _ -> Lwt.return_unit
+   | _ -> Lwt.return_unit)
+  >>= Lwt.pause

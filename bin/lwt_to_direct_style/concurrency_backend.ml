@@ -96,15 +96,15 @@ let eio ~eio_sw_as_fiber_var ~eio_env_as_fiber_var add_comment =
         (mk_exp_ident (fiber_ident "fork"))
         [ get_current_switch_arg (); (Nolabel, process_f) ]
 
-    method wait () =
+    method wait unit =
       add_comment
         "Translation is incomplete, [Promise.await] must be called on the \
          promise when it's part of control-flow.";
-      mk_apply_simple (promise_ident "create") [ mk_unit_val ]
+      mk_apply_simple (promise_ident "create") [ unit ]
 
     method wakeup u arg = mk_apply_simple (promise_ident "resolve") [ u; arg ]
     method join lst = mk_apply_simple (fiber_ident "all") [ lst ]
-    method pause () = mk_apply_simple (fiber_ident "yield") [ mk_unit_val ]
+    method pause unit = mk_apply_simple (fiber_ident "yield") [ unit ]
 
     method extra_opens =
       if !used_eio_std then [ mk_longident' [ "Eio"; "Std" ] ] else []
@@ -131,8 +131,8 @@ let eio ~eio_sw_as_fiber_var ~eio_env_as_fiber_var add_comment =
 
     method timeout_exn = mk_longident [ "Eio"; "Time"; "Timeout" ]
 
-    method condition_create () =
-      mk_apply_simple [ "Eio"; "Condition"; "create" ] [ mk_unit_val ]
+    method condition_create unit =
+      mk_apply_simple [ "Eio"; "Condition"; "create" ] [ unit ]
 
     method condition_wait mutex cond =
       mk_apply_simple [ "Eio"; "Condition"; "await" ] [ cond; mutex ]
@@ -151,8 +151,8 @@ let eio ~eio_sw_as_fiber_var ~eio_env_as_fiber_var add_comment =
 
     method state p = mk_apply_simple (promise_ident "peek") [ p ]
 
-    method mutex_create () =
-      mk_apply_simple [ "Eio"; "Mutex"; "create" ] [ mk_unit_val ]
+    method mutex_create unit =
+      mk_apply_simple [ "Eio"; "Mutex"; "create" ] [ unit ]
 
     method mutex_lock m = mk_apply_simple [ "Eio"; "Mutex"; "lock" ] [ m ]
     method mutex_unlock m = mk_apply_simple [ "Eio"; "Mutex"; "unlock" ] [ m ]
@@ -166,9 +166,7 @@ let eio ~eio_sw_as_fiber_var ~eio_env_as_fiber_var add_comment =
           (Nolabel, f);
         ]
 
-    method key_new () =
-      mk_apply_simple (fiber_ident "create_key") [ mk_unit_val ]
-
+    method key_new unit = mk_apply_simple (fiber_ident "create_key") [ unit ]
     method key_get key = mk_apply_simple (fiber_ident "get") [ key ]
 
     method key_with_value key val_opt f =

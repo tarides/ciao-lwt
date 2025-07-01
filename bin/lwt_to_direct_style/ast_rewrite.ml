@@ -219,8 +219,8 @@ let rewrite_apply_lwt ~backend ~state ident args =
       take @@ fun lst -> return (Some (backend#join (suspend_list ~state lst)))
   (* Async primitives *)
   | "async" -> take @@ fun process_f -> return (Some (backend#async process_f))
-  | "pause" -> take @@ fun _unit -> return (Some (backend#pause ()))
-  | "wait" -> take @@ fun _unit -> return (Some (backend#wait ()))
+  | "pause" -> take @@ fun unit -> return (Some (backend#pause unit))
+  | "wait" -> take @@ fun unit -> return (Some (backend#wait unit))
   | "wakeup" | "wakeup_later" ->
       take @@ fun u ->
       take @@ fun arg -> return (Some (backend#wakeup u arg))
@@ -228,7 +228,7 @@ let rewrite_apply_lwt ~backend ~state ident args =
       take @@ fun p -> return (Some (backend#async (suspend ~state p)))
   | "task" ->
       add_comment state backend#cancel_message;
-      take @@ fun _unit -> return (Some (backend#wait ()))
+      take @@ fun unit -> return (Some (backend#wait unit))
   | "cancel" | "no_cancel" | "protected" | "on_cancel" | "wrap_in_cancelable" ->
       add_comment state backend#cancel_message;
       return None
@@ -257,7 +257,7 @@ let rewrite_apply_lwt ~backend ~state ident args =
       take @@ fun msg ->
       return (Some (mk_apply_simple [ "invalid_arg" ] [ msg ]))
   (* Keys *)
-  | "new_key" -> take @@ fun _unit -> return (Some (backend#key_new ()))
+  | "new_key" -> take @@ fun unit -> return (Some (backend#key_new unit))
   | "get" -> take @@ fun key -> return (Some (backend#key_get key))
   | "with_value" ->
       take @@ fun key ->
@@ -356,13 +356,13 @@ let rewrite_apply ~backend ~state full_ident args =
   | "Lwt_unix", "lstat" ->
       take @@ fun path -> return (Some (backend#path_stat ~follow:false path))
   | "Lwt_condition", "create" ->
-      take @@ fun _unit -> return (Some (backend#condition_create ()))
+      take @@ fun unit -> return (Some (backend#condition_create unit))
   | "Lwt_condition", "wait" ->
       take_lblopt "mutex" @@ fun mutex ->
       take @@ fun cond ->
       return (Some (rewrite_lwt_condition_wait ~backend ~state mutex cond))
   | "Lwt_mutex", "create" ->
-      take @@ fun _unit -> return (Some (backend#mutex_create ()))
+      take @@ fun unit -> return (Some (backend#mutex_create unit))
   | "Lwt_mutex", "lock" -> take @@ fun t -> return (Some (backend#mutex_lock t))
   | "Lwt_mutex", "unlock" ->
       take @@ fun t -> return (Some (backend#mutex_unlock t))

@@ -50,7 +50,7 @@ Make a writable directory tree:
     Lwt_unix.sleep (line 31 column 9)
     Lwt_unix.Timeout (line 37 column 15)
     Lwt_unix.with_timeout (line 35 column 16)
-  lib/test.ml: (179 occurrences)
+  lib/test.ml: (183 occurrences)
     Lwt (line 36 column 12)
     Lwt (line 55 column 18)
     Lwt (line 64 column 13)
@@ -97,6 +97,8 @@ Make a writable directory tree:
     Lwt.fail (line 109 column 9)
     Lwt.return_unit (line 182 column 24)
     Lwt.return_unit (line 183 column 28)
+    Lwt.return_unit (line 195 column 16)
+    Lwt.return_unit (line 196 column 11)
     Lwt.fail_with (line 110 column 9)
     Lwt.fail_invalid_arg (line 118 column 33)
     Lwt.wait (line 122 column 14)
@@ -148,6 +150,7 @@ Make a writable directory tree:
     Lwt.wrap (line 189 column 3)
     Lwt.wrap (line 191 column 9)
     Lwt.pause (line 114 column 9)
+    Lwt.pause (line 197 column 7)
     Lwt.(>>=) (line 32 column 3)
     Lwt.(>>=) (line 33 column 27)
     Lwt.(>>=) (line 59 column 3)
@@ -158,6 +161,7 @@ Make a writable directory tree:
     Lwt.(>>=) (line 88 column 3)
     Lwt.(>>=) (line 158 column 60)
     Lwt.(>>=) (line 162 column 20)
+    Lwt.(>>=) (line 197 column 3)
     Lwt.(=<<) (line 111 column 20)
     Lwt.(>|=) (line 32 column 37)
     Lwt.(>|=) (line 46 column 16)
@@ -563,10 +567,10 @@ Make a writable directory tree:
       (fun () -> x)
   
   let _ =
-    let t, u
+    let t, u =
+      Promise.create
         (* TODO: lwt-to-direct-style: Translation is incomplete, [Promise.await] must be called on the promise when it's part of control-flow. *)
-        =
-      Promise.create ()
+        ()
     in
     Fiber.fork ~sw
       (* TODO: lwt-to-direct-style: [sw] (of type Switch.t) must be propagated here. *)
@@ -615,11 +619,11 @@ Make a writable directory tree:
         x
         (* TODO: lwt-to-direct-style: This computation might not be suspended correctly. *))
   
-  let _
+  let _ =
+    Promise.create
       (* TODO: lwt-to-direct-style: Use [Switch] or [Cancel] for defining a cancellable context. *)
       (* TODO: lwt-to-direct-style: Translation is incomplete, [Promise.await] must be called on the promise when it's part of control-flow. *)
-      =
-    Promise.create ()
+      ()
   
   let _ =
     match Promise.peek x with
@@ -685,6 +689,7 @@ Make a writable directory tree:
     f ()
   
   let _ = (fun () -> ()) ()
+  let _f x = Fiber.yield (match x with Some _ -> () | _ -> ())
 
   $ cat lib/test.mli
   open Eio.Std
