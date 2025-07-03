@@ -1,3 +1,7 @@
+(* SPDX-License-Identifier: MIT
+ * Copyright (c) 2025 Jules Aguillon <jules@j3s.fr>
+ *)
+
 let fail fmt = Printf.ksprintf failwith fmt
 
 (** Convert from OCaml [Parsing] values that Merlin uses to the corresponding

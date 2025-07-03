@@ -1,3 +1,7 @@
+(* SPDX-License-Identifier: MIT
+ * Copyright (c) 2025 Jules Aguillon <jules@j3s.fr>
+ *)
+
 open Ocamlformat_lib
 open Ocamlformat_format
 module Location = Migrate_ast.Location

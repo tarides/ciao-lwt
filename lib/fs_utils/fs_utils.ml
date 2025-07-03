@@ -1,3 +1,7 @@
+(* SPDX-License-Identifier: MIT
+ * Copyright (c) 2025 Jules Aguillon <jules@j3s.fr>
+ *)
+
 (** List files in a directory. Returns an empty array on error. *)
 let list_dir p =
   match Sys.readdir p with
