@@ -1,7 +1,3 @@
-(* SPDX-License-Identifier: MIT
- * Copyright (c) 2025 Jules Aguillon <jules@j3s.fr>
- *)
-
 let main migrate eio_sw_as_fiber_var eio_env_as_fiber_var =
   let backend =
     Concurrency_backend.eio ~eio_sw_as_fiber_var ~eio_env_as_fiber_var

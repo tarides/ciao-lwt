@@ -1,7 +1,3 @@
-(* SPDX-License-Identifier: MIT
- * Copyright (c) 2025 Jules Aguillon <jules@j3s.fr>
- *)
-
 let migrate_file ~formatted ~errors ~modify_ast file =
   match Ocamlformat_utils.format_in_place ~file ~modify_ast with
   | Ok () -> incr formatted

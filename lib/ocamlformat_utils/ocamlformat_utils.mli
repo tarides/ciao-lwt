@@ -1,7 +1,3 @@
-(* SPDX-License-Identifier: MIT
- * Copyright (c) 2025 Jules Aguillon <jules@j3s.fr>
- *)
-
 module Parsing : sig
   (** OCamlformat's version of OCaml's parsing modules *)
 

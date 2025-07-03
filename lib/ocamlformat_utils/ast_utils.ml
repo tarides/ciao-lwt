@@ -1,7 +1,3 @@
-(* SPDX-License-Identifier: MIT
- * Copyright (c) 2025 Jules Aguillon <jules@j3s.fr>
- *)
-
 open Ocamlformat_ocaml_common
 open Ocamlformat_parser_extended
 open Asttypes
