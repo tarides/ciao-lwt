@@ -8,4 +8,5 @@ This project follows the OCaml Code of Conduct [enforcement policy](https://gith
 
 To report any violations, please contact:
 
+- Thomas Gazagnaire <thomas@tarides.com>
 - Jules Aguillon <jules@tarides.com>
