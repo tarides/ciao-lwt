@@ -15,7 +15,19 @@ The tools in the collection are:
 
 - [lwt-to-direct-style](#migrate-from-Lwt-to-direct-style-concurrency): Migrate from `Lwt` to direct-style concurrency.
 
-## Remove usages of `lwt_ppx`
+## Installation
+
+Using Opam:
+
+```
+opam install .
+```
+
+Make sure to install the tools in the Opam switch used to build your project.
+
+## Documentation
+
+### Remove usages of `lwt_ppx`
 
 Usage:
 ```
@@ -71,7 +83,7 @@ let _ =
     ..)
 ```
 
-### Known caveats
+#### Known caveats
 
 - The tool uses OCamlformat to print the changed code, which may reformat the
   entire codebase.
@@ -81,7 +93,7 @@ let _ =
   `lwt_ppx` also helped generate better backtraces in case of an exception
   within asynchronous code. This is removed to avoid poluting the codebase.
 
-## Find implicit forks
+### Find implicit forks
 
 This tool warns about values bound to `let _` or passed to `ignore` that do not have a type annotation.
 The type annotations help find ignored Lwt threads, which are otherwise a challenge to translate into direct-style concurrency.
@@ -93,7 +105,7 @@ $ lwt-lint .
 
 To fix the warnings, add type annotations on `let _` and `ignore` expressions and wrap implicit forks with `Lwt.async (fun () -> ...)`.
 
-## Migrate from `Lwt_log` to `Logs`
+### Migrate from `Lwt_log` to `Logs`
 
 Usage:
 ```
@@ -110,7 +122,7 @@ It must be run from the directory containing Dune's `_build`. This works like
 An example of use can be found here:
 https://github.com/ocsigen/ocsigenserver/pull/256
 
-### Other changes
+#### Other changes
 
 - The `Fatal` log level doesn't exist in Logs. `Error` is used instead.
 
@@ -125,7 +137,7 @@ https://github.com/ocsigen/ocsigenserver/pull/256
 - The `broadcast` and `dispatch` functions are not immediately available in
   `Logs`. They are implemented by generating more code.
 
-### Known caveats
+#### Known caveats
 
 - The tool uses OCamlformat to print the modified code, which may reformat the
   entire codebase.
@@ -147,7 +159,7 @@ https://github.com/ocsigen/ocsigenserver/pull/256
 - There is no equivalent to `Lwt_log.close`. Closing must be handled in the
   application code, if necessary.
 
-## Migrate from `Lwt` to direct-style concurrency
+### Migrate from `Lwt` to direct-style concurrency
 
 Usage:
 ```
@@ -170,7 +182,7 @@ This works on both the syntax and type levels:
 - Merlin is used to detect occurrences of the indentifiers that we want to rewrite using indexes.
   See [`Migrate_utils`](lib/migrate_utils/migrate_utils.mli)
 
-### Transformation to Direct-style
+#### Transformation to Direct-style
 
 Translating code from Lwt to direct-style means transforming binds
 (`Lwt.bind`, `let*`, etc.) into simple `let` and removing uses of
@@ -197,7 +209,7 @@ let _ =
 Other expressions are also simplified, like `Lwt.catch` and `Lwt.fail`,
 `Lwt_list.iter_s`, binding operators, and more.
 
-### Concurrency
+#### Concurrency
 
 Concurrency must now be created by defining explicit fork points (using
 `Eio.Fiber`) but code written for Lwt doesn't define them.
@@ -207,7 +219,7 @@ promise.
 This is the part of the process that requires the most manual intervention to
 make the transition successful.
 
-#### Forks
+##### Forks
 
 For example, this is a fork:
 ```ocaml
@@ -237,7 +249,7 @@ Unfortunately, the tool is not able to generate the correct code in this case.
 
 Explicit forks are handled correctly, like `Lwt.pick`, `Lwt.both` and `Lwt.async`.
 
-#### Promises
+##### Promises
 
 Every `_ Lwt.t` value is a promise but transforming all of them to a
 `Eio.Promise.t` would be extremely impractical and against the goal of doing
@@ -274,7 +286,7 @@ let f () = Some (operation_1 ())
 let f () = Some (operation_1 ())
 ```
 
-#### Other caveats
+##### Other caveats
 
 - Arguments to `Lwt.pick` and `Lwt.both` must now be suspended in a
   `(fun () -> ...)` expression, which was not needed before.
@@ -303,3 +315,16 @@ let f () = Some (operation_1 ())
         thread_3
         (* TODO: lwt-to-direct-style: This computation might not be suspended correctly. *))
   ```
+
+## Contribution
+
+Contributions are most welcome!
+
+- [File issues](https://github.com/Julow/lwt-to-direct-style/issues) to report bugs or feature requests.
+- [Contribute code or documentation](./CONTRIBUTING.md)
+
+---
+
+This project is created and maintained by\
+<a href="https://tarides.com/"><img src="./Tarides.svg" width="200" alt="Tarides" /></a>
+
