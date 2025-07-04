@@ -11,9 +11,9 @@ authors: [
 ]
 depends: [
   "dune" {>= "3.17"}
-  "ocaml"
-  "cmdliner"
-  "base"
+  "ocaml" {>= "4.08"}
+  "base" {>= "v0.12.0"}
+  "cmdliner" {>= "1.1.0"}
   "dune-build-info"
   "either"
   "fix"
@@ -28,6 +28,7 @@ depends: [
   "csexp" {>= "1.4.0"}
   "astring"
   "camlp-streams"
+  "re"
   "odoc" {with-doc}
 ]
 build: [
