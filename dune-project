@@ -4,8 +4,8 @@
 
 (generate_opam_files true)
 
-; (source
-;  (github username/reponame))
+(source
+ (github tarides/ciao-lwt))
 
 (authors
  "Jules Aguillon <jules@j3s.fr>"
