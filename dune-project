@@ -1,11 +1,11 @@
 (lang dune 3.17)
 
-(name lwt_ppx_to_let_syntax)
+(name ciao_lwt)
 
 (generate_opam_files true)
 
-; (source
-;  (github username/reponame))
+(source
+ (github tarides/ciao-lwt))
 
 (authors
  "Jules Aguillon <jules@j3s.fr>"
@@ -15,7 +15,7 @@
  "Jules Aguillon <jules@j3s.fr>"
  "Nicolas Osborne <nicolas.osborne@tarides.com>")
 
-; (license LICENSE)
+(license MIT)
 
 ; (documentation https://url/to/documentation)
 

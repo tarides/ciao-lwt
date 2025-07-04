@@ -9,6 +9,9 @@ authors: [
   "Jules Aguillon <jules@j3s.fr>"
   "Nicolas Osborne <nicolas.osborne@tarides.com>"
 ]
+license: "MIT"
+homepage: "https://github.com/tarides/ciao-lwt"
+bug-reports: "https://github.com/tarides/ciao-lwt/issues"
 depends: [
   "dune" {>= "3.17"}
   "ocaml"
@@ -47,3 +50,4 @@ build: [
     "@doc" {with-doc}
   ]
 ]
+dev-repo: "git+https://github.com/tarides/ciao-lwt.git"

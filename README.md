@@ -320,7 +320,7 @@ let f () = Some (operation_1 ())
 
 Contributions are most welcome!
 
-- [File issues](https://github.com/Julow/lwt-to-direct-style/issues) to report bugs or feature requests.
+- [File issues](https://github.com/tarides/ciao-lwt/issues) to report bugs or feature requests.
 - [Contribute code or documentation](./CONTRIBUTING.md)
 
 ---
