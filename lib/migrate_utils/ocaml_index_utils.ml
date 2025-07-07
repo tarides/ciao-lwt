@@ -127,9 +127,9 @@ let extract_occurrences_of_unit ~units ~lookup_ident paths =
               | `Ignore -> (* Not a value *) acc
               | `Not_found -> (
                   match uid with
-                  | Item { comp_unit; id } when units comp_unit ->
+                  | Item it when units it.comp_unit ->
                       Format.eprintf "@[<v 2>No ident for uid %s.%d:@ %a@]@\n%!"
-                        comp_unit id
+                        it.comp_unit it.id
                         (Format.pp_print_list pp_ocaml_lid)
                         (Lid_set.elements locs);
                       acc
