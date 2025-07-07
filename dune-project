@@ -45,6 +45,8 @@
    (>= 20201216))
   (ocaml-version
    (>= 3.5.0))
+  (ocp-indent
+   (>= 1.8.0))
   stdio
   (uuseg
    (>= 10.0.0))
@@ -86,6 +88,8 @@
    (>= 20201216))
   (ocaml-version
    (>= 3.5.0))
+  (ocp-indent
+   (>= 1.8.0))
   stdio
   (uuseg
    (>= 10.0.0))
@@ -127,6 +131,8 @@
    (>= 20201216))
   (ocaml-version
    (>= 3.5.0))
+  (ocp-indent
+   (>= 1.8.0))
   stdio
   (uuseg
    (>= 10.0.0))
@@ -162,6 +168,8 @@
    (>= 20201216))
   (ocaml-version
    (>= 3.5.0))
+  (ocp-indent
+   (>= 1.8.0))
   stdio
   (uuseg
    (>= 10.0.0))
