@@ -7,7 +7,7 @@ Make a writable directory tree:
   _build/default/lib/.test.objs/cctx.ocaml-index
   _build/default/bin/.main.eobjs/cctx.ocaml-index
 
-  $ lwt-to-direct-style
+  $ ciao-lwt to-eio
   bin/main.ml: (41 occurrences)
     Lwt (line 39 column 6)
     Lwt.return (line 9 column 16)
@@ -311,7 +311,7 @@ Make a writable directory tree:
     Lwt_mutex.t (line 2 column 10)
     Lwt_mutex.t (line 3 column 10)
 
-  $ lwt-to-direct-style --migrate
+  $ ciao-lwt to-eio --migrate
   Formatted 4 files
   Warning: lib/test.ml: 8 occurrences have not been rewritten.
     Lwt (line 55 column 18)
@@ -347,7 +347,7 @@ Make a writable directory tree:
   
   let () =
     Eio_main.run (fun env ->
-        (* TODO: lwt-to-direct-style: [Eio_main.run] argument used to be a [Lwt] promise and is now a [fun]. Make sure no asynchronous or IO calls are done outside of this [fun]. *)
+        (* TODO: ciao-lwt: [Eio_main.run] argument used to be a [Lwt] promise and is now a [fun]. Make sure no asynchronous or IO calls are done outside of this [fun]. *)
         main ())
   
   let _ = None
@@ -363,8 +363,8 @@ Make a writable directory tree:
   let x =
     match
       Eio.Time.with_timeout_exn env#mono_clock
-        (* TODO: lwt-to-direct-style: [env] must be propagated from the main loop *)
-        1.0 (fun () -> 42)
+        (* TODO: ciao-lwt: [env] must be propagated from the main loop *) 1.0
+        (fun () -> 42)
     with
     | v -> v
     | exception Eio.Time.Timeout -> 0
@@ -418,13 +418,13 @@ Make a writable directory tree:
     Fiber.pair
       (fun () ->
         Format.printf
-          (* TODO: lwt-to-direct-style: This computation might not be suspended correctly. *)
+          (* TODO: ciao-lwt: This computation might not be suspended correctly. *)
           "1";
         Format.printf "2";
         ())
       (fun () ->
         Format.printf
-          (* TODO: lwt-to-direct-style: This computation might not be suspended correctly. *)
+          (* TODO: ciao-lwt: This computation might not be suspended correctly. *)
           "3")
   
   let lwt_calls_open () =
@@ -453,13 +453,13 @@ Make a writable directory tree:
     Fiber.pair
       (fun () ->
         Format.printf
-          (* TODO: lwt-to-direct-style: This computation might not be suspended correctly. *)
+          (* TODO: ciao-lwt: This computation might not be suspended correctly. *)
           "1";
         Format.printf "2";
         ())
       (fun () ->
         Format.printf
-          (* TODO: lwt-to-direct-style: This computation might not be suspended correctly. *)
+          (* TODO: ciao-lwt: This computation might not be suspended correctly. *)
           "3")
   
   let lwt_calls_include () =
@@ -481,10 +481,10 @@ Make a writable directory tree:
       Fiber.pair
         (fun () ->
           a
-          (* TODO: lwt-to-direct-style: This computation might not be suspended correctly. *))
+          (* TODO: ciao-lwt: This computation might not be suspended correctly. *))
         (fun () ->
           b
-          (* TODO: lwt-to-direct-style: This computation might not be suspended correctly. *))
+          (* TODO: ciao-lwt: This computation might not be suspended correctly. *))
     in
     Fiber.all
       [
@@ -506,16 +506,16 @@ Make a writable directory tree:
         [
           (fun () ->
             x
-            (* TODO: lwt-to-direct-style: This computation might not be suspended correctly. *));
+            (* TODO: ciao-lwt: This computation might not be suspended correctly. *));
           (fun x1 -> x1);
           (fun () ->
             x
-            (* TODO: lwt-to-direct-style: This computation might not be suspended correctly. *));
+            (* TODO: ciao-lwt: This computation might not be suspended correctly. *));
         ]
     in
     let _ =
       Fiber.any xs
-      (* TODO: lwt-to-direct-style: This expression is a ['a Lwt.t list] but a [(unit -> 'a) list] is expected. *)
+      (* TODO: ciao-lwt: This expression is a ['a Lwt.t list] but a [(unit -> 'a) list] is expected. *)
     in
     x
   
@@ -536,15 +536,15 @@ Make a writable directory tree:
   
   let _ =
     x
-    (* TODO: lwt-to-direct-style: [<?>] can't be automatically translated.Use Eio.Promise instead.  *)
+    (* TODO: ciao-lwt: [<?>] can't be automatically translated.Use Eio.Promise instead.  *)
     <?> x
   
   let _ = Fiber.yield ()
   
   let _ =
     Lwt.choose
-      (* TODO: lwt-to-direct-style: [Lwt.choose] can't be automatically translated.Use Eio.Promise instead.  *)
-      (* TODO: lwt-to-direct-style: [Lwt.choose] can't be automatically translated.Use Eio.Promise instead.  *)
+      (* TODO: ciao-lwt: [Lwt.choose] can't be automatically translated.Use Eio.Promise instead.  *)
+      (* TODO: ciao-lwt: [Lwt.choose] can't be automatically translated.Use Eio.Promise instead.  *)
       [ x; x ]
   
   let _ =
@@ -552,10 +552,10 @@ Make a writable directory tree:
       [
         (fun () ->
           x
-          (* TODO: lwt-to-direct-style: This computation might not be suspended correctly. *));
+          (* TODO: ciao-lwt: This computation might not be suspended correctly. *));
         (fun () ->
           x
-          (* TODO: lwt-to-direct-style: This computation might not be suspended correctly. *));
+          (* TODO: ciao-lwt: This computation might not be suspended correctly. *));
       ]
   
   let _ = Fiber.all [ (fun x1 -> x1) ]
@@ -563,17 +563,17 @@ Make a writable directory tree:
   
   let _ =
     Fiber.fork ~sw
-      (* TODO: lwt-to-direct-style: [sw] (of type Switch.t) must be propagated here. *)
+      (* TODO: ciao-lwt: [sw] (of type Switch.t) must be propagated here. *)
       (fun () -> x)
   
   let _ =
     let t, u =
       Promise.create
-        (* TODO: lwt-to-direct-style: Translation is incomplete, [Promise.await] must be called on the promise when it's part of control-flow. *)
+        (* TODO: ciao-lwt: Translation is incomplete, [Promise.await] must be called on the promise when it's part of control-flow. *)
         ()
     in
     Fiber.fork ~sw
-      (* TODO: lwt-to-direct-style: [sw] (of type Switch.t) must be propagated here. *)
+      (* TODO: ciao-lwt: [sw] (of type Switch.t) must be propagated here. *)
       (fun () -> t);
     Promise.resolve u ();
     Promise.resolve u ()
@@ -583,8 +583,8 @@ Make a writable directory tree:
   
   let _ =
     Lwt_list.iteri_p
-      (* TODO: lwt-to-direct-style: [iteri] can't be translated automatically. See https://ocaml.org/p/eio/latest/doc/Eio/Fiber/List/index.html *)
-      (* TODO: lwt-to-direct-style: [iteri] can't be translated automatically. See https://ocaml.org/p/eio/latest/doc/Eio/Fiber/List/index.html *)
+      (* TODO: ciao-lwt: [iteri] can't be translated automatically. See https://ocaml.org/p/eio/latest/doc/Eio/Fiber/List/index.html *)
+      (* TODO: ciao-lwt: [iteri] can't be translated automatically. See https://ocaml.org/p/eio/latest/doc/Eio/Fiber/List/index.html *)
       (fun _ _ -> x)
       []
   
@@ -592,7 +592,7 @@ Make a writable directory tree:
   
   let f1 cond =
     Eio.Condition.await
-      (* TODO: lwt-to-direct-style: A mutex must be passed *)
+      (* TODO: ciao-lwt: A mutex must be passed *)
       cond __mutex__
   
   let f2 mutex cond = Eio.Condition.await cond mutex
@@ -600,7 +600,7 @@ Make a writable directory tree:
   let f3 mutex cond =
     Eio.Condition.await cond
       (Option.get
-         (* TODO: lwt-to-direct-style: [mutex] shouldn't be an option. *)
+         (* TODO: ciao-lwt: [mutex] shouldn't be an option. *)
          mutex)
   
   let m = Eio.Mutex.create ()
@@ -608,28 +608,25 @@ Make a writable directory tree:
   let _ = Eio.Mutex.unlock m
   let _ = Eio.Mutex.use_rw ~protect:false m (fun () -> x)
   
-  let _
-      (* TODO: lwt-to-direct-style: [sw] (of type Switch.t) must be propagated here. *)
-      =
+  let _ (* TODO: ciao-lwt: [sw] (of type Switch.t) must be propagated here. *) =
     Fiber.fork ~sw (fun x1 -> x1)
   
   let _ =
     Fiber.fork ~sw (fun () ->
-        (* TODO: lwt-to-direct-style: [sw] (of type Switch.t) must be propagated here. *)
+        (* TODO: ciao-lwt: [sw] (of type Switch.t) must be propagated here. *)
         x
-        (* TODO: lwt-to-direct-style: This computation might not be suspended correctly. *))
+        (* TODO: ciao-lwt: This computation might not be suspended correctly. *))
   
   let _ =
     Promise.create
-      (* TODO: lwt-to-direct-style: Use [Switch] or [Cancel] for defining a cancellable context. *)
-      (* TODO: lwt-to-direct-style: Translation is incomplete, [Promise.await] must be called on the promise when it's part of control-flow. *)
+      (* TODO: ciao-lwt: Use [Switch] or [Cancel] for defining a cancellable context. *)
+      (* TODO: ciao-lwt: Translation is incomplete, [Promise.await] must be called on the promise when it's part of control-flow. *)
       ()
   
   let _ =
     match Promise.peek x with
     | Some x -> x
-    | Fail (* TODO: lwt-to-direct-style: [Lwt.Fail] shouldn't be used *) _ ->
-        failwith "fail"
+    | Fail (* TODO: ciao-lwt: [Lwt.Fail] shouldn't be used *) _ -> failwith "fail"
     | None -> ()
   
   let key = Fiber.create_key ()
@@ -651,7 +648,7 @@ Make a writable directory tree:
   let g : unit Promise.t -> unit =
    fun y ->
     Fiber.fork ~sw
-      (* TODO: lwt-to-direct-style: [sw] (of type Switch.t) must be propagated here. *)
+      (* TODO: ciao-lwt: [sw] (of type Switch.t) must be propagated here. *)
       (fun () -> y)
   
   let h : (unit -> unit) -> unit =
@@ -672,11 +669,7 @@ Make a writable directory tree:
   
   let _ = Some ()
   let _ = None
-  
-  let _ =
-    Lwt.Fail
-      (* TODO: lwt-to-direct-style: [Lwt.Fail] shouldn't be used *)
-      Not_found
+  let _ = Lwt.Fail (* TODO: ciao-lwt: [Lwt.Fail] shouldn't be used *) Not_found
   
   let _ =
     let _ : unit Promise.t = () in
@@ -696,7 +689,7 @@ Make a writable directory tree:
   
   val f1 :
     Eio.Condition.t ->
-    (* TODO: lwt-to-direct-style: Eio conditions don't carry a value. Use a mutable variable and a dedicated mutex. *)
+    (* TODO: ciao-lwt: Eio conditions don't carry a value. Use a mutable variable and a dedicated mutex. *)
     'a
   
   val f2 : Lwt_mutex.t -> Eio.Condition.t -> unit
@@ -717,7 +710,7 @@ Make a writable directory tree:
     let inp =
       Unix.(openfile fname [ O_RDWR; O_NONBLOCK; O_APPEND ]) 0o660
       |>
-      (* TODO: lwt-to-direct-style: [sw] (of type Switch.t) must be propagated here. *)
+      (* TODO: ciao-lwt: [sw] (of type Switch.t) must be propagated here. *)
       fun x1 ->
       Eio.Buf_read.of_flow ~max_size:1_000_000
         (Eio_unix.Net.import_socket_stream ~sw ~close_unix:true x1
@@ -726,18 +719,18 @@ Make a writable directory tree:
     let buf = Bytes.create 1024 in
     let (_n : int) =
       Eio.Flow.single_read
-        (* TODO: lwt-to-direct-style: [buf] should be a [Cstruct.t]. *)
-        (* TODO: lwt-to-direct-style: [Eio.Flow.single_read] operates on a [Flow.source] but [inp] is likely of type [Eio.Buf_read.t]. Rewrite this code to use [Buf_read] (which contains an internal buffer) or change the call to [Eio.Buf_read.of_flow] used to create the buffer. *)
-        (* TODO: lwt-to-direct-style: Dropped expression (buffer offset): [0]. This will behave as if it was [0]. *)
-        (* TODO: lwt-to-direct-style: Dropped expression (buffer length): [1024]. This will behave as if it was [Cstruct.length buffer]. *)
+        (* TODO: ciao-lwt: [buf] should be a [Cstruct.t]. *)
+        (* TODO: ciao-lwt: [Eio.Flow.single_read] operates on a [Flow.source] but [inp] is likely of type [Eio.Buf_read.t]. Rewrite this code to use [Buf_read] (which contains an internal buffer) or change the call to [Eio.Buf_read.of_flow] used to create the buffer. *)
+        (* TODO: ciao-lwt: Dropped expression (buffer offset): [0]. This will behave as if it was [0]. *)
+        (* TODO: ciao-lwt: Dropped expression (buffer length): [1024]. This will behave as if it was [Cstruct.length buffer]. *)
         inp buf
     in
     let () =
       Eio.Flow.read_exact
-        (* TODO: lwt-to-direct-style: [buf] should be a [Cstruct.t]. *)
-        (* TODO: lwt-to-direct-style: [Eio.Flow.single_read] operates on a [Flow.source] but [inp] is likely of type [Eio.Buf_read.t]. Rewrite this code to use [Buf_read] (which contains an internal buffer) or change the call to [Eio.Buf_read.of_flow] used to create the buffer. *)
-        (* TODO: lwt-to-direct-style: Dropped expression (buffer offset): [0]. This will behave as if it was [0]. *)
-        (* TODO: lwt-to-direct-style: Dropped expression (buffer length): [1024]. This will behave as if it was [Cstruct.length buffer]. *)
+        (* TODO: ciao-lwt: [buf] should be a [Cstruct.t]. *)
+        (* TODO: ciao-lwt: [Eio.Flow.single_read] operates on a [Flow.source] but [inp] is likely of type [Eio.Buf_read.t]. Rewrite this code to use [Buf_read] (which contains an internal buffer) or change the call to [Eio.Buf_read.of_flow] used to create the buffer. *)
+        (* TODO: ciao-lwt: Dropped expression (buffer offset): [0]. This will behave as if it was [0]. *)
+        (* TODO: ciao-lwt: Dropped expression (buffer length): [1024]. This will behave as if it was [Cstruct.length buffer]. *)
         inp buf
     in
     ()
@@ -749,15 +742,15 @@ Make a writable directory tree:
     Unix.ADDR_INET (Unix.inet_addr_any, 0)
   
   let _
-      (* TODO: lwt-to-direct-style: This call to [Unix.getaddrinfo] was [Lwt_unix.getaddrinfo] before the rewrite. *)
+      (* TODO: ciao-lwt: This call to [Unix.getaddrinfo] was [Lwt_unix.getaddrinfo] before the rewrite. *)
       =
     Unix.getaddrinfo
   
   let _f fd =
     Eio.Buf_write.with_flow
       (Eio_unix.Net.import_socket_stream ~sw ~close_unix:true
-         (* TODO: lwt-to-direct-style: [sw] (of type Switch.t) must be propagated here. *)
-         (* TODO: lwt-to-direct-style: Write operations to buffered IO should be moved inside [with_flow]. *)
+         (* TODO: ciao-lwt: [sw] (of type Switch.t) must be propagated here. *)
+         (* TODO: ciao-lwt: Write operations to buffered IO should be moved inside [with_flow]. *)
          fd
         : [ `W | `Flow | `Close ] r)
       (fun outbuf -> `Move_writing_code_here)
@@ -765,15 +758,15 @@ Make a writable directory tree:
   let _f fd =
     Eio.Buf_read.of_flow ~max_size:1_000_000
       (Eio_unix.Net.import_socket_stream ~sw ~close_unix:true
-         (* TODO: lwt-to-direct-style: [sw] (of type Switch.t) must be propagated here. *)
+         (* TODO: ciao-lwt: [sw] (of type Switch.t) must be propagated here. *)
          fd
         : [ `R | `Flow | `Close ] r)
   
   let _f fd =
     Eio.Buf_write.with_flow
       (Eio_unix.Net.import_socket_stream ~sw ~close_unix:true
-         (* TODO: lwt-to-direct-style: [sw] (of type Switch.t) must be propagated here. *)
-         (* TODO: lwt-to-direct-style: Write operations to buffered IO should be moved inside [with_flow]. *)
+         (* TODO: ciao-lwt: [sw] (of type Switch.t) must be propagated here. *)
+         (* TODO: ciao-lwt: Write operations to buffered IO should be moved inside [with_flow]. *)
          fd
         : [ `W | `Flow | `Close ] r)
       (fun outbuf -> `Move_writing_code_here)
@@ -788,8 +781,8 @@ Make a writable directory tree:
       Eio.Buf_read.of_flow ~max_size:1_000_000
         (Eio.Path.open_in ~sw
            (Eio.Path.( / ) env#cwd
-              (* TODO: lwt-to-direct-style: [sw] (of type Switch.t) must be propagated here. *)
-              (* TODO: lwt-to-direct-style: [env] must be propagated from the main loop *)
+              (* TODO: ciao-lwt: [sw] (of type Switch.t) must be propagated here. *)
+              (* TODO: ciao-lwt: [env] must be propagated from the main loop *)
               fname))
     in
     Eio.Resource.close fd
@@ -799,10 +792,10 @@ Make a writable directory tree:
       Eio.Buf_write.with_flow
         (Eio.Path.open_out ~sw ~create:(`If_missing 0o666)
            (Eio.Path.( / ) env#cwd
-              (* TODO: lwt-to-direct-style: [sw] (of type Switch.t) must be propagated here. *)
-              (* TODO: lwt-to-direct-style: [flags] and [perm] arguments were dropped. The [~create] was added by default and might not match the previous flags. Use [~append:true] for [O_APPEND]. *)
-              (* TODO: lwt-to-direct-style: [env] must be propagated from the main loop *)
-              (* TODO: lwt-to-direct-style: Write operations to buffered IO should be moved inside [with_flow]. *)
+              (* TODO: ciao-lwt: [sw] (of type Switch.t) must be propagated here. *)
+              (* TODO: ciao-lwt: [flags] and [perm] arguments were dropped. The [~create] was added by default and might not match the previous flags. Use [~append:true] for [O_APPEND]. *)
+              (* TODO: ciao-lwt: [env] must be propagated from the main loop *)
+              (* TODO: ciao-lwt: Write operations to buffered IO should be moved inside [with_flow]. *)
               fname))
         (fun outbuf -> `Move_writing_code_here)
     in
@@ -811,27 +804,27 @@ Make a writable directory tree:
   let _f fname =
     Eio.Path.stat ~follow:true
       (Eio.Path.( / ) env#cwd
-         (* TODO: lwt-to-direct-style: [env] must be propagated from the main loop *)
+         (* TODO: ciao-lwt: [env] must be propagated from the main loop *)
          fname)
   
   let _f fname =
     Eio.Path.stat ~follow:false
       (Eio.Path.( / ) env#cwd
-         (* TODO: lwt-to-direct-style: [env] must be propagated from the main loop *)
+         (* TODO: ciao-lwt: [env] must be propagated from the main loop *)
          fname)
   
   let _f chan = Eio.Buf_read.take_all chan
   
   let _f chan =
     Lwt_io.read
-    (* TODO: lwt-to-direct-style: Eio doesn't have a direct equivalent of [Lwt_io.read ~count]. Rewrite the code using [Eio.Buf_read]'s lower level API or switch to unbuffered IO. *)
-    (* TODO: lwt-to-direct-style: Eio doesn't have a direct equivalent of [Lwt_io.read ~count]. Rewrite the code using [Eio.Buf_read]'s lower level API or switch to unbuffered IO. *)
+    (* TODO: ciao-lwt: Eio doesn't have a direct equivalent of [Lwt_io.read ~count]. Rewrite the code using [Eio.Buf_read]'s lower level API or switch to unbuffered IO. *)
+    (* TODO: ciao-lwt: Eio doesn't have a direct equivalent of [Lwt_io.read ~count]. Rewrite the code using [Eio.Buf_read]'s lower level API or switch to unbuffered IO. *)
       ~count:42 chan
   
   let _f chan =
     Lwt_io.read
-    (* TODO: lwt-to-direct-style: Eio doesn't have a direct equivalent of [Lwt_io.read ~count]. Rewrite the code using [Eio.Buf_read]'s lower level API or switch to unbuffered IO. *)
-    (* TODO: lwt-to-direct-style: Eio doesn't have a direct equivalent of [Lwt_io.read ~count]. Rewrite the code using [Eio.Buf_read]'s lower level API or switch to unbuffered IO. *)
+    (* TODO: ciao-lwt: Eio doesn't have a direct equivalent of [Lwt_io.read ~count]. Rewrite the code using [Eio.Buf_read]'s lower level API or switch to unbuffered IO. *)
+    (* TODO: ciao-lwt: Eio doesn't have a direct equivalent of [Lwt_io.read ~count]. Rewrite the code using [Eio.Buf_read]'s lower level API or switch to unbuffered IO. *)
       ?count:(Some 42) chan
   
   let _f chan = Eio.Buf_write.flush chan
@@ -839,16 +832,16 @@ Make a writable directory tree:
   let _f =
     Fiber.fork_promise ~sw (fun () ->
         Eio.Domain_manager.run env#domain_mgr (fun () ->
-            (* TODO: lwt-to-direct-style: [sw] (of type Switch.t) must be propagated here. *)
-            (* TODO: lwt-to-direct-style: [env] must be propagated from the main loop *)
+            (* TODO: ciao-lwt: [sw] (of type Switch.t) must be propagated here. *)
+            (* TODO: ciao-lwt: [env] must be propagated from the main loop *)
             (fun () -> ()) ()))
   
   let _f =
     let f = fun x1 -> x1 in
     Fiber.fork_promise ~sw (fun () ->
         Eio.Domain_manager.run env#domain_mgr (fun () ->
-            (* TODO: lwt-to-direct-style: [env] must be propagated from the main loop *)
-            (* TODO: lwt-to-direct-style: [sw] (of type Switch.t) must be propagated here. *)
+            (* TODO: ciao-lwt: [env] must be propagated from the main loop *)
+            (* TODO: ciao-lwt: [sw] (of type Switch.t) must be propagated here. *)
             f 12))
   
   let _f a b c = Unix.socket a b c
@@ -856,17 +849,17 @@ Make a writable directory tree:
   
   let _f a b =
     Unix.connect
-      (* TODO: lwt-to-direct-style: This call to [Unix.connect] was [Lwt_unix.connect] before. It's now blocking. *)
+      (* TODO: ciao-lwt: This call to [Unix.connect] was [Lwt_unix.connect] before. It's now blocking. *)
       a b
   
   let _f a =
     Unix.accept
-      (* TODO: lwt-to-direct-style: This call to [Unix.accept] was [Lwt_unix.accept] before. It's now blocking. *)
+      (* TODO: ciao-lwt: This call to [Unix.accept] was [Lwt_unix.accept] before. It's now blocking. *)
       a
   
   let _f a b =
     Unix.bind
-      (* TODO: lwt-to-direct-style: This call to [Unix.bind] was [Lwt_unix.bind] before. It's now blocking. *)
+      (* TODO: ciao-lwt: This call to [Unix.bind] was [Lwt_unix.bind] before. It's now blocking. *)
       a b
   
   let _f a b = Unix.listen a b
@@ -877,6 +870,6 @@ Make a writable directory tree:
     Switch.run (fun sw ->
         (fun (_in_chan, _out_chan) -> ())
           (Eio.Net.connect ~sw env#net
-             (* TODO: lwt-to-direct-style: [sockaddr] is of type [Unix.sockaddr] but it should be a [Eio.Net.Sockaddr.stream]. *)
-             (* TODO: lwt-to-direct-style: [env] must be propagated from the main loop *)
+             (* TODO: ciao-lwt: [sockaddr] is of type [Unix.sockaddr] but it should be a [Eio.Net.Sockaddr.stream]. *)
+             (* TODO: ciao-lwt: [env] must be propagated from the main loop *)
              sockaddr))

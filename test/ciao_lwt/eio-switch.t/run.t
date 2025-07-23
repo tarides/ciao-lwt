@@ -3,7 +3,8 @@ Make a writable directory tree:
   $ cd out
 
   $ dune build @ocaml-index
-  $ lwt-to-direct-style --migrate --eio-sw-as-fiber-var Fiber_var.sw --eio-env-as-fiber-var Fiber_var.env
+
+  $ ciao-lwt to-eio --migrate --eio-sw-as-fiber-var Fiber_var.sw --eio-env-as-fiber-var Fiber_var.env
   Formatted 1 files
   Warning: main.ml: 1 occurrences have not been rewritten.
     Lwt_io.printf (line 16 column 3)
@@ -46,5 +47,5 @@ Make a writable directory tree:
         Fiber.with_binding Fiber_var.env env (fun () ->
             Switch.run (fun sw ->
                 Fiber.with_binding Fiber_var.sw sw (fun () ->
-                    (* TODO: lwt-to-direct-style: [Eio_main.run] argument used to be a [Lwt] promise and is now a [fun]. Make sure no asynchronous or IO calls are done outside of this [fun]. *)
+                    (* TODO: ciao-lwt: [Eio_main.run] argument used to be a [Lwt] promise and is now a [fun]. Make sure no asynchronous or IO calls are done outside of this [fun]. *)
                     main ()))))

@@ -11,9 +11,9 @@ The tools in the collection are:
 
 - [lwt_lint](#find-implicit-forks): Find implicit forks
 
-- [lwt-log-to-logs](#migrate-from-Lwt_log-to-Logs): Migrate from `Lwt_log` to `Logs`.
+- [ciao-lwt to-logs](#migrate-from-Lwt_log-to-Logs): Migrate from `Lwt_log` to `Logs`.
 
-- [lwt-to-direct-style](#migrate-from-Lwt-to-direct-style-concurrency): Migrate from `Lwt` to direct-style concurrency.
+- [ciao-lwt to-eio](#migrate-from-Lwt-to-Eio): Migrate from `Lwt` to `Eio`.
 
 ## Installation
 
@@ -111,13 +111,12 @@ Usage:
 ```
 $ dune fmt # Make sure the project is formatted to avoid unrelated diffs
 $ dune build @ocaml-index # Build the index (required)
-$ lwt-log-to-logs --migrate .
+$ ciao-lwt to-logs --migrate .
 $ dune fmt # Remove formatting changes created by the tool
 ```
 
 This will rewrite files containing occurrences of `Lwt_log` and `Lwt_log_js`.
-It must be run from the directory containing Dune's `_build`. This works like
-`lwt-to-direct-style`.
+It must be run from the directory containing Dune's `_build`.
 
 An example of use can be found here:
 https://github.com/ocsigen/ocsigenserver/pull/256
@@ -159,13 +158,13 @@ https://github.com/ocsigen/ocsigenserver/pull/256
 - There is no equivalent to `Lwt_log.close`. Closing must be handled in the
   application code, if necessary.
 
-### Migrate from `Lwt` to direct-style concurrency
+### Migrate from `Lwt` to `Eio`
 
 Usage:
 ```
 $ dune fmt # Make sure the project is formatted to avoid unrelated diffs
 $ dune build @ocaml-index # Build the index (required)
-$ lwt-to-direct-style --migrate .
+$ ciao-lwt to-eio --migrate .
 $ dune fmt # Remove formatting changes created by the tool
 ```
 
@@ -310,10 +309,10 @@ let f () = Some (operation_1 ())
     Fiber.pair
       (fun () ->
         thread_2
-        (* TODO: lwt-to-direct-style: This computation might not be suspended correctly. *))
+        (* TODO: ciao-lwt: This computation might not be suspended correctly. *))
       (fun () ->
         thread_3
-        (* TODO: lwt-to-direct-style: This computation might not be suspended correctly. *))
+        (* TODO: ciao-lwt: This computation might not be suspended correctly. *))
   ```
 
 ## Contribution

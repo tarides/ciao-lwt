@@ -6,7 +6,7 @@ open Ocamlformat_utils.Ast_utils
 module Occ = Migrate_utils.Occ
 
 let add_comment state ?loc text =
-  Migrate_utils.add_comment state ?loc ("TODO: lwt-to-direct-style: " ^ text)
+  Migrate_utils.add_comment state ?loc ("TODO: ciao-lwt: " ^ text)
 
 let is_unit_pat = function
   | { ppat_desc = Ppat_construct ({ txt = Lident "()"; _ }, None); _ } -> true

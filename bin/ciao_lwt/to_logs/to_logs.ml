@@ -6,7 +6,7 @@ open Ocamlformat_utils.Ast_utils
 module Occ = Migrate_utils.Occ
 
 let add_comment state ?loc text =
-  Migrate_utils.add_comment state ?loc ("TODO: lwt-log-to-logs: " ^ text)
+  Migrate_utils.add_comment state ?loc ("TODO: ciao-lwt to-logs: " ^ text)
 
 let mk_lwt_return_unit = Exp.ident (mk_longident [ "Lwt"; "return_unit" ])
 
@@ -365,29 +365,3 @@ let modify_ast ~fname:_ =
     m.signature m sg
   in
   { Migrate_utils.structure; signature }
-
-let main migrate =
-  let units = function
-    | "Lwt_log" | "Lwt_daemon" | "Lwt_log_core" | "Lwt_log_rules" | "Lwt_log_js"
-      ->
-        true
-    | _ -> false
-  in
-  let packages = [ "lwt_log"; "lwt_log.core"; "js_of_ocaml-lwt.logger" ] in
-  if migrate then Migrate_utils.migrate ~packages ~units ~modify_ast
-  else Migrate_utils.print_occurrences ~packages ~units
-
-open Cmdliner
-
-let opt_migrate =
-  let doc =
-    "Modify the source code instead of printing occurrences of Lwt_log."
-  in
-  Arg.(value & flag & info ~doc [ "migrate" ])
-
-let cmd =
-  let doc = "Migrate your codebase from Lwt_log to Logs." in
-  let info = Cmd.info "lwt-log-to-logs" ~version:"%%VERSION%%" ~doc in
-  Cmd.v info Term.(term_result (const main $ opt_migrate))
-
-let () = exit (Cmd.eval cmd)
