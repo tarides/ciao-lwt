@@ -1,6 +1,6 @@
   $ chmod a+w *.ml
   $ dune build @ocaml-index
-  $ lwt-log-to-logs --migrate
+  $ ciao-lwt to-logs --migrate
   Formatted 1 files
 
   $ cat test.ml
@@ -41,7 +41,7 @@
   let _lwt =
     Logs.err (fun fmt ->
         fmt
-          (* TODO: lwt-log-to-logs: This message was previously on the [fatal] level. *)
+          (* TODO: ciao-lwt to-logs: This message was previously on the [fatal] level. *)
           "log");
     Lwt.return_unit
   
@@ -68,7 +68,7 @@
   let _lwt =
     Logs.err (fun fmt ->
         fmt
-          (* TODO: lwt-log-to-logs: This message was previously on the [fatal] level. *)
+          (* TODO: ciao-lwt to-logs: This message was previously on the [fatal] level. *)
           "%s"
           "log");
     Lwt.return_unit
@@ -82,7 +82,7 @@
   let () =
     Logs.err (fun fmt ->
         fmt
-          (* TODO: lwt-log-to-logs: This message was previously on the [fatal] level. *)
+          (* TODO: ciao-lwt to-logs: This message was previously on the [fatal] level. *)
           "log")
   
   let () = Logs.debug (fun fmt -> fmt "%s" "log")
@@ -94,18 +94,18 @@
   let () =
     Logs.err (fun fmt ->
         fmt
-          (* TODO: lwt-log-to-logs: This message was previously on the [fatal] level. *)
+          (* TODO: ciao-lwt to-logs: This message was previously on the [fatal] level. *)
           "%s"
           "log")
   
   let _ =
     Logs.app (fun fmt ->
         fmt
-          (* TODO: lwt-log-to-logs: Labelled argument ~inspect was dropped. *)
+          (* TODO: ciao-lwt to-logs: Labelled argument ~inspect was dropped. *)
           "log")
   
   let _f () : Logs.src * Logs.src * Logs.reporter * string
-      (* TODO: lwt-log-to-logs: Templates are no longer supported *) =
+      (* TODO: ciao-lwt to-logs: Templates are no longer supported *) =
     assert false
   
   let _f = function

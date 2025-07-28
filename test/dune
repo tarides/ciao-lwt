@@ -5,23 +5,13 @@
   (deps %{bin:lwt-ppx-to-let-syntax})))
 
 (subdir
- lwt_to_direct_style
+ ciao_lwt
  (cram
-  (package lwt_to_direct_style)
+  (package ciao_lwt)
   (deps
-   %{bin:lwt-to-direct-style}
+   %{bin:ciao-lwt}
    %{bin:ocaml-index}
    (package lwt))))
-
-(subdir
- lwt_log_to_logs
- (cram
-  (package lwt_log_to_logs)
-  (deps
-   %{bin:lwt-log-to-logs}
-   %{bin:ocaml-index}
-   (package lwt_log)
-   (package js_of_ocaml-lwt))))
 
 (subdir
  lwt_lint
