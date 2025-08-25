@@ -124,7 +124,7 @@ let suspend_list ~state lst =
       lst
 
 let rewrite_lwt_both ~backend ~state left right =
-  Some (backend#both ~left:(suspend ~state left) ~right:(suspend ~state right))
+  backend#both ~left:(suspend ~state left) ~right:(suspend ~state right)
 
 let rewrite_lwt_condition_wait ~backend ~state mutex_opt cond =
   let mutex =
@@ -206,7 +206,8 @@ let rewrite_apply_lwt ~backend ~state ident args =
   (* Async composition *)
   | "both" ->
       take @@ fun left ->
-      take @@ fun right -> return (rewrite_lwt_both ~backend ~state left right)
+      take @@ fun right ->
+      return (Some (rewrite_lwt_both ~backend ~state left right))
   | "pick" ->
       take @@ fun lst -> return (Some (backend#pick (suspend_list ~state lst)))
   | "choose" ->
@@ -272,7 +273,8 @@ let rewrite_apply_lwt ~backend ~state ident args =
       take @@ fun rhs -> return (Some (rewrite_continuation lhs ~arg:rhs))
   | "<&>" ->
       take @@ fun lhs ->
-      take @@ fun rhs -> return (rewrite_lwt_both ~backend ~state lhs rhs)
+      take @@ fun rhs ->
+      return (Some (rewrite_lwt_both ~backend ~state lhs rhs))
   | "<?>" ->
       take @@ fun _lhs ->
       take @@ fun _rhs ->
@@ -470,9 +472,7 @@ let rewrite_letop ~backend ~state let_ ands body = function
           let pat =
             List.fold_right (fun a b -> Pat.tuple [ a; b ]) ands_pats let_pat
           and exp =
-            List.fold_right
-              (fun a b -> backend#both ~left:a ~right:b)
-              ands_exps let_exp
+            List.fold_right (rewrite_lwt_both ~backend ~state) ands_exps let_exp
           in
           Some (mk_let pat exp body))
   | _ -> None

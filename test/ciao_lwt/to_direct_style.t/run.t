@@ -400,17 +400,31 @@ Make a writable directory tree:
   
   let letops () =
     let (), `Ok =
-      Fiber.pair (Format.printf "3")
-        (let () = Format.printf "1" in
-         let () = Format.printf "2" in
-         `Ok)
+      Fiber.pair
+        (fun () -> Format.printf "3")
+        (fun () ->
+          let
+              (* TODO: ciao-lwt: This computation might not be suspended correctly. *)
+              () =
+            Format.printf "1"
+          in
+          let () = Format.printf "2" in
+          `Ok)
     in
     let (), ((), `Ok) =
-      Fiber.pair (Format.printf "6")
-        (Fiber.pair (Format.printf "7")
-           (let () = Format.printf "4" in
-            let () = Format.printf "5" in
-            `Ok))
+      Fiber.pair
+        (fun () -> Format.printf "6")
+        (fun () ->
+          Fiber.pair
+            (fun () -> Format.printf "7")
+            (fun () ->
+              let
+                  (* TODO: ciao-lwt: This computation might not be suspended correctly. *)
+                  () =
+                Format.printf "4"
+              in
+              let () = Format.printf "5" in
+              `Ok))
     in
     ()
   
