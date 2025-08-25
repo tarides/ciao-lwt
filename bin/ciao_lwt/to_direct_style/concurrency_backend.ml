@@ -170,16 +170,21 @@ let eio ~eio_sw_as_fiber_var ~eio_env_as_fiber_var add_comment =
     method key_get key = mk_apply_simple (fiber_ident "get") [ key ]
 
     method key_with_value key val_opt f =
-      Exp.apply
-        (mk_apply_ident [ "Option"; "fold" ]
-           [
-             (mk_lbl "none", mk_exp_ident (fiber_ident "without_binding"));
-             ( mk_lbl "some",
-               mk_apply_simple [ "Fun"; "flip" ]
-                 [ mk_exp_ident (fiber_ident "with_binding") ] );
-             (Nolabel, val_opt);
-           ])
-        [ (Nolabel, key); (Nolabel, f) ]
+      match val_opt with
+      | `Some val_ ->
+          mk_apply_simple (fiber_ident "with_binding") [ key; val_; f ]
+      | `None -> mk_apply_simple (fiber_ident "without_binding") [ key; f ]
+      | `Exp val_opt ->
+          Exp.apply
+            (mk_apply_ident [ "Option"; "fold" ]
+               [
+                 (mk_lbl "none", mk_exp_ident (fiber_ident "without_binding"));
+                 ( mk_lbl "some",
+                   mk_apply_simple [ "Fun"; "flip" ]
+                     [ mk_exp_ident (fiber_ident "with_binding") ] );
+                 (Nolabel, val_opt);
+               ])
+            [ (Nolabel, key); (Nolabel, f) ]
 
     method promise_type param =
       mk_typ_constr ~params:[ param ] (promise_ident "t")

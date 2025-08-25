@@ -151,6 +151,7 @@ let key = Lwt.new_key ()
 let _ = Lwt.get key
 let _ = Lwt.with_value key (Some 12) (fun () -> x)
 let _ = Lwt.with_value key None (fun () -> x)
+let _ = let v = Some 12 in Lwt.with_value key v (fun () -> x)
 
 let x : unit Lwt.t = x
 let f : unit -> unit Lwt.t = fun () -> x
