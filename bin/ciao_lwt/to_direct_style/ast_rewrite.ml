@@ -123,6 +123,13 @@ let suspend_list ~state lst =
          expected.";
       lst
 
+(** Decode whether an expression is [Some _], [None] or something else. *)
+let is_option_constructor exp =
+  match (exp.pexp_desc, exp.pexp_attributes) with
+  | Pexp_construct ({ txt = Lident "Some"; _ }, Some arg), [] -> `Some arg
+  | Pexp_construct ({ txt = Lident "None"; _ }, None), [] -> `None
+  | _ -> `Exp exp
+
 let rewrite_lwt_both ~backend ~state left right =
   backend#both ~left:(suspend ~state left) ~right:(suspend ~state right)
 
@@ -263,7 +270,9 @@ let rewrite_apply_lwt ~backend ~state ident args =
   | "with_value" ->
       take @@ fun key ->
       take @@ fun val_opt ->
-      take @@ fun f -> return (Some (backend#key_with_value key val_opt f))
+      take @@ fun f ->
+      return
+        (Some (backend#key_with_value key (is_option_constructor val_opt) f))
   (* Operators *)
   | ">>=" | ">|=" ->
       take @@ fun lhs ->
