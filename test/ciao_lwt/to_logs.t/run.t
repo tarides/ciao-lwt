@@ -489,7 +489,7 @@
              Logs.report =
                (fun src level ~over k msgf ->
                  List.fold_left
-                   (fun k r _unit -> r.Logs.report src level ~over k msgf)
+                   (fun k r () -> r.Logs.report src level ~over k msgf)
                    k broadcast_reporters ());
            });
         Lwt.return ()
@@ -550,7 +550,7 @@
              Logs.report =
                (fun src level ~over k msgf ->
                  List.fold_left
-                   (fun k r _unit -> r.Logs.report src level ~over k msgf)
+                   (fun k r () -> r.Logs.report src level ~over k msgf)
                    k broadcast_reporters ());
            });
         Lwt.return ()

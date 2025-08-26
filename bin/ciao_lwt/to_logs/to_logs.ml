@@ -100,10 +100,10 @@ let call_reporter r src level over k msgf =
 let mk_broadcast ~state:_ loggers =
   mk_let_var "broadcast_reporters" loggers @@ fun reporters_var ->
   mk_reporter (fun src level over k msgf ->
-      let f k r _unit = call_reporter r src level over k msgf in
+      let f k r () = call_reporter r src level over k msgf in
       let f =
         let open Mk_function in
-        mk_function (return f $ arg "k" $ arg "r" $ arg "_unit")
+        mk_function (return f $ arg "k" $ arg "r" $ arg_unit)
       in
       mk_apply_simple [ "List"; "fold_left" ]
         [ f; k; reporters_var; mk_unit_val ])

@@ -90,15 +90,18 @@ module Mk_function : sig
       ]} *)
 
   type 'a t
-  type arg
+  type 'a arg
 
-  val arg : ?lbl:[ `Lbl | `Opt of expression option ] -> string -> arg
-  val ( $ ) : (expression -> 'a) t -> arg -> 'a t
+  val arg :
+    ?lbl:[ `Lbl | `Opt of expression option ] -> string -> expression arg
+
+  val arg_unit : unit arg
+  val ( $ ) : ('b -> 'a) t -> 'b arg -> 'a t
   val return : 'a -> 'a t
   val mk_function : ?typ:type_constraint -> expression t -> expression
 end = struct
   type 'a t = expr_function_param list * 'a
-  type arg = expr_function_param * expression
+  type 'a arg = expr_function_param * 'a
 
   let ( $ ) (params, body) (param, exp) = (param :: params, body exp)
   let return f = ([], f)
@@ -112,6 +115,8 @@ end = struct
     in
     let exp = mk_exp_var name and pat = Pat.var (mk_loc name) in
     (mk_function_param ?lbl ?def pat, exp)
+
+  let arg_unit = (mk_function_param mk_unit_pat, ())
 
   let mk_function ?typ (params, body) =
     Exp.function_ (List.rev params) typ (Pfunction_body body)

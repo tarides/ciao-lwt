@@ -217,12 +217,7 @@ let rewrite_apply_lwt ~backend ~state ident args =
       return (Some (rewrite_lwt_both ~backend ~state left right))
   | "pick" ->
       take @@ fun lst -> return (Some (backend#pick (suspend_list ~state lst)))
-  | "choose" ->
-      take @@ fun _lst ->
-      add_comment state
-        ("[Lwt.choose] can't be automatically translated."
-       ^ backend#choose_comment_hint);
-      return None
+  | "choose" -> take @@ fun lst -> return (Some (backend#choose lst))
   | "join" ->
       take @@ fun lst -> return (Some (backend#join (suspend_list ~state lst)))
   (* Async primitives *)
@@ -285,12 +280,8 @@ let rewrite_apply_lwt ~backend ~state ident args =
       take @@ fun rhs ->
       return (Some (rewrite_lwt_both ~backend ~state lhs rhs))
   | "<?>" ->
-      take @@ fun _lhs ->
-      take @@ fun _rhs ->
-      add_comment state
-        ("[<?>] can't be automatically translated."
-       ^ backend#choose_comment_hint);
-      return None
+      take @@ fun lhs ->
+      take @@ fun rhs -> return (Some (backend#choose (Exp.list [ lhs; rhs ])))
   | "wrap" ->
       take @@ fun f -> return (Some (Exp.apply f [ (Nolabel, mk_unit_val) ]))
   | _ -> return None
