@@ -91,6 +91,20 @@ let eio ~eio_sw_as_fiber_var ~eio_env_as_fiber_var add_comment =
 
     method pick lst = mk_apply_simple (fiber_ident "any") [ lst ]
 
+    method choose lst =
+      let fiber_f =
+        let open Mk_function in
+        mk_function
+          (return (fun p () -> mk_apply_simple (promise_ident "await") [ p ])
+          $ arg "p" $ arg_unit)
+      in
+      add_comment
+        "The list [%s] is expected to be a list of promises. Use \
+         [Fiber.fork_promise] to make a promise."
+        (Ocamlformat_utils.format_expression lst);
+      mk_apply_simple (fiber_ident "any")
+        [ mk_apply_simple [ "List"; "map" ] [ fiber_f; lst ] ]
+
     method async process_f =
       Exp.apply
         (mk_exp_ident (fiber_ident "fork"))
@@ -108,8 +122,6 @@ let eio ~eio_sw_as_fiber_var ~eio_env_as_fiber_var add_comment =
 
     method extra_opens =
       if !used_eio_std then [ mk_longident' [ "Eio"; "Std" ] ] else []
-
-    method choose_comment_hint = "Use Eio.Promise instead. "
 
     method list_parallel =
       function

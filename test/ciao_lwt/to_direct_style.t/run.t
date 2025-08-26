@@ -313,11 +313,9 @@ Make a writable directory tree:
 
   $ ciao-lwt to-eio --migrate
   Formatted 4 files
-  Warning: lib/test.ml: 8 occurrences have not been rewritten.
+  Warning: lib/test.ml: 6 occurrences have not been rewritten.
     Lwt (line 55 column 18)
     Lwt_fmt (line 56 column 18)
-    Lwt.(<?>) (line 113 column 11)
-    Lwt.choose (line 115 column 9)
     Lwt_list.iteri_p (line 129 column 9)
     Lwt.Fail (line 147 column 5)
     Lwt.let* (line 163 column 21)
@@ -549,17 +547,23 @@ Make a writable directory tree:
   let _ = Fun.id x
   
   let _ =
-    x
-    (* TODO: ciao-lwt: [<?>] can't be automatically translated.Use Eio.Promise instead.  *)
-    <?> x
+    Fiber.any
+      (List.map
+         (fun p () -> Promise.await p)
+         [
+           x
+           (* TODO: ciao-lwt: The list [[ x; x ]] is expected to be a list of promises. Use [Fiber.fork_promise] to make a promise. *);
+           x;
+         ])
   
   let _ = Fiber.yield ()
   
   let _ =
-    Lwt.choose
-      (* TODO: ciao-lwt: [Lwt.choose] can't be automatically translated.Use Eio.Promise instead.  *)
-      (* TODO: ciao-lwt: [Lwt.choose] can't be automatically translated.Use Eio.Promise instead.  *)
-      [ x; x ]
+    Fiber.any
+      (List.map
+         (fun p () -> Promise.await p)
+         (* TODO: ciao-lwt: The list [[ x; x ]] is expected to be a list of promises. Use [Fiber.fork_promise] to make a promise. *)
+         [ x; x ])
   
   let _ =
     Fiber.all
