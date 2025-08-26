@@ -28,6 +28,7 @@
   cmdliner
   merlin-lib
   (lwt :with-test)
+  (js_of_ocaml-lwt :with-test)
   (ocaml-index :with-test)
   ; OCamlformat depends
   (ocaml
