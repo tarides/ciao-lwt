@@ -11,7 +11,8 @@
   (deps
    %{bin:ciao-lwt}
    %{bin:ocaml-index}
-   (package lwt))))
+   (package lwt)
+   (package js_of_ocaml-lwt))))
 
 (subdir
  lwt_lint

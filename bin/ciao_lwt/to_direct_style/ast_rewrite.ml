@@ -414,6 +414,14 @@ let rewrite_apply ~backend ~state full_ident args =
       return
         (Some
            (backend#domain_detach (mk_thunk (Exp.apply f [ (Nolabel, arg) ]))))
+  | "Js_of_ocaml_lwt__Lwt_js", fname -> (
+      match backend#jsoo_lwt_js_equivalent with
+      | Some lid -> transparent (lid @ [ fname ])
+      | None -> return None)
+  | "Js_of_ocaml_lwt__Lwt_js_events", fname -> (
+      match backend#jsoo_lwt_js_events_equivalent with
+      | Some lid -> transparent (lid @ [ fname ])
+      | None -> return None)
   | _ -> return None
 
 (** Transform a [binding_op] into a [pattern] and an [expression] while

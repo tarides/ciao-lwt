@@ -375,4 +375,9 @@ let eio ~eio_sw_as_fiber_var ~eio_env_as_fiber_var add_comment =
                       ] );
                 ]);
         ]
+
+    method jsoo_lwt_js_equivalent = Some [ "Js_of_ocaml_eio"; "Eio_js" ]
+
+    method jsoo_lwt_js_events_equivalent =
+      Some [ "Js_of_ocaml_eio"; "Eio_js_events" ]
   end
