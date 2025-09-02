@@ -195,13 +195,13 @@ let rewrite_apply_lwt ~backend ~state ident args =
       take @@ fun value_f ->
       take @@ fun exn_f ->
       return (Some (rewrite_try_bind ~state thunk value_f exn_f))
-  | "catch" ->
+  | "catch" -> (
       take @@ fun thunk ->
       take @@ fun exn_f ->
-      return
-        (Some
-           (Exp.try_ (call_thunk thunk)
-              (rewrite_exp_into_cases_no_reraise ~state exn_f)))
+      let body = call_thunk thunk in
+      match rewrite_exp_into_cases_no_reraise ~state exn_f with
+      | [] -> (* Contained only a reraise case. *) return (Some body)
+      | cases -> return (Some (Exp.try_ body cases)))
   | "finalize" ->
       take @@ fun f ->
       take @@ fun finally_f ->
