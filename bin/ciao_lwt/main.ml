@@ -49,10 +49,12 @@ module To_eio = struct
       To_direct_style.Ast_rewrite.rewrite_lwt_uses ~fname ~backend
     in
     let units = function
-      | "Lwt" -> true
-      | unit -> String.starts_with ~prefix:"Lwt_" unit
+      | "Lwt" | "Js_of_ocaml_lwt" -> true
+      | unit ->
+          String.starts_with ~prefix:"Lwt_" unit
+          || String.starts_with ~prefix:"Js_of_ocaml_lwt_" unit
     in
-    let packages = [ "lwt"; "lwt.unix" ] in
+    let packages = [ "lwt"; "lwt.unix"; "js_of_ocaml-lwt" ] in
     if migrate then Migrate_utils.migrate ~packages ~units ~modify_ast
     else Migrate_utils.print_occurrences ~packages ~units
 
