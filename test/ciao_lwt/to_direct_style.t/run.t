@@ -50,7 +50,7 @@ Make a writable directory tree:
     Lwt_unix.sleep (line 31 column 9)
     Lwt_unix.Timeout (line 37 column 15)
     Lwt_unix.with_timeout (line 35 column 16)
-  lib/test.ml: (184 occurrences)
+  lib/test.ml: (187 occurrences)
     Lwt (line 36 column 12)
     Lwt (line 55 column 18)
     Lwt (line 64 column 13)
@@ -100,6 +100,7 @@ Make a writable directory tree:
     Lwt.return_unit (line 184 column 28)
     Lwt.return_unit (line 196 column 16)
     Lwt.return_unit (line 197 column 11)
+    Lwt.return_unit (line 200 column 30)
     Lwt.fail_with (line 110 column 9)
     Lwt.fail_invalid_arg (line 118 column 33)
     Lwt.wait (line 122 column 14)
@@ -116,12 +117,14 @@ Make a writable directory tree:
     Lwt.map (line 14 column 25)
     Lwt.map (line 39 column 45)
     Lwt.map (line 69 column 45)
+    Lwt.reraise (line 200 column 47)
     Lwt.catch (line 101 column 12)
     Lwt.catch (line 102 column 12)
     Lwt.catch (line 103 column 12)
     Lwt.catch (line 104 column 12)
     Lwt.catch (line 105 column 12)
     Lwt.catch (line 106 column 12)
+    Lwt.catch (line 200 column 9)
     Lwt.try_bind (line 5 column 3)
     Lwt.try_bind (line 38 column 3)
     Lwt.try_bind (line 44 column 12)
@@ -700,6 +703,7 @@ Make a writable directory tree:
   
   let _ = (fun () -> ()) ()
   let _f x = Fiber.yield (match x with Some _ -> () | _ -> ())
+  let _ = ()
 
   $ cat lib/test.mli
   open Eio.Std

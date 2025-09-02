@@ -196,3 +196,5 @@ let _f x =
    | Some _ -> Lwt.return_unit
    | _ -> Lwt.return_unit)
   >>= Lwt.pause
+
+let _ = Lwt.catch (fun () -> Lwt.return_unit) Lwt.reraise
