@@ -187,11 +187,13 @@ let migrate_file ~filename_map ~formatted ~errors ~modify_ast file =
 let dune_build_dir = "_build"
 
 let occurrences ~packages ~units =
-  match Ocaml_index_utils.occurrences ~dune_build_dir ~packages ~units with
+  let cmts = Ocaml_shape_utils.cmts_of_packages ~packages ~units in
+  match Ocaml_index_utils.occurrences ~dune_build_dir ~cmts with
   | [] ->
       Format.eprintf "Found no occurrences.\n%!";
       exit 1
-  | occ -> occ
+  | occ ->
+      List.map (fun (ns, lid) -> (ns, Compat.Ocaml_to_ocamlformat.lid lid)) occ
 
 let migrate ~packages ~units ~modify_ast ~errors ~formatted =
   let occurs = occurrences ~packages ~units in

@@ -1,0 +1,9 @@
+(library
+ (name ocaml_index_utils)
+ (libraries
+  ocaml_shape_utils
+  fpath
+  compiler-libs
+  merlin-lib.index_format
+  merlin-lib.ocaml_typing
+  fs_utils))

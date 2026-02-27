@@ -15,7 +15,6 @@ module Ocaml_to_ocamlformat = struct
     | Lapply (a, b) -> Lapply (longident a, longident b)
 
   let lid = location_loc longident
-  let merlin_lid = lid
 end
 
 let tpat_alias_ident = function

@@ -24,7 +24,8 @@
  (synopsis
   "A tool for migrating from Lwt to direct-style concurrency libraries")
  (depends
-  ocaml
+  (ocaml
+   (>= 5.3))
   cmdliner
   merlin-lib
   (lwt :with-test)
@@ -36,7 +37,9 @@
   (base
    (>= v0.12.0))
   (cmdliner
-   (>= 1.1.0))
+   (and
+    (>= 1.1.0)
+    (< 2.0.0)))
   dune-build-info
   either
   fix
@@ -104,7 +107,7 @@
 
 (package
  (name lwt_lint)
- (synopsis "A linter for code that might cause implicit forking in Lwt.")
+ (synopsis "A linter for code that might cause implicit forking in Lwt")
  (depends
   ; OCamlformat depends
   (ocaml

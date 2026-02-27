@@ -15,10 +15,6 @@ module Ocaml_to_ocamlformat = struct
     | Lapply (a, b) -> Lapply (longident a.txt, longident b.txt)
 
   let lid = location_loc longident
-
-  let merlin_lid l =
-    let open Merlin_index_format.Index_format in
-    lid (Lid.to_lid l)
 end
 
 let tpat_alias_ident = function
