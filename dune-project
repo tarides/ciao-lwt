@@ -25,7 +25,7 @@
   "A tool for migrating from Lwt to direct-style concurrency libraries")
  (depends
   (ocaml
-   (= 5.2))
+   (>= 5.3))
   cmdliner
   merlin-lib
   (lwt :with-test)
