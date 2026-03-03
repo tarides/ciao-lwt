@@ -28,6 +28,7 @@
    (>= 5.3))
   merlin-lib
   (lwt :with-test)
+  (lwt_log :with-test)
   (js_of_ocaml-lwt :with-test)
   (ocaml-index :with-test)
   ; OCamlformat depends
