@@ -32,7 +32,7 @@ Make sure to install the tools in the Opam switch used to build your project.
 Usage:
 ```
 $ dune fmt # Make sure the project is formatted to avoid unrelated diffs
-$ lwt-ppx-to-let-syntax .
+$ ciao-lwt lwt-ppx-to-let-syntax .
 $ dune fmt # Remove formatting changes created by the tool
 ```
 
@@ -100,7 +100,7 @@ The type annotations help find ignored Lwt threads, which are otherwise a challe
 
 Usage:
 ```
-$ lwt-lint .
+$ ciao-lwt lint .
 ```
 
 To fix the warnings, add type annotations on `let _` and `ignore` expressions and wrap implicit forks with `Lwt.async (fun () -> ...)`.
@@ -326,4 +326,3 @@ Contributions are most welcome!
 
 This project is created and maintained by\
 <a href="https://tarides.com/"><img src="./Tarides.svg" width="200" alt="Tarides" /></a>
-
