@@ -26,9 +26,9 @@
  (depends
   (ocaml
    (>= 5.3))
-  cmdliner
   merlin-lib
   (lwt :with-test)
+  (lwt_log :with-test)
   (js_of_ocaml-lwt :with-test)
   (ocaml-index :with-test)
   ; OCamlformat depends
@@ -64,21 +64,23 @@
    (>= 1.4.0))
   astring
   camlp-streams
-  re))
+  (re
+   (>= "1.10.3"))))
 
 (package
  (name lwt_ppx_to_let_syntax)
  (synopsis "A tool for migrating away from lwt_ppx")
  (depends
   ocaml
-  cmdliner
   ; OCamlformat depends
   (ocaml
    (>= 4.08))
   (base
    (>= v0.12.0))
   (cmdliner
-   (>= 1.1.0))
+   (and
+    (>= 1.1.0)
+    (< 2.0.0)))
   dune-build-info
   either
   fix
@@ -103,7 +105,8 @@
    (>= 1.4.0))
   astring
   camlp-streams
-  re))
+  (re
+   (>= "1.10.3"))))
 
 (package
  (name lwt_lint)
@@ -115,7 +118,9 @@
   (base
    (>= v0.12.0))
   (cmdliner
-   (>= 1.1.0))
+   (and
+    (>= 1.1.0)
+    (< 2.0.0)))
   dune-build-info
   either
   fix
@@ -140,4 +145,5 @@
    (>= 1.4.0))
   astring
   camlp-streams
-  re))
+  (re
+   (>= "1.10.3"))))

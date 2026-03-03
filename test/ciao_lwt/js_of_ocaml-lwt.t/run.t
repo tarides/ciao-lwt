@@ -1,4 +1,5 @@
-  $ cp -r --no-preserve=mode -L src out
+  $ cp -r -L src out
+  $ chmod -R a+w out
   $ cd out
   $ dune build @ocaml-index
 

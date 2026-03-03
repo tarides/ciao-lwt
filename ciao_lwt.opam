@@ -16,9 +16,9 @@ bug-reports: "https://github.com/tarides/ciao-lwt/issues"
 depends: [
   "dune" {>= "3.17"}
   "ocaml" {>= "5.3"}
-  "cmdliner"
   "merlin-lib"
   "lwt" {with-test}
+  "lwt_log" {with-test}
   "js_of_ocaml-lwt" {with-test}
   "ocaml-index" {with-test}
   "ocaml" {>= "4.08"}
@@ -39,7 +39,7 @@ depends: [
   "csexp" {>= "1.4.0"}
   "astring"
   "camlp-streams"
-  "re"
+  "re" {>= "1.10.3"}
   "odoc" {with-doc}
 ]
 build: [
