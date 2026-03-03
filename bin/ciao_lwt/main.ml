@@ -97,11 +97,22 @@ module To_logs = struct
   let cmd = Cmd.v info term
 end
 
+module Lint = struct
+  let pos_inputs =
+    let doc = "Path to files or directories to lint." in
+    Arg.(non_empty & pos_all file [] & info ~doc ~docv:"PATH" [])
+
+  let cmd =
+    let doc = "Lint code that might cause implicit forking in Lwt." in
+    let info = Cmd.info "lint" ~doc in
+    Cmd.v info Term.(const Lint.run $ pos_inputs)
+end
+
 let cmd =
   let doc =
     "Migrate your codebase from Lwt to direct-style concurrency libraries."
   in
   let info = Cmd.info "ciao-lwt" ~version:"%%VERSION%%" ~doc in
-  Cmd.group info [ To_eio.cmd; To_logs.cmd ]
+  Cmd.group info [ To_eio.cmd; To_logs.cmd; Lint.cmd ]
 
 let () = exit (Cmd.eval cmd)

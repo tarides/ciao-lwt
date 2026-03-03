@@ -1,4 +1,4 @@
-  $ lwt-lint .
+  $ ciao-lwt lint .
   ./with_warnings.ml:3:4
     Ignored value without a type annotation. Pattern "_" ignores a value that might be a Lwt promise.
   ./with_warnings.ml:4:4

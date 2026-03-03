@@ -2,10 +2,6 @@
  (public_name ciao-lwt)
  (package ciao_lwt)
  (name main)
- (libraries
-  cmdliner
-  migrate_utils
-  fs_utils
-  ocamlformat_utils
-  to_direct_style
-  to_logs))
+ (libraries cmdliner migrate_utils fs_utils ocamlformat_utils))
+
+(include_subdirs qualified)

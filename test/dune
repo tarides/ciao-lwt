@@ -17,5 +17,5 @@
 (subdir
  lwt_lint
  (cram
-  (package lwt_lint)
-  (deps %{bin:lwt-lint})))
+  (package ciao_lwt)
+  (deps %{bin:ciao-lwt})))
