@@ -1,0 +1,3 @@
+(cram
+ (package ciao_lwt)
+ (deps %{bin:ciao-lwt}))
