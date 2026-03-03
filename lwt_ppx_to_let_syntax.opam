@@ -15,10 +15,9 @@ bug-reports: "https://github.com/tarides/ciao-lwt/issues"
 depends: [
   "dune" {>= "3.17"}
   "ocaml"
-  "cmdliner"
   "ocaml" {>= "4.08"}
   "base" {>= "v0.12.0"}
-  "cmdliner" {>= "1.1.0"}
+  "cmdliner" {>= "1.1.0" & < "2.0.0"}
   "dune-build-info"
   "either"
   "fix"
@@ -34,7 +33,7 @@ depends: [
   "csexp" {>= "1.4.0"}
   "astring"
   "camlp-streams"
-  "re"
+  "re" {>= "1.10.3"}
   "odoc" {with-doc}
 ]
 build: [
