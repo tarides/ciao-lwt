@@ -1,5 +1,6 @@
 (library
  (name ocamlformat_utils)
+ (public_name ciao_lwt.ocamlformat_utils)
  (libraries
   ocamlformat-lib
   ocamlformat.bin_conf

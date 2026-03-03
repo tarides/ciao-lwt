@@ -1,5 +1,6 @@
 (library
  (name ocaml_shape_utils)
+ (public_name ciao_lwt.ocaml_shape_utils)
  (libraries
   fpath
   compiler-libs

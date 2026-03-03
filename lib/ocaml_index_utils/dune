@@ -1,5 +1,6 @@
 (library
  (name ocaml_index_utils)
+ (public_name ciao_lwt.ocaml_index_utils)
  (libraries
   ocaml_shape_utils
   fpath

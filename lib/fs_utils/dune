@@ -1,3 +1,4 @@
 (library
  (name fs_utils)
+ (public_name ciao_lwt.fs_utils)
  (libraries unix))

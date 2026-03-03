@@ -1,5 +1,6 @@
 (library
  (name migrate_utils)
+ (public_name ciao_lwt.migrate_utils)
  (libraries
   compiler-libs
   merlin-lib.index_format
