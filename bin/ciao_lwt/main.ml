@@ -39,7 +39,7 @@ let opt_migrate =
 
 (** Commands *)
 
-module To_eio = struct
+let to_eio =
   let run migrate eio_sw_as_fiber_var eio_env_as_fiber_var =
     let backend =
       To_direct_style.Concurrency_backend.eio ~eio_sw_as_fiber_var
@@ -57,13 +57,13 @@ module To_eio = struct
     let packages = [ "lwt"; "lwt.unix"; "js_of_ocaml-lwt" ] in
     if migrate then Migrate_utils.migrate ~packages ~units ~modify_ast
     else Migrate_utils.print_occurrences ~packages ~units
-
+  in
   let term =
     Term.(
       term_result
         (const run $ opt_migrate $ opt_eio_sw_as_fiber_var
        $ opt_eio_env_as_fiber_var))
-
+  in
   let info =
     let doc =
       "Generate a hashtable mapping identifiers to number of occurrences, as \
@@ -71,11 +71,10 @@ module To_eio = struct
        directories."
     in
     Cmd.info "to-eio" ~doc
+  in
+  Cmd.v info term
 
-  let cmd = Cmd.v info term
-end
-
-module To_logs = struct
+let to_logs =
   let run migrate =
     let modify_ast = To_logs.modify_ast in
     let units = function
@@ -87,21 +86,45 @@ module To_logs = struct
     let packages = [ "lwt_log"; "lwt_log.core"; "js_of_ocaml-lwt.logger" ] in
     if migrate then Migrate_utils.migrate ~packages ~units ~modify_ast
     else Migrate_utils.print_occurrences ~packages ~units
-
-  let term = Term.(term_result (const run $ opt_migrate))
-
+  in
+  let term = Term.(term_result (const run $ opt_migrate)) in
   let info =
     let doc = "Migrate your codebase from Lwt_log to Logs." in
     Cmd.info "to-logs" ~doc
+  in
+  Cmd.v info term
 
-  let cmd = Cmd.v info term
-end
+let lint =
+  let pos_inputs =
+    let doc = "Path to files or directories to lint." in
+    Arg.(non_empty & pos_all file [] & info ~doc ~docv:"PATH" [])
+  in
+  let doc = "Lint code that might cause implicit forking in Lwt." in
+  let info = Cmd.info "lint" ~doc in
+  Cmd.v info Term.(const Lint.run $ pos_inputs)
+
+let lwt_ppx_to_let_syntax =
+  let opt_use_lwt_bind =
+    let doc =
+      "Use 'Lwt.bind' instead of 'let*'. This can help migrate modules that \
+       already use 'let*' for an other purpose."
+    in
+    Arg.(value & flag & info ~doc [ "use-lwt-bind" ])
+  in
+  let pos_inputs =
+    let doc = "Path to files or directories to migrate." in
+    Arg.(non_empty & pos_all file [] & info ~doc ~docv:"PATH" [])
+  in
+  let doc = "Migrate your codebase from lwt_ppx to plain Lwt." in
+  let info = Cmd.info "lwt-ppx-to-let-syntax" ~doc in
+  Cmd.v info
+    Term.(const Lwt_ppx_to_let_syntax.main $ opt_use_lwt_bind $ pos_inputs)
 
 let cmd =
   let doc =
     "Migrate your codebase from Lwt to direct-style concurrency libraries."
   in
   let info = Cmd.info "ciao-lwt" ~version:"%%VERSION%%" ~doc in
-  Cmd.group info [ To_eio.cmd; To_logs.cmd ]
+  Cmd.group info [ to_eio; to_logs; lint; lwt_ppx_to_let_syntax ]
 
 let () = exit (Cmd.eval cmd)

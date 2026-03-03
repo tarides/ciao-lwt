@@ -68,21 +68,8 @@ let lint_file file =
       Format.eprintf "%s: %s\n%!" file msg;
       incr error_count
 
-let main paths =
+let run paths =
   error_count := 0;
   List.iter (Fs_utils.find_ml_files lint_file) paths;
   Format.eprintf "%d errors\n%!" !error_count;
   if !error_count > 0 then exit 1
-
-open Cmdliner
-
-let pos_inputs =
-  let doc = "Path to files or directories to lint." in
-  Arg.(non_empty & pos_all file [] & info ~doc ~docv:"PATH" [])
-
-let cmd =
-  let doc = "Lint code that might cause implicit forking in Lwt." in
-  let info = Cmd.info "lwt-lint" ~version:"%%VERSION%%" ~doc in
-  Cmd.v info Term.(const main $ pos_inputs)
-
-let () = exit (Cmd.eval cmd)

@@ -1,5 +1,5 @@
   $ chmod a+w *.ml
-  $ lwt-ppx-to-let-syntax .
+  $ ciao-lwt lwt-ppx-to-let-syntax .
   Formatted 6 files, 0 errors
 
   $ cat client.ml

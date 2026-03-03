@@ -1,5 +1,0 @@
-(executable
- (public_name lwt-lint)
- (package lwt_lint)
- (name main)
- (libraries cmdliner fs_utils ocamlformat_utils))

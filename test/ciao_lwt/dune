@@ -1,0 +1,7 @@
+(cram
+ (package ciao_lwt)
+ (deps
+  %{bin:ciao-lwt}
+  %{bin:ocaml-index}
+  (package lwt)
+  (package js_of_ocaml-lwt)))
