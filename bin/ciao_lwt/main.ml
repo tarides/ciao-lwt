@@ -108,11 +108,31 @@ module Lint = struct
     Cmd.v info Term.(const Lint.run $ pos_inputs)
 end
 
+module Lwt_ppx_to_let_syntax = struct
+  let opt_use_lwt_bind =
+    let doc =
+      "Use 'Lwt.bind' instead of 'let*'. This can help migrate modules that \
+       already use 'let*' for an other purpose."
+    in
+    Arg.(value & flag & info ~doc [ "use-lwt-bind" ])
+
+  let pos_inputs =
+    let doc = "Path to files or directories to migrate." in
+    Arg.(non_empty & pos_all file [] & info ~doc ~docv:"PATH" [])
+
+  let cmd =
+    let doc = "Migrate your codebase from lwt_ppx to plain Lwt." in
+    let info = Cmd.info "lwt-ppx-to-let-syntax" ~doc in
+    Cmd.v info
+      Term.(const Lwt_ppx_to_let_syntax.main $ opt_use_lwt_bind $ pos_inputs)
+end
+
 let cmd =
   let doc =
     "Migrate your codebase from Lwt to direct-style concurrency libraries."
   in
   let info = Cmd.info "ciao-lwt" ~version:"%%VERSION%%" ~doc in
-  Cmd.group info [ To_eio.cmd; To_logs.cmd; Lint.cmd ]
+  Cmd.group info
+    [ To_eio.cmd; To_logs.cmd; Lint.cmd; Lwt_ppx_to_let_syntax.cmd ]
 
 let () = exit (Cmd.eval cmd)

@@ -3,9 +3,9 @@
   $ cp *.ml use_letop
   $ cp *.ml use_lwt_bind
 
-  $ lwt-ppx-to-let-syntax use_letop
+  $ ciao-lwt lwt-ppx-to-let-syntax use_letop
   Formatted 3 files, 0 errors
-  $ lwt-ppx-to-let-syntax --use-lwt-bind use_lwt_bind
+  $ ciao-lwt lwt-ppx-to-let-syntax --use-lwt-bind use_lwt_bind
   Formatted 3 files, 0 errors
 
   $ cat use_letop/test.ml
