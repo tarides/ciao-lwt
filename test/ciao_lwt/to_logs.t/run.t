@@ -1,6 +1,10 @@
   $ chmod a+w *.ml
   $ dune build @ocaml-index
   $ ciao-lwt to-logs --migrate
+  Warning: No ident for uid Lwt_log_core.50 (10 occurrences):
+    Lwt_log.Section Lwt_log.Section Lwt_log.Section Lwt_log.Section
+    Lwt_log.Section Lwt_log.Section Lwt_log.Section Lwt_log.Section
+    Lwt_log.Section Lwt_log.Section
   Formatted 1 files
   Warning: foo.ml: 8 occurrences have not been rewritten.
     Lwt_log_core.null (line 51 column 35)

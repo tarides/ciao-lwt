@@ -14,5 +14,3 @@ end
 val tpat_alias_ident :
   Ocaml_typing.Typedtree.value Ocaml_typing.Typedtree.pattern_desc ->
   Ocaml_typing.Ident.t option
-
-val sub_locs_of_ident : Longident.t -> Location.t list
