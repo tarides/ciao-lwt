@@ -4,9 +4,9 @@ Make a writable directory tree:
   $ cd out
 
   $ dune build @ocaml-index
-  $ find _build -name '*.ocaml-index'
-  _build/default/lib/.test.objs/cctx.ocaml-index
+  $ find _build -name '*.ocaml-index' | sort
   _build/default/bin/.main.eobjs/cctx.ocaml-index
+  _build/default/lib/.test.objs/cctx.ocaml-index
 
   $ ciao-lwt to-eio
   bin/main.ml: (41 occurrences)
