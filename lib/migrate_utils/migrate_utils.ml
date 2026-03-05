@@ -95,7 +95,10 @@ module Occ = struct
     let pp_occurrence ppf (loc, (unit, ident)) =
       Format.fprintf ppf "%s%a (%a)" unit pp_ident ident Loc.pp loc
     in
-    Format.pp_print_list pp_occurrence
+    fun fmt occurs ->
+      (* Sort for a reproducible output. *)
+      let occurs = List.sort compare occurs in
+      Format.pp_print_list pp_occurrence fmt occurs
 
   (** Warn about locations that have not been rewritten so far. *)
   let warn_missing_locs state fname =
@@ -103,7 +106,6 @@ module Occ = struct
     if missing > 0 then
       let occurs =
         Hashtbl.fold (fun loc occ acc -> (loc, occ) :: acc) state.occ []
-        |> List.sort compare (* Sort for a reproducible output. *)
       in
       Format.eprintf
         "@[<v 2>Warning: %s: %d occurrences have not been rewritten.@ %a@]@\n"
