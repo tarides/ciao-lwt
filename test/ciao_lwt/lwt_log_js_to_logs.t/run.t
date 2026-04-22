@@ -1,6 +1,7 @@
   $ chmod a+w *.ml
   $ dune build @ocaml-index
   $ ciao-lwt to-logs --migrate
+  Warning: No ident for uid Lwt_log_core.50 (1 occurrences): Lwt_log_js.Section
   Formatted 1 files
 
   $ cat test.ml
