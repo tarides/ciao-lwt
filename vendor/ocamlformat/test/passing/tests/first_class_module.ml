@@ -107,7 +107,7 @@ let _ =
     let y = 1
   end )
 
-(* Three form that have an equivalent AST: *)
+(* Three form that had an equivalent AST at some point: *)
 let x : (module S) = (module M)
 let x = ((module M) : (module S))
 let x = (module M : S)
@@ -116,3 +116,33 @@ let x = (module M : S)
 module T = (val (x : (module S)))
 
 let _ = (module Int : T [@foo])
+
+let _ = fun ((module X) : (module M.S with type a = a)) -> X.v
+let _ = fun (module X : M.S with type a = a) -> X.v
+
+let _ =
+  let module MS = struct module type S = sig end end in
+  (fun _ -> ())
+    (fun (module M1 : MS.S) ((module M2) : (module MS.S)) ->
+       (module M1 : MS.S), ((module M2) : (module MS.S)))
+
+let _ =
+  let module MS = struct module type S  = sig  end end in
+  (fun _ -> ())
+    (fun (module M1 : MS.S) ((module M2)  : (module MS.S)) ->
+       (((module M1) : (module MS.S)), ((module M2) : (module MS.S))))
+
+let f :
+    (* a *)
+    (module (* a *) M (* a *) : (* a *) S) (* a *) ->
+    (* a *)
+    fooo =
+  f
+
+let f :
+    (* a *)
+    (module (* a *) Foooooooooooooooooooooooooooooooooooooo (* a *) : (* a *) Foooooooooooooooooooooooooooooooooooooo) (* a *) ->
+    (* a *)
+    fooo =
+  f
+

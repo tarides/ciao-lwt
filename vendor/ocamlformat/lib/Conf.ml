@@ -70,7 +70,7 @@ let conventional_profile from =
   ; doc_comments_padding= elt 2
   ; doc_comments_tag_only= elt `Default
   ; dock_collection_brackets= elt true
-  ; exp_grouping= elt `Parens
+  ; exp_grouping= elt `Preserve
   ; extension_indent= elt 2
   ; field_space= elt `Loose
   ; function_indent= elt 2
@@ -86,11 +86,13 @@ let conventional_profile from =
   ; let_binding_deindent_fun= elt true
   ; let_binding_spacing= elt `Compact
   ; let_module= elt `Compact
+  ; letop_punning= elt `Preserve
   ; line_endings= elt `Lf
   ; margin= elt 80
   ; match_indent= elt 0
   ; match_indent_nested= elt `Never
   ; max_indent= elt None
+  ; module_indent= elt 2
   ; module_item_spacing= elt `Compact
   ; nested_match= elt `Wrap
   ; ocp_indent_compat= elt false
@@ -139,7 +141,7 @@ let ocamlformat_profile from =
   ; doc_comments_padding= elt 2
   ; doc_comments_tag_only= elt `Default
   ; dock_collection_brackets= elt false
-  ; exp_grouping= elt `Parens
+  ; exp_grouping= elt `Preserve
   ; extension_indent= elt 2
   ; field_space= elt `Tight
   ; function_indent= elt 2
@@ -155,11 +157,13 @@ let ocamlformat_profile from =
   ; let_binding_deindent_fun= elt true
   ; let_binding_spacing= elt `Compact
   ; let_module= elt `Compact
+  ; letop_punning= elt `Preserve
   ; line_endings= elt `Lf
   ; margin= elt 80
   ; match_indent= elt 0
   ; match_indent_nested= elt `Never
   ; max_indent= elt None
+  ; module_indent= elt 2
   ; module_item_spacing= elt `Sparse
   ; nested_match= elt `Wrap
   ; ocp_indent_compat= elt false
@@ -223,11 +227,13 @@ let janestreet_profile from =
   ; let_binding_deindent_fun= elt false
   ; let_binding_spacing= elt `Double_semicolon
   ; let_module= elt `Sparse
+  ; letop_punning= elt `Preserve
   ; line_endings= elt `Lf
   ; margin= elt 90
   ; match_indent= elt 0
   ; match_indent_nested= elt `Never
   ; max_indent= elt None
+  ; module_indent= elt 2
   ; module_item_spacing= elt `Compact
   ; nested_match= elt `Wrap
   ; ocp_indent_compat= elt true
@@ -260,7 +266,7 @@ let default =
       ; disable= elt false
       ; margin_check= elt false
       ; max_iters= elt 10
-      ; ocaml_version= elt Ocaml_version.Releases.v4_04_0
+      ; ocaml_version= elt (Ocaml_version.v ~patch:0 5 4)
       ; quiet= elt false
       ; disable_conf_attrs= elt false
       ; version_check= elt true } }
@@ -584,14 +590,13 @@ module Formatting = struct
       (fun conf -> conf.fmt_opts.break_string_literals)
 
   let break_struct =
-    let doc = "Break struct-end module items." in
+    let doc = "Break struct-end and sig-end items." in
     let names = ["break-struct"] in
     let all =
       [ Decl.Value.make ~name:"force" `Force
-          "$(b,force) will break struct-end phrases unconditionally."
+          "$(b,force) will break items unconditionally."
       ; Decl.Value.make ~name:"natural" `Natural
-          "$(b,natural) will break struct-end phrases naturally at the \
-           margin." ]
+          "$(b,natural) will break items naturally at the margin." ]
     in
     Decl.choice ~names ~all ~default ~doc ~kind
       (fun conf elt ->
@@ -743,11 +748,11 @@ module Formatting = struct
     let doc = "Style of expression grouping." in
     let names = ["exp-grouping"] in
     let all =
-      [ Decl.Value.make ~name:"parens" `Parens
-          "$(b,parens) groups expressions using parentheses."
-      ; Decl.Value.make ~name:"preserve" `Preserve
+      [ Decl.Value.make ~name:"preserve" `Preserve
           "$(b,preserve) preserves the original grouping syntax \
-           (parentheses or $(i,begin)/$(i,end))." ]
+           (parentheses or $(i,begin)/$(i,end))."
+      ; Decl.Value.make ~name:"parens" `Parens
+          "$(b,parens) groups expressions using parentheses." ]
     in
     Decl.choice ~names ~all ~default ~doc ~kind ~allow_inline:false
       (fun conf elt -> update conf ~f:(fun f -> {f with exp_grouping= elt}))
@@ -992,6 +997,30 @@ module Formatting = struct
       (fun conf elt -> update conf ~f:(fun f -> {f with let_module= elt}))
       (fun conf -> conf.fmt_opts.let_module)
 
+  let letop_punning =
+    let doc =
+      "Name punning in bindings using extended let operators and \
+       $(i,let%ext) bindings."
+    in
+    let names = ["letop-punning"] in
+    let all =
+      [ Decl.Value.make ~name:"preserve" `Preserve
+          "$(b,preserve) uses let-punning only when it exists in the \
+           source; the code \"$(i,let* foo and* z = z in ...)\" will be \
+           left unchanged."
+      ; Decl.Value.make ~name:"always" `Always
+          "$(b,always) uses let-punning whenever possible; the code \
+           \"$(i,let* foo and* z = z in ...)\" will be rewritten to \
+           \"$(i,let* foo and* z in ...)\"."
+      ; Decl.Value.make ~name:"never" `Never
+          "$(b,never) never uses let-punning; the code \"$(i,let* foo and* \
+           z = z in ...)\" will be rewritten to \"$(i,let* foo = foo and* z \
+           = z in ...)\". " ]
+    in
+    Decl.choice ~names ~all ~default ~doc ~kind
+      (fun conf elt -> update conf ~f:(fun f -> {f with letop_punning= elt}))
+      (fun conf -> conf.fmt_opts.letop_punning)
+
   let let_open =
     let names = ["let-open"] in
     let msg = concrete_syntax_preserved_msg in
@@ -1063,6 +1092,17 @@ module Formatting = struct
       ~values:Int
       (fun conf elt -> update conf ~f:(fun f -> {f with max_indent= elt}))
       (fun conf -> conf.fmt_opts.max_indent)
+
+  let module_indent =
+    let docv = "COLS" in
+    let doc =
+      "Indentation of items within struct ... end and sig ... end ($(docv) \
+       columns)."
+    in
+    let names = ["module-indent"] in
+    Decl.int ~names ~default ~doc ~docv ~kind
+      (fun conf elt -> update conf ~f:(fun f -> {f with module_indent= elt}))
+      (fun conf -> conf.fmt_opts.module_indent)
 
   let module_item_spacing =
     let doc = "Spacing between items of structures and signatures." in
@@ -1340,11 +1380,13 @@ module Formatting = struct
       ; elt let_binding_deindent_fun
       ; elt let_binding_spacing
       ; elt let_module
+      ; elt letop_punning
       ; elt line_endings
       ; elt margin
       ; elt match_indent
       ; elt match_indent_nested
       ; elt max_indent
+      ; elt module_indent
       ; elt module_item_spacing
       ; elt nested_match
       ; elt ocp_indent_compat

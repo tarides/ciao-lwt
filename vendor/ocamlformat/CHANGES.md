@@ -4,7 +4,216 @@ Items marked with an asterisk (\*) are changes that are likely to format
 existing code differently from the previous release when using the default
 profile. This started with version 0.26.0.
 
-## unreleased
+## 0.29.0
+
+### Highlight
+
+- \* Support OCaml 5.5 syntax
+  (#2772, #2774, #2775, #2777, #2780, #2781, #2782, #2783, @Julow)
+  The update brings several tiny changes, they are listed below.
+
+- \* Update Odoc's parser to 3.0 (#2757, @Julow)
+  The indentation of code-blocks containing OCaml code is reduced by 2 to avoid
+  changing the generated documentation. The indentation within code-blocks is
+  now significative in Odoc and shows up in generated documentation.
+
+### Added
+
+- Added option `letop-punning` (#2746, @WardBrian) to control whether
+  punning is used in extended binding operators.
+  For example, the code `let+ x = x in ...` can be formatted as
+  `let+ x in ...` when `letop-punning=always`. With `letop-punning=never`, it
+  becomes `let+ x = x in ...`. The default is `preserve`, which will
+  only use punning when it exists in the source.
+  This also applies to `let%ext` bindings (#2747, @WardBrian).
+
+- Support the unnamed functor parameters syntax in module types
+  (#2755, #2759, @Julow)
+  ```ocaml
+  module type F = ARG -> S
+  ```
+  The following lines are now formatted as they are in the source file:
+  ```ocaml
+  module M : (_ : S) -> (_ : S) -> S = N
+  module M : S -> S -> S = N
+  (* The preceding two lines are no longer turned into this: *)
+  module M : (_ : S) (_ : S) -> S = N
+  ```
+
+### Fixed
+
+- Fix dropped comment in `(function _ -> x (* cmt *))` (#2739, @Julow)
+
+- \* `cases-matching-exp-indent=compact` does not impact `begin end` nodes that
+  don't have a match inside. (#2742, @EmileTrotignon)
+  ```ocaml
+  (* before *)
+  begin match () with
+  | () -> begin
+    f x
+  end
+  end
+  (* after *)
+  begin match () with
+  | () -> begin
+      f x
+    end
+  end
+  ```
+
+- `Ast_mapper` now iterates on *all* locations inside of Longident.t,
+  instead of only some.
+  (#2737, @v-gb)
+
+- Remove line break in `M with module N = N (* cmt *)` (#2779, @Julow)
+
+### Internal
+
+- Added information on writing tests to `CONTRIBUTING.md` (#2838, @WardBrian)
+
+### Changed
+
+- indentation of the `end` keyword in a match-case is now always at least 2. (#2742, @EmileTrotignon)
+  ```ocaml
+  (* before *)
+  begin match () with
+  | () -> begin
+    match () with
+    | () -> ()
+  end
+  end
+  (* after *)
+  begin match () with
+  | () -> begin
+    match () with
+    | () -> ()
+
+- \* use shortcut `begin end` in `match` cases and `if then else` body. (#2744, @EmileTrotignon)
+  ```ocaml
+  (* before *)
+  match () with
+  | () -> begin
+      match () with
+      | () ->
+    end
+  end
+  (* after *)
+  match () with
+  | () ->
+    begin match () with
+      | () ->
+    end
+  end
+  ```
+
+- \* Set the `ocaml-version` to `5.4` by default (#2750, @EmileTrotignon)
+  The main difference is that the `effect` keyword is recognized without having
+  to add `ocaml-version=5.3` to the configuration.
+  In exchange, code that use `effect` as an identifier must use
+  `ocaml-version=5.2`.
+
+- The work to support OCaml 5.5 come with several improvements:
+  + Improve the indentation of `let structure-item` with the
+    `[@ocamlformat "disable"]` attribute.
+    `let structure-item` means `let module`, `let open`, `let include` and
+    `let exception`.
+  + `(let open M in e)[@a]` is turned into `let[@a] open M in e`.
+  + Long `let open ... in` no longer exceed the margin.
+  + Improve indentation of `let structure-item` within parentheses:
+    ```ocaml
+    (* before *)
+    (let module M = M in
+    M.foo)
+    (* after *)
+    (let module M = M in
+     M.foo)
+    ```
+
+## 0.28.1
+
+### Highlight
+
+- \* Support for OCaml 5.4
+  (#2717, #2720, #2732, #2733, #2735, @Julow, @Octachron, @cod1r, @EmileTrotignon)
+  OCamlformat now supports OCaml 5.4 syntax.
+  Module packing of the form `((module M) : (module S))` are no longer
+  rewritten to `(module M : S)` because these are now two different syntaxes.
+
+- \* Reduce indentation after `|> map (fun` (#2694, @EmileTrotignon)
+  Notably, the indentation no longer depends on the length of the infix
+  operator, for example:
+  ```ocaml
+  (* before *)
+  v
+  |>>>>>> map (fun x ->
+              x )
+  (* after *)
+  v
+  |>>>>>> map (fun x ->
+      x )
+  ```
+  `@@ match` can now also be on one line.
+
+### Added
+
+- Added option `module-indent` option (#2711, @HPRIOR) to control the indentation
+  of items within modules. This affects modules and signatures. For example,
+  module-indent=4:
+  ```ocaml
+  module type M = sig
+      type t
+
+      val f : (string * int) list -> int
+  end
+  ```
+
+- `exp-grouping=preserve` is now the default in `default` and `ocamlformat`
+  profiles. This means that its now possible to use `begin ... end` without
+  tweaking ocamlformat. (#2716, @EmileTrotignon)
+
+### Deprecated
+
+- Starting in this release, ocamlformat can use cmdliner >= 2.0.0. When that is
+  the case, the tool no longer accepts unambiguous option names prefixes. For
+  example, `--max-iter` is not accepted anymore, you have to pass the full
+  option `--max-iters`. This does not apply to the keys in the `.ocamlformat`
+  configuration files, which have always required the full name.
+  See dbuenzli/cmdliner#200.
+  (#2680, @emillon)
+
+### Changed
+
+- \* The formatting of infix extensions is now consistent with regular
+  formatting by construction. This reduces indentation in `f @@ match%e`
+  expressions to the level of indentation in `f @@ match`. Other unknown
+  inconsistencies might also be fixed. (#2676, @EmileTrotignon)
+
+- \* The spacing of infix attributes is now consistent across keywords. Every
+  keyword but `begin` `function`, and `fun` had attributes stuck to the keyword:
+  `match[@a]`, but `fun [@a]`. Now its also `fun[@a]`. (#2676, @EmileTrotignon)
+
+- \* The formatting of`let a = b in fun ...` is now consistent with other
+  contexts like `a ; fun ...`. A check for the syntax `let a = fun ... in ...`
+  was made more precise. (#2705, @EmileTrotignon)
+
+- \* `|> begin`, `~arg:begin`, `begin if`, `lazy begin`, `begin match`,
+  `begin fun` and `map li begin fun`  can now be printed on the same line, with
+  one less indentation level for the body of the inner expression.
+  (#2664, #2666, #2671, #2672, #2681, #2685, #2693, @EmileTrotignon)
+  For example :
+  ```ocaml
+  (* before *)
+  begin
+    fun x ->
+      some code
+  end
+  (* after *)
+  begin fun x ->
+    some code
+  end
+  ```
+
+- \* `break-struct=natural` now also applies to `sig ... end`. (#2682, @EmileTrotignon)
 
 ### Fixed
 
@@ -30,6 +239,48 @@ profile. This started with version 0.26.0.
 
 - ocamlformat is now more robust when used as a library to print modified ASTs
   (#2659, @v-gb)
+
+- Fix crash due to edge case with asterisk-prefixed comments (#2674, @Julow)
+
+- Fix crash when formatting `mld` files that cannot be lexed as ocaml (e.g.
+  containing LaTeX or C code) (#2684, @emillon)
+
+- \* Fix double parens around module constraint in functor application :
+  `module M = F ((A : T))` becomes `module M = F (A : T)`. (#2678, @EmileTrotignon)
+
+- Fix misplaced `;;` due to interaction with floating doc comments.
+  (#2691, @EmileTrotignon)
+
+- The formatting of attributes of expression is now aware of the attributes
+  infix or postix positions: `((fun [@a] x -> y) [@b])` is formatted without
+  moving attributes. (#2676, @EmileTrotignon)
+
+- `begin%e ... end` and `begin [@a] ... end` nodes are always preserved.
+  (#2676, @EmileTrotignon)
+
+- `begin end` syntax for `()` is now preserved. (#2676, @EmileTrotignon)
+
+- Fix a crash on `type 'a t = A : 'a. {a: 'a} -> 'a t`. (#2710, @EmileTrotignon)
+
+- Fix a crash where `type%e nonrec t = t` was formatted as `type nonrec%e t = t`,
+  which is invalid syntax. (#2712, @EmileTrotignon)
+
+- Fix commandline parsing being quadratic in the number of arguments
+  (#2724, @let-def)
+
+- \* Fix `;;` being added after a documentation comment (#2683, @EmileTrotignon)
+  This results in more `;;` being inserted, for example:
+  ```ocaml
+  (* before *)
+  print_endline "foo"
+  let a = 3
+
+  (* after *)
+  print_endline "foo" ;;
+  let a = 3
+  ```
+
+- Fix dropped comment in `if then (* comment *) begin .. end` (#2734, @Julow)
 
 ## 0.27.0
 
@@ -1686,3 +1937,4 @@ profile. This started with version 0.26.0.
 ## 0.1 (2017-10-19)
 
 - Initial release.
+

@@ -25,11 +25,9 @@ let create ~text ~tokens =
   {text; tokens= Array.of_list tokens}
 
 let string_at t (l : Location.t) =
-  if l.loc_ghost then None
-  else
-    let pos = l.loc_start.Lexing.pos_cnum
-    and len = Position.distance l.loc_start l.loc_end in
-    Some (String.sub t.text ~pos ~len)
+  let pos = l.loc_start.Lexing.pos_cnum
+  and len = Position.distance l.loc_start l.loc_end in
+  String.sub t.text ~pos ~len
 
 let find_token t k pos =
   Array.binary_search t.tokens
@@ -109,7 +107,8 @@ let extend_loc_to_include_attributes (loc : Location.t) (l : attributes) =
     {loc with loc_end= {loc.loc_end with pos_cnum= loc_end.loc_end.pos_cnum}}
 
 let string_literal t mode loc =
-  Option.bind ~f:(Literal_lexer.string mode) (string_at t loc)
+  Option.value_exn ~message:"Parse error while reading string literal"
+    (Literal_lexer.string mode (string_at t loc))
 
 let begins_line ?(ignore_spaces = true) t (l : Location.t) =
   if not ignore_spaces then Position.column l.loc_start = 0

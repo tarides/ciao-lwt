@@ -20,5 +20,3 @@ val fmt_ast :
   -> 'a
   -> Fmt.t
 (** Format a fragment. *)
-
-val str_longident : Longident.t -> string

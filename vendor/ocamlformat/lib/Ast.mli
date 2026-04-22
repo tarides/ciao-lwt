@@ -117,13 +117,15 @@ type t =
   | Vc of value_constraint
   | Lb of value_binding
   | Bo of binding_op
-  | Mb of module_binding
+  | Mb of t * module_binding  (** Carry the parent context. *)
   | Md of module_declaration
   | Cl of class_expr
   | Mty of module_type
   | Mod of module_expr
   | Sig of signature_item
   | Str of structure_item
+  | Str_exp of structure_item
+      (** A structure item embedded in a [let .. in] expression. *)
   | Clf of class_field
   | Ctf of class_type_field
   | Tli of toplevel_item
@@ -239,4 +241,10 @@ val parenze_mod : module_expr xt -> bool
 
 module Ext_attrs : sig
   val has_attrs : ext_attrs -> bool
+end
+
+module Infix_ext_attrs : sig
+  val is_empty : infix_ext_attrs -> bool
+
+  val extract_attrs : expression_desc -> attributes
 end

@@ -15,7 +15,7 @@ module Left = struct
   let rec core_type typ =
     match typ.ptyp_desc with
     | Ptyp_arrow (t :: _, _) -> core_type t.pap_type
-    | Ptyp_tuple l -> core_type (List.hd_exn l)
+    | Ptyp_tuple l -> core_type (List.hd_exn l).lte_elt
     | Ptyp_object _ -> true
     | Ptyp_alias (typ, _) -> core_type typ
     | _ -> false
@@ -29,7 +29,7 @@ module Right = struct
     | {ptyp_desc; _} -> (
       match ptyp_desc with
       | Ptyp_arrow (_, t) -> core_type t
-      | Ptyp_tuple l -> core_type (List.last_exn l)
+      | Ptyp_tuple l -> core_type (List.last_exn l).lte_elt
       | Ptyp_object _ -> true
       | _ -> false )
 
@@ -60,10 +60,11 @@ module Right = struct
 
   let type_declaration = function
     | {ptype_attributes= {attrs_after= _ :: _; _}; _} -> false
-    | {ptype_cstrs= _ :: _ as cstrs; _} ->
+    | {ptype_constraints= _ :: _ as cstrs; _} ->
         (* type a = ... constraint left = < ... > *)
         list ~elt:(fun (_left, right, _loc) -> core_type right) cstrs
-    | {ptype_kind= Ptype_open | Ptype_record _; _} -> false
+    | {ptype_kind= Ptype_open | Ptype_record _ | Ptype_external _; _} ->
+        false
     | {ptype_kind= Ptype_abstract; ptype_manifest= None; _} -> false
     | {ptype_kind= Ptype_abstract; ptype_manifest= Some manifest; _} ->
         (* type a = < ... > *)
