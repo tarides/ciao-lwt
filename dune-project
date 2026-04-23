@@ -26,7 +26,8 @@
  (depends
   (ocaml
    (>= 5.3))
-  merlin-lib
+  (merlin-lib
+   (>= 5.5-503))
   (lwt :with-test)
   (lwt_log :with-test)
   (js_of_ocaml-lwt :with-test)

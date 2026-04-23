@@ -1,6 +1,8 @@
 open Ocamlformat_utils.Parsing
 
 module Ocaml_to_ocamlformat = struct
+  let mk_loc txt = { Location.txt; loc = Location.none }
+
   let location_t { Ocaml_parsing.Location.loc_start; loc_end; loc_ghost } =
     { Location.loc_start; loc_end; loc_ghost }
 
@@ -11,8 +13,8 @@ module Ocaml_to_ocamlformat = struct
     let open Longident in
     function
     | Ocaml_parsing.Longident.Lident s -> Lident s
-    | Ldot (a, b) -> Ldot (longident a, b)
-    | Lapply (a, b) -> Lapply (longident a, longident b)
+    | Ldot (a, b) -> Ldot (mk_loc (longident a), mk_loc b)
+    | Lapply (a, b) -> Lapply (mk_loc (longident a), mk_loc (longident b))
 
   let lid = location_loc longident
 end
