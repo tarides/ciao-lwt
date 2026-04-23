@@ -204,7 +204,15 @@ let format_fragment ext_fg ast =
   String.trim fmted
 
 let format_expression exp = format_fragment Extended_ast.Expression exp
-let format_longident = Fmt_ast.str_longident
+let fpf = Format.fprintf
+
+let format_longident =
+  let rec f ppf = function
+    | Longident.Lident s -> fpf ppf "%s" s
+    | Ldot (a, b) -> fpf ppf "%a.%s" f a.txt b.txt
+    | Lapply (a, b) -> fpf ppf "%a(%a)" f a.txt f b.txt
+  in
+  Format.asprintf "%a" f
 
 let handle_fmt_exn = function
   | Failure msg | Sys_error msg -> error msg

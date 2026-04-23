@@ -11,10 +11,10 @@ module Ocaml_to_ocamlformat = struct
     let open Longident in
     function
     | Ocaml_parsing.Longident.Lident s -> Lident s
-    | Ldot (a, b) -> Ldot (longident a.txt, b.txt)
-    | Lapply (a, b) -> Lapply (longident a.txt, longident b.txt)
+    | Ldot (a, b) -> Ldot (lid a, location_loc Fun.id b)
+    | Lapply (a, b) -> Lapply (lid a, lid b)
 
-  let lid = location_loc longident
+  and lid lid = location_loc longident lid
 end
 
 let tpat_alias_ident = function

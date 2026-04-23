@@ -605,26 +605,23 @@ Make a writable directory tree:
   let _ = Fiber.List.iter (fun _ -> x) []
   
   let _ =
-    Lwt_list.iteri_p
-      (* TODO: ciao-lwt: [iteri] can't be translated automatically. See https://ocaml.org/p/eio/latest/doc/Eio/Fiber/List/index.html *)
-      (* TODO: ciao-lwt: [iteri] can't be translated automatically. See https://ocaml.org/p/eio/latest/doc/Eio/Fiber/List/index.html *)
+    Lwt_list
+    (* TODO: ciao-lwt: [iteri] can't be translated automatically. See https://ocaml.org/p/eio/latest/doc/Eio/Fiber/List/index.html *)
+    .iteri_p
       (fun _ _ -> x)
       []
   
   let _ = Eio.Condition.create ()
   
   let f1 cond =
-    Eio.Condition.await
-      (* TODO: ciao-lwt: A mutex must be passed *)
-      cond __mutex__
+    Eio.Condition.await (* TODO: ciao-lwt: A mutex must be passed *) cond
+      __mutex__
   
   let f2 mutex cond = Eio.Condition.await cond mutex
   
   let f3 mutex cond =
     Eio.Condition.await cond
-      (Option.get
-         (* TODO: ciao-lwt: [mutex] shouldn't be an option. *)
-         mutex)
+      (Option.get (* TODO: ciao-lwt: [mutex] shouldn't be an option. *) mutex)
   
   let m = Eio.Mutex.create ()
   let _ = Eio.Mutex.lock m
@@ -690,7 +687,7 @@ Make a writable directory tree:
   
   let _ = Some ()
   let _ = None
-  let _ = Lwt.Fail (* TODO: ciao-lwt: [Lwt.Fail] shouldn't be used *) Not_found
+  let _ = Lwt (* TODO: ciao-lwt: [Lwt.Fail] shouldn't be used *).Fail Not_found
   
   let _ =
     let _ : unit Promise.t = () in
@@ -780,8 +777,7 @@ Make a writable directory tree:
   let _f fd =
     Eio.Buf_read.of_flow ~max_size:1_000_000
       (Eio_unix.Net.import_socket_stream ~sw ~close_unix:true
-         (* TODO: ciao-lwt: [sw] (of type Switch.t) must be propagated here. *)
-         fd
+         (* TODO: ciao-lwt: [sw] (of type Switch.t) must be propagated here. *) fd
         : [ `R | `Flow | `Close ] r)
   
   let _f fd =
@@ -826,28 +822,24 @@ Make a writable directory tree:
   let _f fname =
     Eio.Path.stat ~follow:true
       (Eio.Path.( / ) env#cwd
-         (* TODO: ciao-lwt: [env] must be propagated from the main loop *)
-         fname)
+         (* TODO: ciao-lwt: [env] must be propagated from the main loop *) fname)
   
   let _f fname =
     Eio.Path.stat ~follow:false
       (Eio.Path.( / ) env#cwd
-         (* TODO: ciao-lwt: [env] must be propagated from the main loop *)
-         fname)
+         (* TODO: ciao-lwt: [env] must be propagated from the main loop *) fname)
   
   let _f chan = Eio.Buf_read.take_all chan
   
   let _f chan =
-    Lwt_io.read
+    Lwt_io
     (* TODO: ciao-lwt: Eio doesn't have a direct equivalent of [Lwt_io.read ~count]. Rewrite the code using [Eio.Buf_read]'s lower level API or switch to unbuffered IO. *)
-    (* TODO: ciao-lwt: Eio doesn't have a direct equivalent of [Lwt_io.read ~count]. Rewrite the code using [Eio.Buf_read]'s lower level API or switch to unbuffered IO. *)
-      ~count:42 chan
+    .read ~count:42 chan
   
   let _f chan =
-    Lwt_io.read
+    Lwt_io
     (* TODO: ciao-lwt: Eio doesn't have a direct equivalent of [Lwt_io.read ~count]. Rewrite the code using [Eio.Buf_read]'s lower level API or switch to unbuffered IO. *)
-    (* TODO: ciao-lwt: Eio doesn't have a direct equivalent of [Lwt_io.read ~count]. Rewrite the code using [Eio.Buf_read]'s lower level API or switch to unbuffered IO. *)
-      ?count:(Some 42) chan
+    .read ?count:(Some 42) chan
   
   let _f chan = Eio.Buf_write.flush chan
   
@@ -860,11 +852,10 @@ Make a writable directory tree:
   
   let _f =
     let f = fun x1 -> x1 in
+    (* TODO: ciao-lwt: [env] must be propagated from the main loop *)
+    (* TODO: ciao-lwt: [sw] (of type Switch.t) must be propagated here. *)
     Fiber.fork_promise ~sw (fun () ->
-        Eio.Domain_manager.run env#domain_mgr (fun () ->
-            (* TODO: ciao-lwt: [env] must be propagated from the main loop *)
-            (* TODO: ciao-lwt: [sw] (of type Switch.t) must be propagated here. *)
-            f 12))
+        Eio.Domain_manager.run env#domain_mgr (fun () -> f 12))
   
   let _f a b c = Unix.socket a b c
   let _f a b c = Unix.socketpair a b c

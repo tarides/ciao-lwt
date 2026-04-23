@@ -32,4 +32,6 @@ val parse :
 (** Formatting a fragment of AST. This is most useful for messages. *)
 
 val format_expression : expression -> string
+
 val format_longident : Parsing.Longident.t -> string
+(** Format longidents without comments. *)
