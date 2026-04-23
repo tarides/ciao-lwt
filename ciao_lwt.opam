@@ -14,16 +14,16 @@ license: "MIT"
 homepage: "https://github.com/tarides/ciao-lwt"
 bug-reports: "https://github.com/tarides/ciao-lwt/issues"
 depends: [
-  "dune" {>= "3.17"}
   "ocaml" {>= "5.3"}
-  "merlin-lib"
+  "merlin-lib" {>= "5.5-503"}
   "lwt" {with-test}
   "lwt_log" {with-test}
   "js_of_ocaml-lwt" {with-test}
   "ocaml-index" {with-test}
   "ocaml" {>= "4.08"}
   "base" {>= "v0.12.0"}
-  "cmdliner" {>= "1.1.0" & < "2.0.0"}
+  "cmdliner" {>= "1.1.0"}
+  "dune" {>= "3.17"}
   "dune-build-info"
   "either"
   "fix"

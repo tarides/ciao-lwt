@@ -40,7 +40,9 @@ let add_comment state ?(loc = state.comment_default_loc) text =
   state.comments <-
     Ocamlformat_utils.Cmt.create_comment cmt loc :: state.comments
 
-let set_default_comment_loc state loc = state.comment_default_loc <- loc
+let set_default_comment_loc state (loc : Location.t) =
+  let loc = { loc with loc_end = loc.loc_start } in
+  state.comment_default_loc <- loc
 
 module Occ = struct
   open Location
@@ -54,7 +56,7 @@ module Occ = struct
     let locs =
       Array.of_list lids
       |> Array.map (fun (ident, lid) ->
-             (ident, Loc.of_location_ocaml lid.Ocaml_parsing.Location.loc))
+          (ident, Loc.of_location_ocaml lid.Ocaml_parsing.Location.loc))
     in
     Array.sort (fun (_, a) (_, b) -> compare a b) locs;
     let len = Array.length locs in

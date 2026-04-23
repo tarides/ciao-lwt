@@ -58,6 +58,7 @@ f
      ()
    else
      ())
+;;
 
 let () =
   f
@@ -67,7 +68,7 @@ let () =
      else
        c_________________________________________________________________)
 
-let () = if [@test] true then () else if [@other] true then ()
+let () = if[@test] true then () else if[@other] true then ()
 let foo = if cond1 then arm1 else if cond2 then arm2 else arm3
 
 let _ =
@@ -209,3 +210,11 @@ let compare s1 s2 =
 
 let _ = if x then 42 (* dummy *) else y
 let _ = if x then 42 (* dummy *) else if y then z else w
+
+let () =
+  if true then (* a *)
+  begin
+    ()
+  end
+  else
+    ()

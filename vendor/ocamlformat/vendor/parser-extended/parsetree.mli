@@ -87,6 +87,11 @@ and ext_attrs = {
   attrs_after : attributes; (** eg. [module Foo = struct end [@@attr]]. *)
 }
 
+and infix_ext_attrs = {
+  infix_attrs: attributes;
+  infix_ext: string loc option;
+}
+
 (** {1 Core language} *)
 (** {2 Type expressions} *)
 
@@ -117,9 +122,14 @@ and core_type_desc =
             - [?l:T1 -> T2] when [lbl] is
                                      {{!Asttypes.arg_label.Optional}[Optional]}.
          *)
-  | Ptyp_tuple of core_type list
-      (** [Ptyp_tuple([T1 ; ... ; Tn])]
-          represents a product type [T1 * ... * Tn].
+  | Ptyp_tuple of core_type labeled_tuple_element list
+      (** [Ptyp_tuple(tl)] represents a product type:
+          - [T1 * ... * Tn]
+              when [tl] is [(None, T1); ...; (None, Tn)]
+          - [L1:T1 * ... * Ln:Tn]
+              when [tl] is [(Some L1, T1); ...; (Some Ln, Tn)]
+          - A mix, e.g., [L1:T1 * T2]
+              when [tl] is [(Some L1, T1); (None, T2)]
 
            Invariant: [n >= 2].
         *)
@@ -168,6 +178,15 @@ and core_type_desc =
              to a constraint on a let-binding:
             {[let x : 'a1 ... 'an. T = e ...]}
 
+           - Under {{!class_field_kind.Cfk_virtual}[Cfk_virtual]} for methods
+          (not values).
+
+           - As the {!core_type} of a
+           {{!class_type_field_desc.Pctf_method}[Pctf_method]} node.
+
+           - As the {!core_type} of a {{!expression_desc.Pexp_poly}[Pexp_poly]}
+           node.
+
            - As the {{!label_declaration.pld_type}[pld_type]} field of a
            {!label_declaration}.
 
@@ -180,11 +199,20 @@ and core_type_desc =
   | Ptyp_package of package_type  (** [(module S)]. *)
   | Ptyp_open of Longident.t loc * core_type (** [M.(T)] *)
   | Ptyp_extension of extension  (** [[%id]]. *)
+  | Ptyp_functor of arg_label * string loc * package_type * core_type
+        (** [(module M : S) -> ...] : module-dependent arrow *)
 
-and package_type = Longident.t loc * (Longident.t loc * core_type) list * attributes
+
+and package_type =
+    {
+     ppt_path: Longident.t loc;
+     ppt_constraints: (Longident.t loc * core_type) list;
+     ppt_loc: Location.t;
+     ppt_attrs: attributes;
+    }
 (** As {!package_type} typed values:
-         - [(S, [])] represents [(module S)],
-         - [(S, [(t1, T1) ; ... ; (tn, Tn)])]
+         - [{ppt_path: S; ppt_constraints: []}] represents [(module S)],
+         - [{ppt_path: S; ppt_constraints: [(t1, T1) ; ... ; (tn, Tn)]}]
           represents [(module S with type t1 = T1 and ... and tn = Tn)].
        *)
 
@@ -219,6 +247,17 @@ and object_field_desc =
   | Otag of label loc * core_type
   | Oinherit of core_type
 
+and ('elt,'c) labeled_tuple_element_with_pun =
+  | Lte_pun of string loc
+  | Lte_constrained_pun of
+      { loc:Location.t; label: string loc; type_constraint: 'c }
+  | Lte_simple of 'elt labeled_tuple_element
+
+and 'elt labeled_tuple_element = {
+    lte_label: string loc option;
+    lte_elt: 'elt;
+  }
+
 (** {2 Patterns} *)
 
 and pattern =
@@ -241,11 +280,23 @@ and pattern_desc =
 
            Other forms of interval are recognized by the parser
            but rejected by the type-checker. *)
-  | Ppat_tuple of pattern list
-      (** Patterns [(P1, ..., Pn)].
+  | Ppat_tuple of
+      (pattern, core_type) labeled_tuple_element_with_pun list * Asttypes.closed_flag
+      (** [Ppat_tuple(pl, Closed)] represents
+          - [(P1, ..., Pn)]
+              when [pl] is [(None, P1); ...; (None, Pn)]
+          - [(~L1:P1, ..., ~Ln:Pn)]
+              when [pl] is [(Some L1, P1); ...; (Some Ln, Pn)]
+          - A mix, e.g. [(~L1:P1, P2)]
+              when [pl] is [(Some L1, P1); (None, P2)]
 
-           Invariant: [n >= 2]
-        *)
+          [Ppat_tuple(pl, Open)] is similar, but indicates the pattern
+          additionally ends in a [..].
+
+          Invariant:
+          - If Closed, [n >= 2].
+          - If Open, [n >= 1].
+      *)
   | Ppat_construct of Longident.t loc * (string loc list * pattern) option
       (** [Ppat_construct(C, args)] represents:
             - [C]               when [args] is [None],
@@ -277,11 +328,11 @@ and pattern_desc =
   | Ppat_type of Longident.t loc  (** Pattern [#tconst] *)
   | Ppat_lazy of pattern  (** Pattern [lazy P] *)
   | Ppat_unpack of string option loc * package_type option
-      (** [Ppat_unpack(p, s)] represents:
-            - [(module P)] when [p] is [Some "P"] and [s] is [None]
-            - [(module _)] when [p] is [None] and [s] is [None]
-            - [(module P : S)] when [p] is [Some "P"] and [s] is [Some "S"]
-            - [(module _ : S)] when [p] is [None] and [s] is [Some "S"]
+      (** [Ppat_unpack(s, ptyp)] represents:
+            - [(module P : S)] when [s] is [Some "P"] and [ptyp] is [Some "S"]
+            - [(module _ : S)] when [s] is [None] and [ptyp] is [Some "S"]
+            - [(module P)] when [s] is [Some "P"] and [ptyp] is [None]
+            - [(module _)] when [s] is [None] and [ptyp] is [None]
          *)
   | Ppat_exception of pattern  (** Pattern [exception P] *)
   | Ppat_effect of pattern * pattern (* Pattern [effect P P] *)
@@ -315,7 +366,7 @@ and expression_desc =
             - [loc_in] is the location of the [in] keyword.
          *)
   | Pexp_function of
-      expr_function_param list * type_constraint option * function_body
+      expr_function_param list * type_constraint option * function_body * infix_ext_attrs
   (** [Pexp_function ([P1; ...; Pn], C, body)] represents any construct
       involving [fun] or [function], including:
       - [fun P1 ... Pn -> E]
@@ -326,8 +377,9 @@ and expression_desc =
       [C] represents a type constraint or coercion placed immediately before the
       arrow, e.g. [fun P1 ... Pn : ty -> ...] when [C = Some (Pconstraint ty)].
 
-      A function must have parameters. [Pexp_function (params, _, body)] must
-      have non-empty [params] or a [Pfunction_cases _] body.
+      A function must have parameters: in [Pexp_function (params, _, body)],
+      if [params] does not contain a [Pparam_val _], [body] must be
+      [Pfunction_cases _].
   *)
   | Pexp_apply of expression * (arg_label * expression) list
       (** [Pexp_apply(E0, [(l1, E1) ; ... ; (ln, En)])]
@@ -340,15 +392,22 @@ and expression_desc =
 
            Invariant: [n > 0]
          *)
-  | Pexp_match of expression * case list
+  | Pexp_match of expression * case list * infix_ext_attrs
       (** [match E0 with P1 -> E1 | ... | Pn -> En] *)
-  | Pexp_try of expression * case list
+  | Pexp_try of expression * case list * infix_ext_attrs
       (** [try E0 with P1 -> E1 | ... | Pn -> En] *)
-  | Pexp_tuple of expression list
-      (** Expressions [(E1, ..., En)]
+  | Pexp_tuple of (expression,type_constraint) labeled_tuple_element_with_pun list
+      (** [Pexp_tuple(el)] represents
+          - [(E1, ..., En)]
+              when [el] is [(None, E1); ...; (None, En)]
+          - [(~L1:E1, ..., ~Ln:En)]
+              when [el] is [(Some L1, E1); ...; (Some Ln, En)]
+          - A mix, e.g., [(~L1:E1, E2)]
+              when [el] is [(Some L1, E1); (None, E2)]
 
            Invariant: [n >= 2]
         *)
+  | Pexp_construct_unit_beginend of infix_ext_attrs (** Represents [begin end]*)
   | Pexp_construct of Longident.t loc * expression option
       (** [Pexp_construct(C, exp)] represents:
            - [C]               when [exp] is [None],
@@ -379,9 +438,9 @@ and expression_desc =
   | Pexp_list of expression list  (** [[ E1; ...; En ]] *)
   | Pexp_ifthenelse of if_branch list * (expression * Location.t) option
       (** [Pexp_ifthenelse (if_branches, Some (else_expr, else_keyword_loc)] *)
-  | Pexp_sequence of expression * expression  (** [E1; E2] *)
-  | Pexp_while of expression * expression  (** [while E1 do E2 done] *)
-  | Pexp_for of pattern * expression * expression * direction_flag * expression
+  | Pexp_sequence of expression * expression * string loc option (** [E1; E2] *)
+  | Pexp_while of expression * expression * infix_ext_attrs (** [while E1 do E2 done] *)
+  | Pexp_for of pattern * expression * expression * direction_flag * expression * infix_ext_attrs
       (** [Pexp_for(i, E1, E2, direction, E3)] represents:
             - [for i = E1 to E2 do E3 done]
                  when [direction] is {{!Asttypes.direction_flag.Upto}[Upto]}
@@ -395,35 +454,41 @@ and expression_desc =
             - [(E : T0 :> T)] when [from] is [Some T0].
          *)
   | Pexp_send of expression * label loc  (** [E # m] *)
-  | Pexp_new of Longident.t loc  (** [new M.c] *)
+  | Pexp_new of Longident.t loc * infix_ext_attrs  (** [new M.c] *)
   | Pexp_setinstvar of label loc * expression  (** [x <- 2] *)
   | Pexp_override of (label loc * expression) list
       (** [{< x1 = E1; ...; xn = En >}] *)
-  | Pexp_letmodule of string option loc * functor_parameter loc list * module_expr * expression
-      (** [let module M = ME in E] *)
-  | Pexp_letexception of extension_constructor * expression
-      (** [let exception C in E] *)
-  | Pexp_assert of expression
+  | Pexp_struct_item of structure_item * expression * infix_ext_attrs
+     (** [let SI in E] *)
+  | Pexp_assert of expression * infix_ext_attrs
       (** [assert E].
 
            Note: [assert false] is treated in a special way by the
            type-checker. *)
-  | Pexp_lazy of expression  (** [lazy E] *)
-  | Pexp_object of class_structure  (** [object ... end] *)
-  | Pexp_pack of module_expr * package_type option
+  | Pexp_lazy of expression * infix_ext_attrs  (** [lazy E] *)
+  (*
+  | Pexp_poly of expression * core_type option
+      (** Used for method bodies.
+
+           Can only be used as the expression under
+           {{!class_field_kind.Cfk_concrete}[Cfk_concrete]} for methods (not
+           values). *)
+  *)
+  | Pexp_object of class_structure * infix_ext_attrs  (** [object ... end] *)
+  (*
+  | Pexp_newtype of string loc * expression  (** [fun (type t) -> E] *)
+  *)
+  | Pexp_pack of module_expr * package_type option * infix_ext_attrs
       (** - [(module M)] is represented as [Pexp_pack(M, None)]
           - [(module M : S)] is represented as [Pexp_pack(M, Some S)] *)
   | Pexp_open of Longident.t loc * expression  (** [M.(E)] *)
-  | Pexp_letopen of open_declaration * expression
-      (** - [let open M in E]
-          - [let open! M in E] *)
   | Pexp_letop of letop
       (** - [let* P = E0 in E1]
             - [let* P0 = E00 and* P1 = E01 in E1] *)
   | Pexp_extension of extension  (** [[%id]] *)
   | Pexp_unreachable  (** [.] *)
   | Pexp_hole  (** [_] *)
-  | Pexp_beginend of expression  (** [begin E end] *)
+  | Pexp_beginend of expression * infix_ext_attrs (** [begin E end] *)
   | Pexp_parens of expression  (** [(E)] *)
   | Pexp_cons of expression list  (** [E1 :: ... :: En] *)
   | Pexp_indexop_access of indexop_access
@@ -453,7 +518,7 @@ and if_branch =
   {
     if_cond: expression;
     if_body: expression;
-    if_attrs: attributes;  (** [... [\@id1] [\@id2]] *)
+    if_attrs: infix_ext_attrs;  (** [... [\@id1] [\@id2]] *)
     if_loc_then: Location.t;  (** Location of the [then] keyword, for comment attachment. *)
   }
 
@@ -537,7 +602,7 @@ and class_function_param = pparam_val function_param
 
 and function_body =
   | Pfunction_body of expression
-  | Pfunction_cases of case list * Location.t * attributes
+  | Pfunction_cases of case list * Location.t * infix_ext_attrs
   (** In [Pfunction_cases (_, loc, attrs)], the location extends from the
       start of the [function] keyword to the end of the last case. The compiler
       will only use typechecking-related attributes from [attrs], e.g. enabling
@@ -574,7 +639,7 @@ and type_declaration =
      ptype_name: string loc;
      ptype_params: (core_type * variance_and_injectivity) list;
       (** [('a1,...'an) t] *)
-     ptype_cstrs: (core_type * core_type * Location.t) list;
+     ptype_constraints: (core_type * core_type * Location.t) list;
       (** [... constraint T1=T1'  ... constraint Tn=Tn'] *)
      ptype_kind: type_kind;
      ptype_private: private_flag;  (** for [= private ...] *)
@@ -606,6 +671,10 @@ and type_declaration =
  - [type t = ..]
               when [type_kind] is {{!type_kind.Ptype_open}[Ptype_open]},
                and [manifest]  is [None].
+ - [type t = external "gmp"]
+              when [type_kind] is
+                 {{!type_kind.Ptype_external}[Ptype_external("gmp")]}
+               and [manifest]  is [None].
 *)
 
 and type_kind =
@@ -613,6 +682,7 @@ and type_kind =
   | Ptype_variant of constructor_declaration list
   | Ptype_record of label_declaration list  (** Invariant: non-empty list *)
   | Ptype_open
+  | Ptype_external of string
 
 and label_declaration =
     {
@@ -763,7 +833,8 @@ and class_type_field_desc =
   | Pctf_val of (label loc * mutable_virtual * core_type)
       (** [val x: T] *)
   | Pctf_method of (label loc * private_virtual * core_type)
-      (** [method x: T] *)
+      (** [method x: T]
+        *)
   | Pctf_constraint of (core_type * core_type)  (** [constraint T1 = T2] *)
   | Pctf_attribute of attribute  (** [[\@\@\@id]] *)
   | Pctf_extension of extension  (** [[%%id]] *)
@@ -911,9 +982,9 @@ and module_type =
 and module_type_desc =
   | Pmty_ident of Longident.t loc  (** [Pmty_ident(S)] represents [S] *)
   | Pmty_signature of signature  (** [sig ... end] *)
-  | Pmty_functor of functor_parameter loc list * module_type * bool
-      (** [functor (X1 : MT1) ... (Xn : MTn) -> MT], third argument codes
-          whether the short syntax is used. *)
+  | Pmty_functor of functor_parameters_type * module_type
+      (** [functor (X1 : MT1) ... (Xn : MTn) -> MT -> ... -> MT]. The [functor]
+          keyword is optional. *)
   | Pmty_with of module_type * with_constraint list  (** [MT with ...] *)
   | Pmty_typeof of module_expr  (** [module type of ME] *)
   | Pmty_extension of extension  (** [[%id]] *)
@@ -925,6 +996,14 @@ and functor_parameter =
       (** [Named(name, MT)] represents:
             - [(X : MT)] when [name] is [Some X],
             - [(_ : MT)] when [name] is [None] *)
+
+and functor_parameters_type =
+  | Pfunctorty_short of functor_parameter loc list
+      (** [(A : T) (_ : T) ... ->]. *)
+  | Pfunctorty_keyword of attributes * functor_parameter loc list
+      (** [functor (A : T) (_ : T) ... ->]. *)
+  | Pfunctorty_unnamed of module_type
+      (** [T ->]. *)
 
 and signature = signature_item list
 

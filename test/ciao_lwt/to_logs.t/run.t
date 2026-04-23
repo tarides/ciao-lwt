@@ -215,8 +215,9 @@
   let () =
     let _ : Logs.reporter = Logs.reporter () in
     let _ =
-      Lwt_log.default
+      Lwt_log
       (* TODO: ciao-lwt to-logs: Use [Logs.set_reporter : reporter -> unit]. *)
+      .default
     in
     let _ = Logs.nop_reporter in
     let _ =
@@ -259,17 +260,15 @@
   
   let () =
     let _ =
-      Lwt_log.close
-        (* TODO: ciao-lwt to-logs: close is no longer supported. *)
-        (* TODO: ciao-lwt to-logs: close is no longer supported. *)
+      Lwt_log (* TODO: ciao-lwt to-logs: close is no longer supported. *).close
         (Logs.reporter ())
     in
     let _ =
-      Lwt_log.close (* TODO: ciao-lwt to-logs: close is no longer supported. *)
+      Lwt_log (* TODO: ciao-lwt to-logs: close is no longer supported. *).close
     in
     let _ =
-      Lwt_log.add_rule
-      (* TODO: ciao-lwt to-logs: add_rule is no longer supported. *)
+      Lwt_log (* TODO: ciao-lwt to-logs: add_rule is no longer supported. *)
+      .add_rule
     in
     let _
         (* TODO: ciao-lwt to-logs: [Logs_syslog_unix.unix_reporter] take a single path but a list is passed. *)
@@ -337,16 +336,12 @@
     in
     let _ =
       let mode = `Append in
+      (* TODO: ciao-lwt to-logs: [file]: Channel is never closed. *)
       let logs_formatter =
         Format.formatter_of_out_channel
           (open_out_gen
              (let append_mode =
-                match
-                  (* TODO: ciao-lwt to-logs: [file]: Channel is never closed. *)
-                  mode
-                with
-                | `Append -> Open_append
-                | `Truncate -> Open_trunc
+                match mode with `Append -> Open_append | `Truncate -> Open_trunc
               in
               [ append_mode; Open_wronly; Open_creat; Open_text ])
              0o640 "")
@@ -355,18 +350,12 @@
     in
     let _ =
       let mode = Some `Append in
+      (* TODO: ciao-lwt to-logs: [file]: Channel is never closed. *)
       let logs_formatter =
         Format.formatter_of_out_channel
           (open_out_gen
              (let append_mode =
-                match
-                  match
-                    (* TODO: ciao-lwt to-logs: [file]: Channel is never closed. *)
-                    mode
-                  with
-                  | Some x -> x
-                  | None -> `Append
-                with
+                match match mode with Some x -> x | None -> `Append with
                 | `Append -> Open_append
                 | `Truncate -> Open_trunc
               in
@@ -391,6 +380,7 @@
     in
     let _ =
       let perm = 1 in
+      (* TODO: ciao-lwt to-logs: [file]: Channel is never closed. *)
       let logs_formatter =
         Format.formatter_of_out_channel
           (open_out_gen
@@ -400,13 +390,13 @@
                 | `Truncate -> Open_trunc
               in
               [ append_mode; Open_wronly; Open_creat; Open_text ])
-             (* TODO: ciao-lwt to-logs: [file]: Channel is never closed. *)
              perm "")
       in
       Logs.format_reporter ~app:logs_formatter ~dst:logs_formatter ()
     in
     let _ =
       let perm = Some 1 in
+      (* TODO: ciao-lwt to-logs: [file]: Channel is never closed. *)
       let logs_formatter =
         Format.formatter_of_out_channel
           (open_out_gen
@@ -416,12 +406,7 @@
                 | `Truncate -> Open_trunc
               in
               [ append_mode; Open_wronly; Open_creat; Open_text ])
-             (match
-                (* TODO: ciao-lwt to-logs: [file]: Channel is never closed. *)
-                perm
-              with
-             | Some x -> x
-             | None -> 0o640)
+             (match perm with Some x -> x | None -> 0o640)
              "")
       in
       Logs.format_reporter ~app:logs_formatter ~dst:logs_formatter ()
@@ -471,10 +456,8 @@
     List.iter
       (fun l ->
         ignore
-          (Lwt_log.close
-             (* TODO: ciao-lwt to-logs: close is no longer supported. *)
-             (* TODO: ciao-lwt to-logs: close is no longer supported. *)
-             l
+          (Lwt_log (* TODO: ciao-lwt to-logs: close is no longer supported. *)
+           .close l
             : unit Lwt.t))
       !loggers;
     match None with

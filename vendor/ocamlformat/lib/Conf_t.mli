@@ -92,11 +92,13 @@ type fmt_opts =
         (** De-indent the [fun] in a let-binding body. *)
   ; let_binding_spacing: [`Compact | `Sparse | `Double_semicolon] elt
   ; let_module: [`Compact | `Sparse] elt
+  ; letop_punning: [`Always | `Preserve | `Never] elt
   ; line_endings: [`Lf | `Crlf] elt
   ; margin: int elt  (** Format code to fit within [margin] columns. *)
   ; match_indent: int elt
   ; match_indent_nested: [`Always | `Auto | `Never] elt
   ; max_indent: int option elt
+  ; module_indent: int elt
   ; module_item_spacing: [`Compact | `Preserve | `Sparse] elt
   ; nested_match: [`Wrap | `Align] elt
   ; ocp_indent_compat: bool elt  (** Try to indent like ocp-indent *)
