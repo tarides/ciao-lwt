@@ -116,6 +116,7 @@ let eio ~eio_sw_as_fiber_var ~eio_env_as_fiber_var add_comment =
          promise when it's part of control-flow.";
       mk_apply_simple (promise_ident "create") [ unit ]
 
+    method blocking_await exp = mk_apply_simple (promise_ident "await") [ exp ]
     method wakeup u arg = mk_apply_simple (promise_ident "resolve") [ u; arg ]
     method join lst = mk_apply_simple (fiber_ident "all") [ lst ]
     method pause unit = mk_apply_simple (fiber_ident "yield") [ unit ]

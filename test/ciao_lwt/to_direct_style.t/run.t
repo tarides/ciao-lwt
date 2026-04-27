@@ -51,7 +51,7 @@ Make a writable directory tree:
     Lwt.return_unit (line 49 column 3)
     Lwt.return (line 53 column 3)
     Lwt.return (line 57 column 3)
-  lib/test.ml: (187 occurrences)
+  lib/test.ml: (190 occurrences)
     Lwt.Infix (line 1 column 6)
     Lwt.Syntax (line 2 column 6)
     Lwt.try_bind (line 5 column 3)
@@ -239,6 +239,9 @@ Make a writable directory tree:
     Lwt.catch (line 200 column 9)
     Lwt.return_unit (line 200 column 30)
     Lwt.reraise (line 200 column 47)
+    Lwt.let* (line 203 column 3)
+    Lwt.return (line 204 column 3)
+    Lwt.let+ (line 207 column 3)
   lib/test_lwt_unix.ml: (57 occurrences)
     Lwt.Syntax (line 1 column 6)
     Lwt_unix.of_unix_file_descr (line 6 column 8)
@@ -702,6 +705,14 @@ Make a writable directory tree:
   let _ = (fun () -> ()) ()
   let _f x = Fiber.yield (match x with Some _ -> () | _ -> ())
   let _ = ()
+  
+  let _ =
+    let x = Promise.await x in
+    x
+  
+  let _ =
+    let x = Promise.await x in
+    x
 
   $ cat lib/test.mli
   open Eio.Std

@@ -477,13 +477,22 @@ let can_simply_sequence ~state rhs =
       true
   | _ -> false
 
+(** Rewrite the expression after the [=]. If it's a function application, it is
+    turned into a direct call. Otherwise, it is turned into a await. *)
+let rewrite_letop_exp ~backend exp =
+  match exp.pexp_desc with
+  | Pexp_apply _ -> exp
+  | _ -> backend#blocking_await exp
+
 let rewrite_letop ~backend ~state let_ ands body = function
   | "Lwt", ("let*" | "let+") -> (
       match ands with
       | [] ->
           Some
             (mk_let ~is_pun:let_.pbop_is_pun ?value_constraint:let_.pbop_typ
-               let_.pbop_pat ~args:let_.pbop_args let_.pbop_exp body)
+               let_.pbop_pat ~args:let_.pbop_args
+               (rewrite_letop_exp ~backend let_.pbop_exp)
+               body)
       | _ :: _ ->
           List.iter (fun and_ -> Occ.remove_s state and_.pbop_op) ands;
           let let_pat, let_exp = split_binding_op ~state let_

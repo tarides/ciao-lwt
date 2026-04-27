@@ -198,3 +198,11 @@ let _f x =
   >>= Lwt.pause
 
 let _ = Lwt.catch (fun () -> Lwt.return_unit) Lwt.reraise
+
+let _ =
+  let* x = x in
+  Lwt.return x
+
+let _ =
+  let+ x = x in
+  x
