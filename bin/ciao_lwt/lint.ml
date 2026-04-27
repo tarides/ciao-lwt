@@ -15,7 +15,12 @@ let rec is_ignore_pat pat =
   | Ppat_any -> Some ("_", pat.ppat_loc)
   | Ppat_var var when String.starts_with ~prefix:"_" var.txt ->
       Some (var.txt, pat.ppat_loc)
-  | Ppat_tuple pats -> List.find_map is_ignore_pat pats
+  | Ppat_tuple (_, Open) -> Some ("...", pat.ppat_loc)
+  | Ppat_tuple (pats, Closed) -> List.find_map is_ignore_pat_tuple pats
+  | _ -> None
+
+and is_ignore_pat_tuple = function
+  | Lte_simple { lte_label = None; lte_elt } -> is_ignore_pat lte_elt
   | _ -> None
 
 let lint_value_binding pvb =

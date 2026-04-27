@@ -7,6 +7,7 @@
   (package js_of_ocaml-lwt)))
 
 ; Test output is unstable across versions
+
 (cram
  (applies_to lwt_log_js_to_logs to_logs)
  (enabled_if

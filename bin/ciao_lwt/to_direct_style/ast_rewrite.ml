@@ -12,17 +12,29 @@ let is_unit_pat = function
   | { ppat_desc = Ppat_construct ({ txt = Lident "()"; _ }, None); _ } -> true
   | _ -> false
 
+let extattrs_is_empty = function
+  | { infix_attrs = []; infix_ext = None } -> true
+  | _ -> false
+
+let mk_tuple_elem ?lbl exp = Lte_simple { lte_label = lbl; lte_elt = exp }
+
+(** Unlabelled tuple. *)
+let mk_pat_tuple elems = Pat.tuple (List.map mk_tuple_elem elems) Closed
+
 (* Rewrite a continuation to a let binding, a match or an apply. *)
 let rewrite_continuation cont ~arg:cont_arg =
   let get =
     match cont.pexp_desc with
     | _ when cont.pexp_attributes <> [] -> `Apply
+    | Pexp_function (_, _, _, x) when not (extattrs_is_empty x) -> `Apply
     | Pexp_function
         ( [ { pparam_desc = Pparam_val (Nolabel, None, arg_pat); _ } ],
           None,
-          Pfunction_body body ) ->
+          Pfunction_body body,
+          _ ) ->
         if is_unit_pat arg_pat then `Seq body else `Let (arg_pat, body)
-    | Pexp_function ([], None, Pfunction_cases (cases, _loc, [])) ->
+    | Pexp_function ([], None, Pfunction_cases (cases, _loc, x), _)
+      when extattrs_is_empty x ->
         `Match cases
     | _ -> `Apply
   in
@@ -34,7 +46,7 @@ let rewrite_continuation cont ~arg:cont_arg =
 
 let rewrite_exp_into_cases = function
   | {
-      pexp_desc = Pexp_function ([], None, Pfunction_cases (cases, _, []));
+      pexp_desc = Pexp_function ([], None, Pfunction_cases (cases, _, _), _);
       pexp_attributes = [];
       _;
     } ->
@@ -44,7 +56,8 @@ let rewrite_exp_into_cases = function
         Pexp_function
           ( [ { pparam_desc = Pparam_val (Nolabel, None, arg_pat); _ } ],
             None,
-            Pfunction_body body );
+            Pfunction_body body,
+            _ );
       pexp_attributes = [];
       _;
     } ->
@@ -61,20 +74,20 @@ let rewrite_exp_into_cases = function
 let rewrite_exp_into_cases_no_reraise ~state exn_f =
   rewrite_exp_into_cases exn_f
   |> List.filter_map (fun case ->
-         match case.pc_rhs.pexp_desc with
-         (* Drop cases doing just a [Lwt.reraise]. *)
-         | Pexp_apply
-             ({ pexp_desc = Pexp_ident lid; pexp_attributes = []; _ }, [ _ ])
-           when same_longident lid.txt [ "Lwt"; "reraise" ] ->
-             Occ.remove state lid;
-             None
-         | _ -> Some case)
+      match case.pc_rhs.pexp_desc with
+      (* Drop cases doing just a [Lwt.reraise]. *)
+      | Pexp_apply
+          ({ pexp_desc = Pexp_ident lid; pexp_attributes = []; _ }, [ _ ])
+        when same_longident lid.txt [ "Lwt"; "reraise" ] ->
+          Occ.remove state lid;
+          None
+      | _ -> Some case)
 
 let rewrite_try_bind ~state thunk value_f exn_f =
   let body =
     match thunk with
     | {
-     pexp_desc = Pexp_function ([ _ ], None, Pfunction_body body);
+     pexp_desc = Pexp_function ([ _ ], None, Pfunction_body body, _);
      pexp_attributes = [];
      _;
     } ->
@@ -91,7 +104,7 @@ let rewrite_try_bind ~state thunk value_f exn_f =
    simplified. *)
 let call_thunk thunk =
   match thunk.pexp_desc with
-  | Pexp_function ([ _ ], None, Pfunction_body body) -> body
+  | Pexp_function ([ _ ], None, Pfunction_body body, _) -> body
   | _ -> Exp.apply thunk [ (Nolabel, mk_unit_val) ]
 
 (* Suspend an expression into a thunk. Some expressions cannot be suspended this
@@ -478,7 +491,7 @@ let rewrite_letop ~backend ~state let_ ands body = function
             List.map (split_binding_op ~state) ands |> List.split
           in
           let pat =
-            List.fold_right (fun a b -> Pat.tuple [ a; b ]) ands_pats let_pat
+            List.fold_right (fun a b -> mk_pat_tuple [ a; b ]) ands_pats let_pat
           and exp =
             List.fold_right (rewrite_lwt_both ~backend ~state) ands_exps let_exp
           in
@@ -530,9 +543,17 @@ let rewrite_expression ~backend ~state exp =
   | Pexp_letop { let_; ands; body; _ } ->
       Occ.may_rewrite_s state let_.pbop_op
         (rewrite_letop ~backend ~state let_ ands body)
-  | Pexp_sequence (lhs, rhs) when can_simply_sequence ~state rhs -> Some lhs
+  | Pexp_sequence (lhs, rhs, None) when can_simply_sequence ~state rhs ->
+      Some lhs
   | Pexp_open (lid, rhs)
-  | Pexp_letopen ({ popen_expr = { pmod_desc = Pmod_ident lid; _ }; _ }, rhs)
+  | Pexp_struct_item
+      ( {
+          pstr_desc =
+            Pstr_open { popen_expr = { pmod_desc = Pmod_ident lid; _ }; _ };
+          _;
+        },
+        rhs,
+        _ )
     when Occ.pop state lid ->
       Some rhs
   | Pexp_construct (lid, arg) ->

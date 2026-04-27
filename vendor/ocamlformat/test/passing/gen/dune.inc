@@ -443,7 +443,7 @@
  (action
   (with-stdout-to break_cases-toplevel.ml.stdout
    (with-stderr-to break_cases-toplevel.ml.stderr
-     (run %{bin:ocamlformat} --name break_cases-toplevel.ml --margin-check --break-cases=toplevel --max-iter=4 %{dep:../tests/break_cases.ml})))))
+     (run %{bin:ocamlformat} --name break_cases-toplevel.ml --margin-check --break-cases=toplevel --max-iters=4 %{dep:../tests/break_cases.ml})))))
 
 (rule
  (alias runtest)
@@ -482,7 +482,7 @@
  (action
   (with-stdout-to break_cases.ml.stdout
    (with-stderr-to break_cases.ml.stderr
-     (run %{bin:ocamlformat} --name break_cases.ml --margin-check --break-cases=fit --max-iter=4 %{dep:../tests/break_cases.ml})))))
+     (run %{bin:ocamlformat} --name break_cases.ml --margin-check --break-cases=fit --max-iters=4 %{dep:../tests/break_cases.ml})))))
 
 (rule
  (alias runtest)
@@ -716,7 +716,7 @@
  (action
   (with-stdout-to break_separators-after.ml.stdout
    (with-stderr-to break_separators-after.ml.stderr
-     (run %{bin:ocamlformat} --name break_separators-after.ml --margin-check --break-separators=after --max-iter=3 %{dep:../tests/break_separators.ml})))))
+     (run %{bin:ocamlformat} --name break_separators-after.ml --margin-check --break-separators=after --max-iters=3 %{dep:../tests/break_separators.ml})))))
 
 (rule
  (alias runtest)
@@ -734,7 +734,7 @@
  (action
   (with-stdout-to break_separators-after_docked.ml.stdout
    (with-stderr-to break_separators-after_docked.ml.stderr
-     (run %{bin:ocamlformat} --name break_separators-after_docked.ml --margin-check --break-separators=after --dock-collection-brackets --max-iter=3 %{dep:../tests/break_separators.ml})))))
+     (run %{bin:ocamlformat} --name break_separators-after_docked.ml --margin-check --break-separators=after --dock-collection-brackets --max-iters=3 %{dep:../tests/break_separators.ml})))))
 
 (rule
  (alias runtest)
@@ -752,7 +752,7 @@
  (action
   (with-stdout-to break_separators-before_docked.ml.stdout
    (with-stderr-to break_separators-before_docked.ml.stderr
-     (run %{bin:ocamlformat} --name break_separators-before_docked.ml --margin-check --break-separators=before --dock-collection-brackets --max-iter=3 %{dep:../tests/break_separators.ml})))))
+     (run %{bin:ocamlformat} --name break_separators-before_docked.ml --margin-check --break-separators=before --dock-collection-brackets --max-iters=3 %{dep:../tests/break_separators.ml})))))
 
 (rule
  (alias runtest)
@@ -770,7 +770,7 @@
  (action
   (with-stdout-to break_separators.ml.stdout
    (with-stderr-to break_separators.ml.stderr
-     (run %{bin:ocamlformat} --name break_separators.ml --margin-check --break-separators=before --max-iter=3 %{dep:../tests/break_separators.ml})))))
+     (run %{bin:ocamlformat} --name break_separators.ml --margin-check --break-separators=before --max-iters=3 %{dep:../tests/break_separators.ml})))))
 
 (rule
  (alias runtest)
@@ -871,6 +871,24 @@
  (alias runtest)
  (package ocamlformat)
  (action (diff cases_exp_grouping.ml.err cases_exp_grouping.ml.stderr)))
+
+(rule
+ (deps .ocamlformat)
+ (package ocamlformat)
+ (action
+  (with-stdout-to cases_exp_indent.ml.stdout
+   (with-stderr-to cases_exp_indent.ml.stderr
+     (run %{bin:ocamlformat} --name cases_exp_indent.ml --margin-check --nested-match=align --cases-exp-indent=4 %{dep:../tests/cases_exp_indent.ml})))))
+
+(rule
+ (alias runtest)
+ (package ocamlformat)
+ (action (diff cases_exp_indent.ml.ref cases_exp_indent.ml.stdout)))
+
+(rule
+ (alias runtest)
+ (package ocamlformat)
+ (action (diff cases_exp_indent.ml.err cases_exp_indent.ml.stderr)))
 
 (rule
  (deps .ocamlformat)
@@ -1136,7 +1154,7 @@
  (action
   (with-stdout-to comments-no-wrap.ml.stdout
    (with-stderr-to comments-no-wrap.ml.stderr
-     (run %{bin:ocamlformat} --name comments-no-wrap.ml --margin-check --no-wrap-comments --max-iter=4 %{dep:../tests/comments.ml})))))
+     (run %{bin:ocamlformat} --name comments-no-wrap.ml --margin-check --no-wrap-comments --max-iters=4 %{dep:../tests/comments.ml})))))
 
 (rule
  (alias runtest)
@@ -1154,7 +1172,7 @@
  (action
   (with-stdout-to comments.ml.stdout
    (with-stderr-to comments.ml.stderr
-     (run %{bin:ocamlformat} --name comments.ml --margin-check --max-iter=4 %{dep:../tests/comments.ml})))))
+     (run %{bin:ocamlformat} --name comments.ml --margin-check --max-iters=4 %{dep:../tests/comments.ml})))))
 
 (rule
  (alias runtest)
@@ -1190,7 +1208,7 @@
  (action
   (with-stdout-to comments_args.ml.stdout
    (with-stderr-to comments_args.ml.stderr
-     (run %{bin:ocamlformat} --name comments_args.ml --margin-check --max-iter=4 %{dep:../tests/comments_args.ml})))))
+     (run %{bin:ocamlformat} --name comments_args.ml --margin-check --max-iters=4 %{dep:../tests/comments_args.ml})))))
 
 (rule
  (alias runtest)
@@ -1244,7 +1262,7 @@
  (action
   (with-stdout-to comments_in_record-break_separator-after.ml.stdout
    (with-stderr-to comments_in_record-break_separator-after.ml.stderr
-     (run %{bin:ocamlformat} --name comments_in_record-break_separator-after.ml --margin-check --break-separator=after %{dep:../tests/comments_in_record.ml})))))
+     (run %{bin:ocamlformat} --name comments_in_record-break_separator-after.ml --margin-check --break-separators=after %{dep:../tests/comments_in_record.ml})))))
 
 (rule
  (alias runtest)
@@ -1262,7 +1280,7 @@
  (action
   (with-stdout-to comments_in_record-break_separator-before.ml.stdout
    (with-stderr-to comments_in_record-break_separator-before.ml.stderr
-     (run %{bin:ocamlformat} --name comments_in_record-break_separator-before.ml --margin-check --break-separator=before %{dep:../tests/comments_in_record.ml})))))
+     (run %{bin:ocamlformat} --name comments_in_record-break_separator-before.ml --margin-check --break-separators=before %{dep:../tests/comments_in_record.ml})))))
 
 (rule
  (alias runtest)
@@ -1714,19 +1732,22 @@
 
 (rule
  (deps .ocamlformat)
+ (enabled_if (>= %{ocaml_version} 5.3))
  (package ocamlformat)
  (action
   (with-stdout-to effects.ml.stdout
    (with-stderr-to effects.ml.stderr
-     (run %{bin:ocamlformat} --name effects.ml --margin-check --ocaml-version=5.3 %{dep:../tests/effects.ml})))))
+     (run %{bin:ocamlformat} --name effects.ml --margin-check %{dep:../tests/effects.ml})))))
 
 (rule
  (alias runtest)
+ (enabled_if (>= %{ocaml_version} 5.3))
  (package ocamlformat)
  (action (diff effects.ml.ref effects.ml.stdout)))
 
 (rule
  (alias runtest)
+ (enabled_if (>= %{ocaml_version} 5.3))
  (package ocamlformat)
  (action (diff effects.ml.err effects.ml.stderr)))
 
@@ -2246,7 +2267,7 @@
  (action
   (with-stdout-to fun_function.ml.stdout
    (with-stderr-to fun_function.ml.stderr
-     (run %{bin:ocamlformat} --name fun_function.ml --margin-check --max-iter=3 %{dep:../tests/fun_function.ml})))))
+     (run %{bin:ocamlformat} --name fun_function.ml --margin-check --max-iters=3 %{dep:../tests/fun_function.ml})))))
 
 (rule
  (alias runtest)
@@ -2293,6 +2314,24 @@
  (alias runtest)
  (package ocamlformat)
  (action (diff function_indent.ml.err function_indent.ml.stderr)))
+
+(rule
+ (deps .ocamlformat)
+ (package ocamlformat)
+ (action
+  (with-stdout-to functor-414.ml.stdout
+   (with-stderr-to functor-414.ml.stderr
+     (run %{bin:ocamlformat} --name functor-414.ml --margin-check --ocaml-version=4.14 %{dep:../tests/functor.ml})))))
+
+(rule
+ (alias runtest)
+ (package ocamlformat)
+ (action (diff functor-414.ml.ref functor-414.ml.stdout)))
+
+(rule
+ (alias runtest)
+ (package ocamlformat)
+ (action (diff functor-414.ml.err functor-414.ml.stderr)))
 
 (rule
  (deps .ocamlformat)
@@ -3167,7 +3206,7 @@
  (action
   (with-stdout-to js_args.ml.stdout
    (with-stderr-to js_args.ml.stderr
-     (run %{bin:ocamlformat} --name js_args.ml --margin-check --max-iter=3 %{dep:../tests/js_args.ml})))))
+     (run %{bin:ocamlformat} --name js_args.ml --margin-check --max-iters=3 %{dep:../tests/js_args.ml})))))
 
 (rule
  (alias runtest)
@@ -3221,7 +3260,7 @@
  (action
   (with-stdout-to js_fun.ml.stdout
    (with-stderr-to js_fun.ml.stderr
-     (run %{bin:ocamlformat} --name js_fun.ml --margin-check --max-iter=3 %{dep:../tests/js_fun.ml})))))
+     (run %{bin:ocamlformat} --name js_fun.ml --margin-check --max-iters=3 %{dep:../tests/js_fun.ml})))))
 
 (rule
  (alias runtest)
@@ -3239,7 +3278,7 @@
  (action
   (with-stdout-to js_map.ml.stdout
    (with-stderr-to js_map.ml.stderr
-     (run %{bin:ocamlformat} --name js_map.ml --margin-check --max-iter=3 %{dep:../tests/js_map.ml})))))
+     (run %{bin:ocamlformat} --name js_map.ml --margin-check --max-iters=3 %{dep:../tests/js_map.ml})))))
 
 (rule
  (alias runtest)
@@ -3275,7 +3314,7 @@
  (action
   (with-stdout-to js_poly.ml.stdout
    (with-stderr-to js_poly.ml.stderr
-     (run %{bin:ocamlformat} --name js_poly.ml --margin-check --max-iter=3 %{dep:../tests/js_poly.ml})))))
+     (run %{bin:ocamlformat} --name js_poly.ml --margin-check --max-iters=3 %{dep:../tests/js_poly.ml})))))
 
 (rule
  (alias runtest)
@@ -3293,7 +3332,7 @@
  (action
   (with-stdout-to js_record.ml.stdout
    (with-stderr-to js_record.ml.stderr
-     (run %{bin:ocamlformat} --name js_record.ml --margin-check --max-iter=3 %{dep:../tests/js_record.ml})))))
+     (run %{bin:ocamlformat} --name js_record.ml --margin-check --max-iters=3 %{dep:../tests/js_record.ml})))))
 
 (rule
  (alias runtest)
@@ -3433,6 +3472,24 @@
  (alias runtest)
  (package ocamlformat)
  (action (diff label_option_default_args.ml.err label_option_default_args.ml.stderr)))
+
+(rule
+ (deps .ocamlformat)
+ (package ocamlformat)
+ (action
+  (with-stdout-to labeled_tuples.ml.stdout
+   (with-stderr-to labeled_tuples.ml.stderr
+     (run %{bin:ocamlformat} --name labeled_tuples.ml --margin-check %{dep:../tests/labeled_tuples.ml})))))
+
+(rule
+ (alias runtest)
+ (package ocamlformat)
+ (action (diff labeled_tuples.ml.ref labeled_tuples.ml.stdout)))
+
+(rule
+ (alias runtest)
+ (package ocamlformat)
+ (action (diff labeled_tuples.ml.err labeled_tuples.ml.stderr)))
 
 (rule
  (deps .ocamlformat)
@@ -3672,6 +3729,42 @@
  (deps .ocamlformat)
  (package ocamlformat)
  (action
+  (with-stdout-to let_punning-denied.ml.stdout
+   (with-stderr-to let_punning-denied.ml.stderr
+     (run %{bin:ocamlformat} --name let_punning-denied.ml --margin-check --letop-punning=never --ocaml-version=4.14.0 %{dep:../tests/let_punning.ml})))))
+
+(rule
+ (alias runtest)
+ (package ocamlformat)
+ (action (diff let_punning-denied.ml.ref let_punning-denied.ml.stdout)))
+
+(rule
+ (alias runtest)
+ (package ocamlformat)
+ (action (diff let_punning-denied.ml.err let_punning-denied.ml.stderr)))
+
+(rule
+ (deps .ocamlformat)
+ (package ocamlformat)
+ (action
+  (with-stdout-to let_punning-preferred.ml.stdout
+   (with-stderr-to let_punning-preferred.ml.stderr
+     (run %{bin:ocamlformat} --name let_punning-preferred.ml --margin-check --letop-punning=always --ocaml-version=4.14.0 %{dep:../tests/let_punning.ml})))))
+
+(rule
+ (alias runtest)
+ (package ocamlformat)
+ (action (diff let_punning-preferred.ml.ref let_punning-preferred.ml.stdout)))
+
+(rule
+ (alias runtest)
+ (package ocamlformat)
+ (action (diff let_punning-preferred.ml.err let_punning-preferred.ml.stderr)))
+
+(rule
+ (deps .ocamlformat)
+ (package ocamlformat)
+ (action
   (with-stdout-to let_punning.ml.stdout
    (with-stderr-to let_punning.ml.stderr
      (run %{bin:ocamlformat} --name let_punning.ml --margin-check %{dep:../tests/let_punning.ml})))))
@@ -3685,6 +3778,24 @@
  (alias runtest)
  (package ocamlformat)
  (action (diff let_punning.ml.err let_punning.ml.stderr)))
+
+(rule
+ (deps .ocamlformat)
+ (package ocamlformat)
+ (action
+  (with-stdout-to let_struct_item.ml.stdout
+   (with-stderr-to let_struct_item.ml.stderr
+     (run %{bin:ocamlformat} --name let_struct_item.ml --margin-check %{dep:../tests/let_struct_item.ml})))))
+
+(rule
+ (alias runtest)
+ (package ocamlformat)
+ (action (diff let_struct_item.ml.ref let_struct_item.ml.stdout)))
+
+(rule
+ (alias runtest)
+ (package ocamlformat)
+ (action (diff let_struct_item.ml.err let_struct_item.ml.stderr)))
 
 (rule
  (deps .ocamlformat)
@@ -3943,6 +4054,24 @@
  (deps .ocamlformat)
  (package ocamlformat)
  (action
+  (with-stdout-to modular_explicits.ml.stdout
+   (with-stderr-to modular_explicits.ml.stderr
+     (run %{bin:ocamlformat} --name modular_explicits.ml --margin-check %{dep:../tests/modular_explicits.ml})))))
+
+(rule
+ (alias runtest)
+ (package ocamlformat)
+ (action (diff modular_explicits.ml.ref modular_explicits.ml.stdout)))
+
+(rule
+ (alias runtest)
+ (package ocamlformat)
+ (action (diff modular_explicits.ml.err modular_explicits.ml.stderr)))
+
+(rule
+ (deps .ocamlformat)
+ (package ocamlformat)
+ (action
   (with-stdout-to module.ml.stdout
    (with-stderr-to module.ml.stderr
      (run %{bin:ocamlformat} --name module.ml --margin-check %{dep:../tests/module.ml})))))
@@ -3997,9 +4126,27 @@
  (deps .ocamlformat)
  (package ocamlformat)
  (action
+  (with-stdout-to module_indent.ml.stdout
+   (with-stderr-to module_indent.ml.stderr
+     (run %{bin:ocamlformat} --name module_indent.ml --margin-check --module-indent=4 %{dep:../tests/module_indent.ml})))))
+
+(rule
+ (alias runtest)
+ (package ocamlformat)
+ (action (diff module_indent.ml.ref module_indent.ml.stdout)))
+
+(rule
+ (alias runtest)
+ (package ocamlformat)
+ (action (diff module_indent.ml.err module_indent.ml.stderr)))
+
+(rule
+ (deps .ocamlformat)
+ (package ocamlformat)
+ (action
   (with-stdout-to module_item_spacing-preserve.ml.stdout
    (with-stderr-to module_item_spacing-preserve.ml.stderr
-     (run %{bin:ocamlformat} --name module_item_spacing-preserve.ml --margin-check --max-iter=3 --module-item-spacing=preserve %{dep:../tests/module_item_spacing.ml})))))
+     (run %{bin:ocamlformat} --name module_item_spacing-preserve.ml --margin-check --max-iters=3 --module-item-spacing=preserve %{dep:../tests/module_item_spacing.ml})))))
 
 (rule
  (alias runtest)
@@ -4017,7 +4164,7 @@
  (action
   (with-stdout-to module_item_spacing-sparse.ml.stdout
    (with-stderr-to module_item_spacing-sparse.ml.stderr
-     (run %{bin:ocamlformat} --name module_item_spacing-sparse.ml --margin-check --max-iter=3 --module-item-spacing=sparse %{dep:../tests/module_item_spacing.ml})))))
+     (run %{bin:ocamlformat} --name module_item_spacing-sparse.ml --margin-check --max-iters=3 --module-item-spacing=sparse %{dep:../tests/module_item_spacing.ml})))))
 
 (rule
  (alias runtest)
@@ -4035,7 +4182,7 @@
  (action
   (with-stdout-to module_item_spacing.ml.stdout
    (with-stderr-to module_item_spacing.ml.stderr
-     (run %{bin:ocamlformat} --name module_item_spacing.ml --margin-check --max-iter=3 --module-item-spacing=compact %{dep:../tests/module_item_spacing.ml})))))
+     (run %{bin:ocamlformat} --name module_item_spacing.ml --margin-check --max-iters=3 --module-item-spacing=compact %{dep:../tests/module_item_spacing.ml})))))
 
 (rule
  (alias runtest)
@@ -4053,7 +4200,7 @@
  (action
   (with-stdout-to module_item_spacing.mli.stdout
    (with-stderr-to module_item_spacing.mli.stderr
-     (run %{bin:ocamlformat} --name module_item_spacing.mli --margin-check --max-iter=3 %{dep:../tests/module_item_spacing.mli})))))
+     (run %{bin:ocamlformat} --name module_item_spacing.mli --margin-check --max-iters=3 %{dep:../tests/module_item_spacing.mli})))))
 
 (rule
  (alias runtest)
@@ -4448,24 +4595,6 @@
  (deps .ocamlformat)
  (package ocamlformat)
  (action
-  (with-stdout-to option.ml.stdout
-   (with-stderr-to option.ml.stderr
-     (run %{bin:ocamlformat} --name option.ml --margin-check %{dep:../tests/option.ml})))))
-
-(rule
- (alias runtest)
- (package ocamlformat)
- (action (diff option.ml.ref option.ml.stdout)))
-
-(rule
- (alias runtest)
- (package ocamlformat)
- (action (diff option.ml.err option.ml.stderr)))
-
-(rule
- (deps .ocamlformat)
- (package ocamlformat)
- (action
   (with-stdout-to override.ml.stdout
    (with-stderr-to override.ml.stderr
      (run %{bin:ocamlformat} --name override.ml --margin-check %{dep:../tests/override.ml})))))
@@ -4497,6 +4626,24 @@
  (alias runtest)
  (package ocamlformat)
  (action (diff parens_tuple_patterns.ml.err parens_tuple_patterns.ml.stderr)))
+
+(rule
+ (deps .ocamlformat)
+ (package ocamlformat)
+ (action
+  (with-stdout-to poly_params.ml.stdout
+   (with-stderr-to poly_params.ml.stderr
+     (run %{bin:ocamlformat} --name poly_params.ml --margin-check %{dep:../tests/poly_params.ml})))))
+
+(rule
+ (alias runtest)
+ (package ocamlformat)
+ (action (diff poly_params.ml.ref poly_params.ml.stdout)))
+
+(rule
+ (alias runtest)
+ (package ocamlformat)
+ (action (diff poly_params.ml.err poly_params.ml.stderr)))
 
 (rule
  (deps .ocamlformat)
@@ -4829,7 +4976,7 @@
  (action
   (with-stdout-to reformat_string.ml.stdout
    (with-stderr-to reformat_string.ml.stderr
-     (run %{bin:ocamlformat} --name reformat_string.ml --margin-check --max-iter=3 %{dep:../tests/reformat_string.ml})))))
+     (run %{bin:ocamlformat} --name reformat_string.ml --margin-check --max-iters=3 %{dep:../tests/reformat_string.ml})))))
 
 (rule
  (alias runtest)
@@ -4957,7 +5104,7 @@
  (action
   (with-stdout-to sequence-preserve.ml.stdout
    (with-stderr-to sequence-preserve.ml.stderr
-     (run %{bin:ocamlformat} --name sequence-preserve.ml --margin-check --sequence-blank-line=preserve-one --max-iter=3 %{dep:../tests/sequence.ml})))))
+     (run %{bin:ocamlformat} --name sequence-preserve.ml --margin-check --sequence-blank-line=preserve-one --max-iters=3 %{dep:../tests/sequence.ml})))))
 
 (rule
  (alias runtest)

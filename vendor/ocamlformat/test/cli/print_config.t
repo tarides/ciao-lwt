@@ -18,7 +18,7 @@ No redundant values:
   disable=false
   margin-check=false
   max-iters=10
-  ocaml-version=4.04.0
+  ocaml-version=5.4.0
   quiet=false
   disable-conf-attrs=false
   version-check=true
@@ -42,7 +42,7 @@ No redundant values:
   doc-comments-padding=2 (profile conventional (file .ocamlformat:1))
   doc-comments-tag-only=default (profile conventional (file .ocamlformat:1))
   dock-collection-brackets=true (profile conventional (file .ocamlformat:1))
-  exp-grouping=parens (profile conventional (file .ocamlformat:1))
+  exp-grouping=preserve (profile conventional (file .ocamlformat:1))
   extension-indent=2 (profile conventional (file .ocamlformat:1))
   field-space=tight (file .ocamlformat:2)
   function-indent=2 (profile conventional (file .ocamlformat:1))
@@ -58,11 +58,13 @@ No redundant values:
   let-binding-deindent-fun=true (profile conventional (file .ocamlformat:1))
   let-binding-spacing=compact (profile conventional (file .ocamlformat:1))
   let-module=compact (profile conventional (file .ocamlformat:1))
+  letop-punning=preserve (profile conventional (file .ocamlformat:1))
   line-endings=lf (profile conventional (file .ocamlformat:1))
   margin=80 (profile conventional (file .ocamlformat:1))
   match-indent=0 (profile conventional (file .ocamlformat:1))
   match-indent-nested=never (profile conventional (file .ocamlformat:1))
   max-indent=68 (profile conventional (file .ocamlformat:1))
+  module-indent=2 (profile conventional (file .ocamlformat:1))
   module-item-spacing=compact (profile conventional (file .ocamlformat:1))
   nested-match=wrap (profile conventional (file .ocamlformat:1))
   ocp-indent-compat=false (profile conventional (file .ocamlformat:1))
@@ -97,7 +99,7 @@ Redundant values from the conventional profile:
   disable=false
   margin-check=false
   max-iters=10
-  ocaml-version=4.04.0
+  ocaml-version=5.4.0
   quiet=false
   disable-conf-attrs=false
   version-check=true
@@ -121,7 +123,7 @@ Redundant values from the conventional profile:
   doc-comments-padding=2 (profile conventional (file .ocamlformat:1))
   doc-comments-tag-only=default (profile conventional (file .ocamlformat:1))
   dock-collection-brackets=true (profile conventional (file .ocamlformat:1))
-  exp-grouping=parens (profile conventional (file .ocamlformat:1))
+  exp-grouping=preserve (profile conventional (file .ocamlformat:1))
   extension-indent=2 (profile conventional (file .ocamlformat:1))
   field-space=loose (profile conventional (file .ocamlformat:1))
   function-indent=2 (profile conventional (file .ocamlformat:1))
@@ -137,11 +139,13 @@ Redundant values from the conventional profile:
   let-binding-deindent-fun=true (profile conventional (file .ocamlformat:1))
   let-binding-spacing=compact (profile conventional (file .ocamlformat:1))
   let-module=compact (profile conventional (file .ocamlformat:1))
+  letop-punning=preserve (profile conventional (file .ocamlformat:1))
   line-endings=lf (profile conventional (file .ocamlformat:1))
   margin=80 (file .ocamlformat:3) -- Warning (redundant):  (profile conventional (file .ocamlformat:1))
   match-indent=0 (profile conventional (file .ocamlformat:1))
   match-indent-nested=never (profile conventional (file .ocamlformat:1))
   max-indent=68 (profile conventional (file .ocamlformat:1))
+  module-indent=2 (profile conventional (file .ocamlformat:1))
   module-item-spacing=compact (profile conventional (file .ocamlformat:1))
   nested-match=wrap (profile conventional (file .ocamlformat:1))
   ocp-indent-compat=false (profile conventional (file .ocamlformat:1))
@@ -176,7 +180,7 @@ Redundant values from the ocamlformat profile:
   disable=false
   margin-check=false
   max-iters=10
-  ocaml-version=4.04.0
+  ocaml-version=5.4.0
   quiet=false
   disable-conf-attrs=false
   version-check=true
@@ -200,7 +204,7 @@ Redundant values from the ocamlformat profile:
   doc-comments-padding=2 (profile ocamlformat (file .ocamlformat:1))
   doc-comments-tag-only=default (profile ocamlformat (file .ocamlformat:1))
   dock-collection-brackets=false (profile ocamlformat (file .ocamlformat:1))
-  exp-grouping=parens (profile ocamlformat (file .ocamlformat:1))
+  exp-grouping=preserve (profile ocamlformat (file .ocamlformat:1))
   extension-indent=2 (profile ocamlformat (file .ocamlformat:1))
   field-space=tight (profile ocamlformat (file .ocamlformat:1))
   function-indent=2 (profile ocamlformat (file .ocamlformat:1))
@@ -216,11 +220,13 @@ Redundant values from the ocamlformat profile:
   let-binding-deindent-fun=true (profile ocamlformat (file .ocamlformat:1))
   let-binding-spacing=compact (profile ocamlformat (file .ocamlformat:1))
   let-module=compact (profile ocamlformat (file .ocamlformat:1))
+  letop-punning=preserve (profile ocamlformat (file .ocamlformat:1))
   line-endings=lf (profile ocamlformat (file .ocamlformat:1))
   margin=80 (file .ocamlformat:3) -- Warning (redundant):  (profile ocamlformat (file .ocamlformat:1))
   match-indent=0 (profile ocamlformat (file .ocamlformat:1))
   match-indent-nested=never (profile ocamlformat (file .ocamlformat:1))
   max-indent=68 (profile ocamlformat (file .ocamlformat:1))
+  module-indent=2 (profile ocamlformat (file .ocamlformat:1))
   module-item-spacing=sparse (profile ocamlformat (file .ocamlformat:1))
   nested-match=wrap (profile ocamlformat (file .ocamlformat:1))
   ocp-indent-compat=false (profile ocamlformat (file .ocamlformat:1))

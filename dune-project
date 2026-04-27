@@ -26,20 +26,20 @@
  (depends
   (ocaml
    (>= 5.3))
-  merlin-lib
+  (merlin-lib
+   (>= 5.5-503))
   (lwt :with-test)
   (lwt_log :with-test)
   (js_of_ocaml-lwt :with-test)
   (ocaml-index :with-test)
-  ; OCamlformat depends
+  ; ocamlformat-lib
   (ocaml
    (>= 4.08))
   (base
    (>= v0.12.0))
   (cmdliner
-   (and
-    (>= 1.1.0)
-    (< 2.0.0)))
+   (>= 1.1.0))
+  dune
   dune-build-info
   either
   fix
@@ -62,7 +62,9 @@
    (>= 1.0.1))
   (csexp
    (>= 1.4.0))
+  ; for vendored odoc-parser
   astring
   camlp-streams
+  ; ocamlformat
   (re
-   (>= "1.10.3"))))
+   (>= 1.10.3))))

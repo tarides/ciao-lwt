@@ -283,3 +283,274 @@ let _ =
   match x with
   | _ ->
       begin[@foo] y end
+
+let v =
+  map x
+    begin fun x y z ->
+      y
+    end
+
+let v =
+  map x
+    begin fun x arggggggggggggggggggggggggggggggggggggggggggggggggggggggggggg ->
+      y
+    end
+
+let v =
+  map x
+    begin
+      fun x arggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggg ->
+      y
+    end
+
+let v =
+  map x
+    (fun x yyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyy z ->
+    print y;
+    z)
+
+let v =
+  map x
+    begin
+      fun x
+        argggggggggggggggggggggggggggggggggg
+        gggggggggggggggggggg
+        ggggggggggggggg
+      ->
+      y
+    end
+
+let v =
+  map x
+    (fun x yyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyy z ->
+    print y;
+    z)
+
+let v =
+  map x
+    begin fun x y z ->
+      ya f;
+      a f b
+    end
+
+let v =
+  map x
+    begin%ext1
+      fun%ext2 x y z ->
+        ya f;
+        a f b
+    end
+
+let _ =
+  lazy begin
+    print_endline xxxxxxxxx;
+    f xxxxxxxxxx yyyyyyyyyyyyy zzzzzzzzzzzzzzzzzzzzz
+  end
+
+let _ =
+  lazy begin fun y ->
+    print_endline xxxxxxxxx;
+    f xxxxxxxxxx yyyyyyyyyyyyy zzzzzzzzzzzzzzzzzzzzz
+  end
+
+let _ =
+  lazy begin match a with
+  | A -> b
+  | A ->
+    print_endline xxxxxxxxx;
+    f xxxxxxxxxx yyyyyyyyyyyyy zzzzzzzzzzzzzzzzzzzzz
+  end
+
+let _ =
+  lazy begin fun xxxxxxxxxxxxxxxxxxxxxxx yyyyyyyyyyyyyyyyyyy zzzzzzzzzzzzzzzzzzzzzzzz ->
+    print_endline xxxxxxxxx;
+    f xxxxxxxxxx yyyyyyyyyyyyy zzzzzzzzzzzzzzzzzzzzz
+  end
+
+[@@@ocamlformat "if-then-else=fit-or-vertical"]
+
+let _ =
+  if b
+  then begin
+    e1;
+    e2
+  end
+  else begin
+    something loooooooooooooooooooooooooooooooong enough to_trigger a break;
+    this is more
+  end
+
+let _ =
+  if b
+  then begin
+    something loooooooooooooooooooooooooooooooong enough to_trigger a break;
+    this is more
+  end
+  else if b1
+  then begin
+    something loooooooooooooooooooooooooooooooong enough to_trigger a break;
+    this is more
+  end
+  else e
+;;
+
+f
+  begin if loooooooooooooooooooooooooooooooooooooooooooooooooooooooooong
+  then ()
+  else ()
+  end
+;;
+
+f
+  begin if loooooooooooooooooooooooooooooooooooooooooooooooooooooooooonger
+  then ()
+  else ()
+  end
+;;
+
+f
+  begin if even loooooooooooooooooooooooooooooooooooooooooooooooooooooooooonger
+  then ()
+  else ()
+  end
+;;
+
+f
+  begin if
+          and_ even
+            loooooooooooooooooooooooooooooooooooooooooooooooooooooooooonger
+  then ()
+  else ()
+  end
+
+let () =
+  f
+    begin if
+            a___________________________________________________________________
+    then b_________________________________________________________________
+    else c_________________________________________________________________
+    end
+
+let _ =
+  f ~aaaaaaaaaaaaaaaaaaaaaaaaaa ~bbbbbbbbbbbbbbbbbbbbbbb ~ccccccccccccccccccccc
+    ~label:begin fun x ->
+      function_ body;
+      force breakkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkk;
+      return value
+    end
+    ~last ~args
+
+let _ =
+  f ~aaaaaaaaaaaaaaaaaaaaaaaaaa ~bbbbbbbbbbbbbbbbbbbbbbb ~ccccccccccccccccccccc
+    ~label:begin fun x aaaaaaaaaaaaaaaaaaaaaaaaa aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa ->
+      function_ body;
+      force breakkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkk;
+      return value
+    end
+    ~last ~args
+
+let _ =
+  f ~aaaaaaaaaaaaaaaaaaaaaaaaaa ~bbbbbbbbbbbbbbbbbbbbbbb ~ccccccccccccccccccccc
+    ~label:begin match x aaaaaaaaaaaaaaaaaaaaaaaaa aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa with
+      | A -> aaaaaaaaaaaa
+      | B -> bbbbbbbbbbbbbbbbb b bbbbbbbbbbbbbbbbb
+      | C -> c cccccccccccccccccc cccccccccccccccccccccccccccccc
+    end
+    ~last ~args
+
+let _ =
+  f ~aaaaaaaaaaaaaaaaaaaaaaaaaa ~bbbbbbbbbbbbbbbbbbbbbbb ~ccccccccccccccccccccc
+    ~label:begin
+      function_ body;
+      force breakkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkk;
+      return value
+    end
+    ~last ~args
+
+let _ =
+  aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa
+  |>>>>> begin fun xxxxxxx ->
+    xxxxxxxxxxxxxxxxxxxxxxx ;
+    aaaaaaaaaAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAaaaaaa
+  end
+
+let _ =
+  aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa
+  |>>>>> begin match xxxxxxx with
+  | A -> xxxxxxxxxxxxxxxxxxxxxxx
+  | B -> aaaaaaaaaAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAaaaaaa
+  end
+
+
+let _ =
+  aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa
+  |>>>>> begin
+    xxxxxxxxxxxxxxxxxxxxxxx ;
+    aaaaaaaaaAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAaaaaaa
+  end
+let main =
+  Lwt.run
+  @@
+  match a with
+  | A -> aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa
+  | B -> bbbbbbbbbbbbbbbbbbbbbb
+
+let main =
+  Lwt.run
+  @@
+  match%lwt a with
+  | A -> aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa
+  | B -> bbbbbbbbbbbbbbbbbbbbbb
+
+let _ = begin a end [@a]
+
+let () =
+  fooooo
+  |>>>>> List.iter begin fun a ->
+      let x =
+        some_really_really_really_long_name_that_doesn't_fit_on_the_line $ y
+      in
+      fooooooooooo x
+    end
+
+let () =
+  fooooo
+  |>>>>> List.iter
+           begin fun aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa ->
+             let x =
+               some_really_really_really_long_name_that_doesn't_fit_on_the_line
+               $ y
+             in
+             fooooooooooo x
+           end
+
+let () =
+  fooooo
+  |>>>>> List.iter begin fun a ->
+      let x =
+        some_really_really_really_long_name_that_doesn't_fit_on_the_line $ y
+      in
+      fooooooooooo x
+    end
+
+let () =
+  fooooo
+  |>>>>> List.iter aaaaaaaaaaaa aaaaaaaaaaaaaaaaaaaaa aaaaaaaaaaaaaaa
+           aaaaaaaaaaaaaa
+           begin fun aaaaaaaaaaaaaaaaaaaaaaaaaaa
+                   aa
+                   aaaaaaaaaaa
+                   aaaaaaaaaaaaaaaaaaaaaaaaaaaaa ->
+             let x =
+               some_really_really_really_long_name_that_doesn't_fit_on_the_line
+               $ y
+             in
+             fooooooooooo x
+           end
+
+let f () =
+  f
+    (g a begin fun () ->
+        let x = y in
+        z
+      end )

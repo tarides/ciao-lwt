@@ -18,14 +18,17 @@ let mk_let ?loc_in ?rec_ ?(is_pun = false) ?value_constraint pat ?(args = [])
   let binding = Vb.mk ~is_pun ?value_constraint pat args (Pfunction_body lhs) in
   mk_let' ?loc_in ?rec_ [ binding ] rhs
 
-let mk_function_cases ?(loc = !default_loc) ?(attrs = []) cases =
+let mk_function_cases ?(loc = !default_loc) ?(attrs = Attr.infix_ext_attrs ())
+    cases =
   Exp.function_ [] None (Pfunction_cases (cases, loc, attrs))
 
 let mk_longident' = function
   | [] -> assert false
   | hd :: tl ->
       let open Longident in
-      List.fold_left (fun acc seg -> Ldot (acc, seg)) (Lident hd) tl
+      List.fold_left
+        (fun acc seg -> Ldot (mk_loc acc, mk_loc seg))
+        (Lident hd) tl
 
 let mk_longident ident = mk_loc (mk_longident' ident)
 let mk_constr_exp ?arg cstr = Exp.construct (mk_longident cstr) arg
@@ -132,7 +135,8 @@ let is_unit_val = function
   | _ -> false
 
 let mk_if if_cond if_body else_body =
-  let mk_if_cond ?(loc_then = !default_loc) ?(attrs = []) if_cond if_body =
+  let mk_if_cond ?(loc_then = !default_loc) ?(attrs = Attr.infix_ext_attrs ())
+      if_cond if_body =
     { if_cond; if_body; if_attrs = attrs; if_loc_then = loc_then }
   in
   Exp.ifthenelse [ mk_if_cond if_cond if_body ] (Some (else_body, !default_loc))
