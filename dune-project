@@ -33,8 +33,6 @@
   (js_of_ocaml-lwt :with-test)
   (ocaml-index :with-test)
   ; ocamlformat-lib
-  (ocaml
-   (>= 4.08))
   (base
    (>= v0.12.0))
   (cmdliner

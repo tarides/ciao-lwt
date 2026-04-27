@@ -50,9 +50,8 @@ module Shap = struct
   type t = Shape.t
 
   let reduce t =
-    match Shape_reduce.local_reduce_for_uid Env.empty t with
-    | Resolved uid | Resolved_alias (uid, _) -> Some uid
-    | _ -> None
+    let t' = Shape_reduce.local_reduce Env.empty t in
+    t'.uid
 
   let proj = Shape.proj
 
