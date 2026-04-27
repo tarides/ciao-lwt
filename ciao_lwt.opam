@@ -20,7 +20,6 @@ depends: [
   "lwt_log" {with-test}
   "js_of_ocaml-lwt" {with-test}
   "ocaml-index" {with-test}
-  "ocaml" {>= "4.08"}
   "base" {>= "v0.12.0"}
   "cmdliner" {>= "1.1.0"}
   "dune" {>= "3.17"}
