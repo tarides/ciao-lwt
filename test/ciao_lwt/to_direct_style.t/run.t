@@ -338,6 +338,8 @@ Make a writable directory tree:
     Lwt_mutex.t (line 3 column 10)
 
   $ cat bin/main.ml
+  open Eio.Std
+  
   let _main () =
     match
       let () = Format.printf "Main.main" in
@@ -375,7 +377,7 @@ Make a writable directory tree:
     | v -> v
     | exception Eio.Time.Timeout -> 0
   
-  let _ = match x with 0 -> true | _ -> false
+  let _ = match Promise.await x with 0 -> true | _ -> false
   let _ = print_endline "Hello"
   let _ = print_endline "Hello"
   
@@ -458,8 +460,8 @@ Make a writable directory tree:
   
   let lwt_calls_rebind () =
     let tr = fun x1 x2 x3 -> match x1 () with v -> x2 v | exception v -> x3 v in
-    let b = fun x1 x2 -> x2 x1 in
-    let ( >> ) = fun x1 x2 -> x2 x1 in
+    let b = fun x1 x2 -> x2 (Promise.await x1) in
+    let ( >> ) = fun x1 x2 -> x2 (Promise.await x1) in
     let p fmt = Format.printf fmt in
     let ( ~@ ) = fun x1 -> x1 in
     tr
@@ -497,14 +499,15 @@ Make a writable directory tree:
     Format.printf "Test.test";
     let _ = Fiber.pair lwt_calls lwt_calls_point_free in
     let _ =
-      let a = lwt_calls () and b = lwt_calls_point_free () in
-      Fiber.pair
-        (fun () ->
-          a
-          (* TODO: ciao-lwt: This computation might not be suspended correctly. *))
-        (fun () ->
-          b
-          (* TODO: ciao-lwt: This computation might not be suspended correctly. *))
+      Promise.await
+        (let a = lwt_calls () and b = lwt_calls_point_free () in
+         Fiber.pair
+           (fun () ->
+             a
+             (* TODO: ciao-lwt: This computation might not be suspended correctly. *))
+           (fun () ->
+             b
+             (* TODO: ciao-lwt: This computation might not be suspended correctly. *)))
     in
     Fiber.all
       [
@@ -551,8 +554,8 @@ Make a writable directory tree:
   
   let _ = raise Not_found
   let _ = failwith "not found"
-  let _ = x
-  let _ = Fun.id x
+  let _ = Promise.await x
+  let _ = Fun.id (Promise.await x)
   
   let _ =
     Fiber.any
@@ -679,7 +682,7 @@ Make a writable directory tree:
   
   let i : (unit Promise.t -> unit) -> unit = fun f -> f x
   let _ = ()
-  let _ = fun x1 x2 -> x2 x1
+  let _ = fun x1 x2 -> x2 (Promise.await x1)
   let _ = ( let* )
   
   let _ =
@@ -703,7 +706,7 @@ Make a writable directory tree:
     f ()
   
   let _ = (fun () -> ()) ()
-  let _f x = Fiber.yield (match x with Some _ -> () | _ -> ())
+  let _f x = Fiber.yield (Promise.await (match x with Some _ -> () | _ -> ()))
   let _ = ()
   
   let _ =

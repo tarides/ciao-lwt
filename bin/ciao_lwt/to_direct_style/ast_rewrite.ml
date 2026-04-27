@@ -21,8 +21,16 @@ let mk_tuple_elem ?lbl exp = Lte_simple { lte_label = lbl; lte_elt = exp }
 (** Unlabelled tuple. *)
 let mk_pat_tuple elems = Pat.tuple (List.map mk_tuple_elem elems) Closed
 
+(** Rewrite the expression passed to [bind], [map], [let*], etc... If it's a
+    function application, it is turned into a direct call. Otherwise, it is
+    turned into an await. *)
+let rewrite_bind_exp ~backend exp =
+  match exp.pexp_desc with
+  | Pexp_apply _ -> exp
+  | _ -> backend#blocking_await exp
+
 (* Rewrite a continuation to a let binding, a match or an apply. *)
-let rewrite_continuation cont ~arg:cont_arg =
+let rewrite_continuation ~backend cont ~arg:cont_arg =
   let get =
     match cont.pexp_desc with
     | _ when cont.pexp_attributes <> [] -> `Apply
@@ -38,6 +46,7 @@ let rewrite_continuation cont ~arg:cont_arg =
         `Match cases
     | _ -> `Apply
   in
+  let cont_arg = rewrite_bind_exp ~backend cont_arg in
   match get with
   | `Let (arg_pat, body) -> mk_let arg_pat cont_arg body
   | `Match cases -> Exp.match_ cont_arg cases
@@ -198,11 +207,11 @@ let rewrite_apply_lwt ~backend ~state ident args =
   | "bind" ->
       take @@ fun promise_arg ->
       take @@ fun fun_arg ->
-      return (Some (rewrite_continuation fun_arg ~arg:promise_arg))
+      return (Some (rewrite_continuation ~backend fun_arg ~arg:promise_arg))
   | "map" ->
       take @@ fun fun_arg ->
       take @@ fun promise_arg ->
-      return (Some (rewrite_continuation fun_arg ~arg:promise_arg))
+      return (Some (rewrite_continuation ~backend fun_arg ~arg:promise_arg))
   | "try_bind" ->
       take @@ fun thunk ->
       take @@ fun value_f ->
@@ -284,10 +293,12 @@ let rewrite_apply_lwt ~backend ~state ident args =
   (* Operators *)
   | ">>=" | ">|=" ->
       take @@ fun lhs ->
-      take @@ fun rhs -> return (Some (rewrite_continuation rhs ~arg:lhs))
+      take @@ fun rhs ->
+      return (Some (rewrite_continuation ~backend rhs ~arg:lhs))
   | "=<<" | "=|<" ->
       take @@ fun lhs ->
-      take @@ fun rhs -> return (Some (rewrite_continuation lhs ~arg:rhs))
+      take @@ fun rhs ->
+      return (Some (rewrite_continuation ~backend lhs ~arg:rhs))
   | "<&>" ->
       take @@ fun lhs ->
       take @@ fun rhs ->
@@ -477,13 +488,6 @@ let can_simply_sequence ~state rhs =
       true
   | _ -> false
 
-(** Rewrite the expression after the [=]. If it's a function application, it is
-    turned into a direct call. Otherwise, it is turned into a await. *)
-let rewrite_letop_exp ~backend exp =
-  match exp.pexp_desc with
-  | Pexp_apply _ -> exp
-  | _ -> backend#blocking_await exp
-
 let rewrite_letop ~backend ~state let_ ands body = function
   | "Lwt", ("let*" | "let+") -> (
       match ands with
@@ -491,7 +495,7 @@ let rewrite_letop ~backend ~state let_ ands body = function
           Some
             (mk_let ~is_pun:let_.pbop_is_pun ?value_constraint:let_.pbop_typ
                let_.pbop_pat ~args:let_.pbop_args
-               (rewrite_letop_exp ~backend let_.pbop_exp)
+               (rewrite_bind_exp ~backend let_.pbop_exp)
                body)
       | _ :: _ ->
           List.iter (fun and_ -> Occ.remove_s state and_.pbop_op) ands;
